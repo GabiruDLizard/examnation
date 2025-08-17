@@ -1,0 +1,83 @@
+.setup-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(40, 44, 52, 0.08);
+  padding: 32px 24px;
+  max-width: 420px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.setup-form label {
+  font-size: 1.1rem;
+  color: #282c34;
+  margin-bottom: 8px;
+  font-weight: 500;
+  display: block;
+}
+
+.setup-form input[type="text"],
+.setup-form input[type="date"],
+.setup-form select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #f7f7f7;
+  transition: border-color 0.2s;
+}
+
+.setup-form input[type="text"]:focus,
+.setup-form input[type="date"]:focus,
+.setup-form select:focus {
+  border-color: #61dafb;
+  outline: none;
+}
+
+.setup-form .multiselect label {
+  margin-right: 16px;
+  font-size: 1rem;
+}
+
+.setup-form input[type="checkbox"],
+.setup-form input[type="radio"] {
+  margin-right: 6px;
+}
+
+.setup-form button {
+  background: #61dafb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+
+.setup-form button[type="button"] {
+  background: #cfd8dc;
+  color: #282c34;
+  margin-right: 10px;
+}
+
+.setup-form button:hover {
+  background: #21a1f3;
+}
+
+.setup-form .question-container {
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .setup-form {
+    padding: 18px 8px;
+    max-width: 98vw;
+  }
+}

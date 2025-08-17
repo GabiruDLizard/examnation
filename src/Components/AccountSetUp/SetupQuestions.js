@@ -64,3 +64,5 @@ const questions = [
         roles: ["educator", "parent"]
     }
 ];
+
+export default questions

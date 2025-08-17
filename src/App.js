@@ -4,7 +4,7 @@ import Navbar from './Components/Navbar';
 import LandingPage from './Components/Landing';
 import Auth from './Components/Auth';
 import ResetPassword from './Components/ResetPassword';
-import { SetUp } from './Components/AccountSetUp/SetUp';
+import SetUp from './Components/AccountSetUp/SetUp';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
