@@ -142,6 +142,18 @@ const SetUp = () => {
                             ))}
                         </div>
                     )}
+                    {question.type === 'number' && (
+                        <div>
+                            <input
+                                type="number"
+                                value={answers[question.id] || ''}
+                                onChange={(e) => handleChange(question.id, e.target.value)}
+                                required={question.required}
+                            min="0"
+                            style={{ width: '100%', padding: '10px 12px', marginBottom: '18px', borderRadius: '6px', border: '1px solid #cfd8dc' }}
+                            />
+                        </div>
+                    )}
                 </div>
                 <div>
                     {current > 0 && (<button type="button" onClick={handleBack}>Back</button>)}
