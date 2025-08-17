@@ -20,7 +20,7 @@ const questions = [
         type: "multiselect",
         options: ["Math", "English", "Science", "Social Studies", "Other"],
         roles: ["student", "educator"],
-        required: true
+        required: false
     },
     {
         id: 4,
