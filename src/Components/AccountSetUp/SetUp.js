@@ -82,6 +82,7 @@ const SetUp = () => {
                             type="text"
                             value={answers[question.id] || ''}
                             onChange={(e) => handleChange(question.id, e.target.value)}
+                            required={question.required}
                         />
                     )}
                     {question.type === 'select' && (
@@ -101,6 +102,7 @@ const SetUp = () => {
                             type="date"
                             value={answers[question.id] || ''}
                             onChange={(e) => handleChange(question.id, e.target.value)}
+                            required={question.required}
                         />
                     )}
                     {question.type === 'boolean' && (
@@ -111,6 +113,7 @@ const SetUp = () => {
                                     value="true"
                                     checked={answers[question.id] === true}
                                     onChange={() => handleChange(question.id, true)}
+                                    required={question.required}
                                 /> Yes
                             </label>
                             <label>
@@ -119,6 +122,7 @@ const SetUp = () => {
                                     value="false"
                                     checked={answers[question.id] === false}
                                     onChange={() => handleChange(question.id, false)}
+                                    required={question.required}
                                 /> No
                             </label>
                         </div>
@@ -131,6 +135,7 @@ const SetUp = () => {
                                         type="checkbox"
                                         checked={answers[question.id]?.includes(option) || false}
                                         onChange={() => handleMultiSelect(question.id, option)}
+                                        required={question.required}
                                     />
                                     {option}
                                 </label>
