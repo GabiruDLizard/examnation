@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "YxELDvDt7+0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Kendr\\OneDrive\\Documents\\Examnation\\examnation\\BackEnd\\APIS\\examnation-api\\examnation-api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Kendr\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.1\\microsoft.aspnetcore.openapi.9.0.1.nupkg.sha512",
+    "C:\\Users\\Kendr\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}

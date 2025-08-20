@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import questions from './SetupQuestions';
+import { useNavigate } from 'react-router-dom';
 import '../../Styling/AccountSetUp/SetUp.css' // Assuming you have a questions.js file with your questions
 
 const SetUp = () => {
-    const [answers, setAnswers] = useState({});
+    const location = useLocation();
+    const initialAnswers = location.state || {};
+    const [answers, setAnswers] = useState(initialAnswers);
     const [current, setCurrent] = useState(0);
     const [role, setRole] = useState(null);
+    const navigate = useNavigate();
 
     const selectedRole = answers[questions[0].id] || role;
 
@@ -45,7 +50,7 @@ const SetUp = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert('Setup complete! Answers: ' + JSON.stringify(answers));
+        navigate('/studentdashboard', {state: answers});
     };
 
     const handleMultiSelect = (id, option) => {
@@ -69,12 +74,35 @@ const SetUp = () => {
 
     const handleNext = (e) => {
         e.preventDefault();
-        if (current < questions.length - 1) {
+        if (current < filteredQuestions.length - 1) {
             setCurrent(current + 1);
         }
     };
+
     return (
-        <form className="setup-form" onSubmit={current === questions.length - 1 ? handleSubmit : handleNext}>
+        <div className="setup-flexpage">
+            <article className="setup-welcome">
+                <h2>Welcome to Examnation!</h2>
+                <p>
+                    We’re excited to help you prepare for your exams.  
+                    This quick setup will personalize your experience and recommend the best resources for you.  
+                    Answer each question to get started, and feel free to explore our dashboard once you’re done!
+                </p>
+                <ul>
+                    <li>Practice real CXC questions</li>
+                    <li>Track your progress</li>
+                    <li>Get personalized recommendations</li>
+                </ul>
+                <p>
+                    Let’s get started!
+                </p>
+            </article>
+            <form className="setup-form" onSubmit={current === filteredQuestions.length - 1 ? handleSubmit : handleNext}>
+                {current > 0 && (
+                    <button type="button" className="setup-back-btn" onClick={handleBack}>
+                        &#8592; Back
+                    </button>
+                )}
                 <div className="question-container" key={question.id}>
                     <label>{question.text}</label>
                     {question.type === 'text' && (
@@ -86,16 +114,27 @@ const SetUp = () => {
                         />
                     )}
                     {question.type === 'select' && (
-                        <select
-                            value={answers[question.id] || ''}
-                            onChange={(e) => handleChange(question.id, e.target.value)}
-                            required
-                        >
-                            <option value="">Select...</option>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '18px' }}>
                             {question.options.map(option => (
-                                <option key={option} value={option}>{option}</option>
+                                <button
+                                    key={option}
+                                    type="button"
+                                    className={answers[question.id] === option ? 'selected-btn' : ''}
+                                    onClick={() => handleChange(question.id, option)}
+                                    style={{
+                                        padding: '10px 18px',
+                                        borderRadius: '6px',
+                                        border: answers[question.id] === option ? '2px solid #61dafb' : '1px solid #cfd8dc',
+                                        background: answers[question.id] === option ? '#e3f7ff' : '#fff',
+                                        color: '#282c34',
+                                        fontWeight: 500,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {option}
+                                </button>
                             ))}
-                        </select>
+                        </div>
                     )}
                     {question.type === 'date' && (
                         <input
@@ -149,17 +188,20 @@ const SetUp = () => {
                                 value={answers[question.id] || ''}
                                 onChange={(e) => handleChange(question.id, e.target.value)}
                                 required={question.required}
-                            min="0"
-                            style={{ width: '100%', padding: '10px 12px', marginBottom: '18px', borderRadius: '6px', border: '1px solid #cfd8dc' }}
+                                min="0"
+                                style={{ width: '100%', padding: '10px 12px', marginBottom: '18px', borderRadius: '6px', border: '1px solid #cfd8dc' }}
                             />
                         </div>
                     )}
                 </div>
-                <div>
+                {/* <div>
                     {current > 0 && (<button type="button" onClick={handleBack}>Back</button>)}
-                </div>
-            <button type="submit">{current < questions.length - 1 ? 'Next' : 'Finished'}</button>
-        </form>
+                </div> */}
+                <button type="submit">
+                    {filteredQuestions.length === 1 || current < filteredQuestions.length - 1 ? 'Next' : 'Finished'}
+                </button>
+            </form>
+        </div>
     );
 }
 
