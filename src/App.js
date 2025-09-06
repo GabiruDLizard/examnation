@@ -2,7 +2,7 @@
 import './App.css';
 import Navbar from './Components/Navbar';
 import LandingPage from './Components/Landing';
-import Auth from './Components/Auth';
+import Auth from './Components/Authentication/Auth';
 import ResetPassword from './Components/ResetPassword';
 import SetUp from './Components/AccountSetUp/SetUp';
 import StudentDashboard from './Components/Dashboards/StudentDashboard';

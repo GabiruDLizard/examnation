@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Register from './Register';
 import Navbar from './Navbar';
-import Auth from './Auth';
+import Auth from './Authentication/Auth';
 
 
 const LandingPage = () => {

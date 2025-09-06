@@ -1,11 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import '../../Styling/Dashboards/StudentDashboard.css';
 
 const StudentDashboard = () => {
     const location = useLocation();
-    const student = location.state || {};
+    // Get student ID from navigation state or localStorage
+    const studentId = location.state?.id || localStorage.getItem('studentId');
+    const [student, setStudent] = useState({});
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        const fetchStudentData = async () => {
+            if (!studentId || !token) return;
+            try {
+                const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${studentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStudent(data);
+                }
+            } catch (error) {
+                setStudent({});
+            }
+        };
+
+        fetchStudentData();
+    }, [studentId, token]);
 
     return (
         <div className="dashboard-layout">

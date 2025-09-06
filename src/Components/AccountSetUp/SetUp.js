@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import questions from './SetupQuestions';
 import { useNavigate } from 'react-router-dom';
+import { register } from './SetUpService';
 import '../../Styling/AccountSetUp/SetUp.css' // Assuming you have a questions.js file with your questions
 
 const SetUp = () => {
@@ -12,7 +13,7 @@ const SetUp = () => {
     const [role, setRole] = useState(null);
     const navigate = useNavigate();
 
-    const selectedRole = answers[questions[0].id] || role;
+    const selectedRole = answers[questions[0].key] || role;
 
     const filteredQuestions = selectedRole
         ? questions.filter(q => q.roles.includes(selectedRole.toLowerCase()))
@@ -36,37 +37,59 @@ const SetUp = () => {
         }
     };
 
-    const handleChange = (id, value) => {
+    const handleChange = (key, value) => {
         setAnswers(prevAnswers => ({
             ...prevAnswers,
-            [id]: value
+            [key]: value
         }));
 
-        if(id === questions[0].id){
+        if (key === questions[0].key) {
             setRole(value);
             setCurrent(1);
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
         e.preventDefault();
-        navigate('/studentdashboard', {state: answers});
+        console.log(answers);
+        const payload = {
+            Username: answers.username,
+            Email: answers.email,
+            FirstName: answers.firstName,
+            LastName: answers.lastName,
+            PasswordHash: answers.password,
+            Role: answers.role
+        };
+        console.log(payload);
+        try{
+            const response = await register(payload);
+            if(response.success){
+                navigate('/studentdashboard');
+            }
+            else{
+                alert(response.message || 'Registration failed');
+            }
+        }
+        catch (error){
+            alert('Error connecting to server');
+        }
+        // navigate('/studentdashboard', {state: answers});
     };
 
-    const handleMultiSelect = (id, option) => {
+    const handleMultiSelect = (key, option) => {
         setAnswers(prevAnswers => {
-            const selected = prevAnswers[id] || [];
+            const selected = prevAnswers[key] || [];
             if (selected.includes(option)) {
                 // Remove option
                 return {
                     ...prevAnswers,
-                    [id]: selected.filter(item => item !== option)
+                    [key]: selected.filter(item => item !== option)
                 };
             } else {
                 // Add option
                 return {
                     ...prevAnswers,
-                    [id]: [...selected, option]
+                    [key]: [...selected, option]
                 };
             }
         });
@@ -103,13 +126,13 @@ const SetUp = () => {
                         &#8592; Back
                     </button>
                 )}
-                <div className="question-container" key={question.id}>
+                <div className="question-container" key={question.key}>
                     <label>{question.text}</label>
                     {question.type === 'text' && (
                         <input
                             type="text"
-                            value={answers[question.id] || ''}
-                            onChange={(e) => handleChange(question.id, e.target.value)}
+                            value={answers[question.key] || ''}
+                            onChange={(e) => handleChange(question.key, e.target.value)}
                             required={question.required}
                         />
                     )}
@@ -119,13 +142,13 @@ const SetUp = () => {
                                 <button
                                     key={option}
                                     type="button"
-                                    className={answers[question.id] === option ? 'selected-btn' : ''}
-                                    onClick={() => handleChange(question.id, option)}
+                                    className={answers[question.key] === option ? 'selected-btn' : ''}
+                                    onClick={() => handleChange(question.key, option)}
                                     style={{
                                         padding: '10px 18px',
                                         borderRadius: '6px',
-                                        border: answers[question.id] === option ? '2px solid #61dafb' : '1px solid #cfd8dc',
-                                        background: answers[question.id] === option ? '#e3f7ff' : '#fff',
+                                        border: answers[question.key] === option ? '2px solid #61dafb' : '1px solid #cfd8dc',
+                                        background: answers[question.key] === option ? '#e3f7ff' : '#fff',
                                         color: '#282c34',
                                         fontWeight: 500,
                                         cursor: 'pointer'
@@ -139,8 +162,8 @@ const SetUp = () => {
                     {question.type === 'date' && (
                         <input
                             type="date"
-                            value={answers[question.id] || ''}
-                            onChange={(e) => handleChange(question.id, e.target.value)}
+                            value={answers[question.key] || ''}
+                            onChange={(e) => handleChange(question.key, e.target.value)}
                             required={question.required}
                         />
                     )}
@@ -150,8 +173,8 @@ const SetUp = () => {
                                 <input
                                     type="radio"
                                     value="true"
-                                    checked={answers[question.id] === true}
-                                    onChange={() => handleChange(question.id, true)}
+                                    checked={answers[question.key] === true}
+                                    onChange={() => handleChange(question.key, true)}
                                     required={question.required}
                                 /> Yes
                             </label>
@@ -159,8 +182,8 @@ const SetUp = () => {
                                 <input
                                     type="radio"
                                     value="false"
-                                    checked={answers[question.id] === false}
-                                    onChange={() => handleChange(question.id, false)}
+                                    checked={answers[question.key] === false}
+                                    onChange={() => handleChange(question.key, false)}
                                     required={question.required}
                                 /> No
                             </label>
@@ -172,8 +195,8 @@ const SetUp = () => {
                                 <label key={option} style={{ marginRight: '10px' }}>
                                     <input
                                         type="checkbox"
-                                        checked={answers[question.id]?.includes(option) || false}
-                                        onChange={() => handleMultiSelect(question.id, option)}
+                                        checked={answers[question.key]?.includes(option) || false}
+                                        onChange={() => handleMultiSelect(question.key, option)}
                                         required={question.required}
                                     />
                                     {option}
@@ -185,8 +208,8 @@ const SetUp = () => {
                         <div>
                             <input
                                 type="number"
-                                value={answers[question.id] || ''}
-                                onChange={(e) => handleChange(question.id, e.target.value)}
+                                value={answers[question.key] || ''}
+                                onChange={(e) => handleChange(question.key, e.target.value)}
                                 required={question.required}
                                 min="0"
                                 style={{ width: '100%', padding: '10px 12px', marginBottom: '18px', borderRadius: '6px', border: '1px solid #cfd8dc' }}

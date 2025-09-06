@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import '../Styling/Auth.css';
-import logo from '../Resources/PHold-logo.png';
+import '../../Styling/Auth.css';
+import logo from '../../Resources/PHold-logo.png';
 import { useNavigate } from 'react-router-dom';
+import { login } from './AuthService';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -14,12 +15,24 @@ const Auth = () => {
     const [lastName, setLastName] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle authentication logic here
-        console.log(isLogin ? 'Logging in' : 'Registering', { email, password });
-        if(!isLogin){
-            navigate('/setup', { state: { email, username, firstName, lastName } });
+        if (isLogin) {
+            try {
+                // Pass username as UsernameorEmail
+                const data = await login(username, password);
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    navigate('/dashboard');
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+            }
+        } else {
+            // Registration logic
+            navigate('/setup', { state: { email, username, firstName, lastName, password } });
         }
     };
 
@@ -101,7 +114,7 @@ const Auth = () => {
                         </>
                     ) : (
                         <>
-                            <p onClick={() => setIsLogin(true)}>Already have an account?</p>
+                            <p onClick={() => setIsLogin(true)}>Already have an    account?</p>
                             <p onClick={() => navigate('/')}>Cancel</p>
                         </>
                     )}

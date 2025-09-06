@@ -23,6 +23,10 @@ CREATE TABLE questions (
     question_text TEXT NOT NULL,
     options TEXT[], -- Array of options for multiple choice
     correct_answer VARCHAR(255) NOT NULL,
+    answer_breakdown TEXT,
+    difficulty_level VARCHAR(50),
+    figure_description TEXT,
+    figure_blob_url VARCHAR(512),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
