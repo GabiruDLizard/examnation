@@ -1,12 +1,4 @@
-export async function register({ email, username, password, firstName, lastName, role, ...rest }) {
-    const payload = { 
-        email, 
-        username, 
-        firstName, 
-        lastName, 
-        passwordHash: password, // Send plain password as passwordHash
-        role 
-    };
+export async function register(payload) {
 
     const response = await fetch('https://examnationwebapi.azurewebsites.net/api/user', {
         method: 'POST',

@@ -51,7 +51,6 @@ const SetUp = () => {
 
     const handleSubmit = async(e) => {
         e.preventDefault();
-        console.log(answers);
         const payload = {
             Username: answers.username,
             Email: answers.email,
@@ -60,10 +59,11 @@ const SetUp = () => {
             PasswordHash: answers.password,
             Role: answers.role
         };
-        console.log(payload);
         try{
+            //console.log(payload);
             const response = await register(payload);
-            if(response.success){
+            console.log(response);
+            if(response.success || response.id){
                 navigate('/studentdashboard');
             }
             else{
