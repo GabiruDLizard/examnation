@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import '../../Styling/Auth.css';
 import logo from '../../Resources/PHold-logo.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from './AuthService';
 
 const Auth = () => {
-    const [isLogin, setIsLogin] = useState(true);
+    const location = useLocation();
+    const [isLogin, setIsLogin] = useState(location.state?.isLogin ?? true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');

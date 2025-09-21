@@ -2,35 +2,57 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import '../../Styling/Dashboards/StudentDashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard = () => {
     const location = useLocation();
     // Get student ID from navigation state or localStorage
-    const studentId = location.state?.id || localStorage.getItem('studentId');
+    //const studentId = location.state?.id || localStorage.getItem('studentId');
     const [student, setStudent] = useState({});
+    const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    const [loading, setLoading] = useState(true);
+    //const payload = JSON.parse(atob(token.split('.')[1]));
+    //const studentId = payload.sub;
 
     useEffect(() => {
-        const fetchStudentData = async () => {
-            if (!studentId || !token) return;
-            try {
-                const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${studentId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setStudent(data);
-                }
-            } catch (error) {
-                setStudent({});
-            }
-        };
+        if(!token){
+            navigate('/login');
+        }
+        else{
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const studentId = payload.sub;
 
-        fetchStudentData();
-    }, [studentId, token]);
+            // if (!studentId) {
+            //     navigate('/login');
+            //     return;
+            // }
+            // if (payload.role !== 'student') {
+            //     navigate('/login');
+            //     return;
+            // }
+            const fetchStudentData = async () => {
+                if (!studentId) return;
+                try {
+                    const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${studentId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setStudent(data);
+                    }
+                } catch (error) {
+                    setStudent({});
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchStudentData();
+        }
+    }, [token]);
 
     return (
         <div className="dashboard-layout">

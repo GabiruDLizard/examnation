@@ -1,5 +1,5 @@
 export async function register(payload) {
-
+    //payload.Email = payload.Email.toLowerCase();
     const response = await fetch('https://examnationwebapi.azurewebsites.net/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
