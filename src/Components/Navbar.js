@@ -1,8 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../Styling/Navbar.css'; 
 import logo from '../Resources/PHold-logo.png';
+import { FaUserCircle } from 'react-icons/fa';
+import UserPopUp from './UserPopUp';
 
 const Navbar = () => {
+    const [showMenu, setShowMenu] = useState(false);
+    const [user, setUser] = useState(null);
+    const isLoggedIn = !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    // const payload = JSON.parse(atob(token?.split('.')[1]));
+    // const userId = payload.sub;
+    const handleLogout = () => {
+        localStorage.clear();
+        window.location.href = '/';
+    };
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if(token){
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const userId = payload.sub;
+                    const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${userId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch user data');
+                    }
+                    const data = await response.json();
+                    setUser(data);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        };
+        fetchUserData();
+    }, [token]);
     return (
 
         <nav className="navbar">
@@ -21,7 +58,26 @@ const Navbar = () => {
                     <li><a href="/">Home</a></li>
                     <li><a href="/about">About</a></li>
                     <li><a href="/contact">Contact</a></li>
-                    <li><a href="/login">Login</a></li>
+                    {isLoggedIn ? (
+                        <li style = {{ position: 'relative' }}>
+                            <FaUserCircle 
+                                size={24} 
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => setShowMenu(!showMenu)} 
+                            />
+                            {showMenu && (
+                                <UserPopUp 
+                                    user={user}
+                                    onLogout={handleLogout}
+                                    onClose={() => setShowMenu(false)}
+                                />
+                            )}
+                        </li>
+                    ) : (
+                        <li>
+                            <a href="/login">Login</a>
+                        </li>
+                    )}
                 </ul>
             </div>
         </nav>

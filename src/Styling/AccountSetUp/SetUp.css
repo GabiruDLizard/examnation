@@ -1,20 +1,49 @@
+.setup-fullpage {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(120deg, #61dafb 0%, #282c34 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setup-flexpage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 48px;
+  padding: 0 24px;
+}
+
 .setup-form {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(40, 44, 52, 0.08);
-  padding: 32px 24px;
-  max-width: 420px;
-  margin: 40px auto;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(40, 44, 52, 0.12);
+  padding: 48px 32px;
+  width: 100%;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
 }
 
-.setup-form label {
-  font-size: 1.1rem;
+.setup-welcome {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  max-width: 450px;
   color: #282c34;
-  margin-bottom: 8px;
-  font-weight: 500;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.setup-form label {
+  font-size: 1.2rem;
+  color: #282c34;
+  margin-bottom: 12px;
+  font-weight: 600;
   display: block;
 }
 
@@ -62,9 +91,10 @@
 }
 
 .setup-form button[type="button"] {
-  background: #cfd8dc;
+  background: whitesmoke;
   color: #282c34;
   margin-right: 10px;
+  hover: whitesmoke;
 }
 
 .setup-form button:hover {
@@ -73,11 +103,45 @@
 
 .setup-form .question-container {
   margin-bottom: 24px;
+  width: 350px;        /* Fixed width */
+  min-height: 180px;   /* Optional: ensures consistent height */
+  box-sizing: border-box;
+  /* You can adjust these values as needed */
+}
+
+.setup-back-btn {
+  background: #fff; /* Match the container background */
+  border: none;
+  color: #282c34;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.setup-back-btn:hover {
+  color: #61dafb;
+  text-decoration: underline;
 }
 
 @media (max-width: 600px) {
   .setup-form {
     padding: 18px 8px;
+    max-width: 98vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .setup-flexpage {
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px 0;
+  }
+  .setup-welcome, .setup-form {
     max-width: 98vw;
   }
 }
