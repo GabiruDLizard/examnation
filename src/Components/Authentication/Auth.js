@@ -24,7 +24,7 @@ const Auth = () => {
                 const data = await login(username, password);
                 if (data.token) {
                     localStorage.setItem('token', data.token);
-                    navigate('/dashboard');
+                    navigate('/studentdashboard');
                 } else {
                     alert(data.message || 'Login failed');
                 }
