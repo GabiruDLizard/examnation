@@ -1,24 +1,39 @@
 import React, { useState } from 'react';
-import '../Styling/Auth.css';
-import logo from '../Resources/PHold-logo.png';
-import { useNavigate } from 'react-router-dom';
+import '../../Styling/Auth.css';
+import logo from '../../Resources/PHold-logo.png';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { login } from './AuthService';
 
 const Auth = () => {
-    const [isLogin, setIsLogin] = useState(true);
+    const location = useLocation();
+    const [isLogin, setIsLogin] = useState(location.state?.isLogin ?? true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');	
     const [passwordForgot, setForgotPassword] = useState(false);
-
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle authentication logic here
-        console.log(isLogin ? 'Logging in' : 'Registering', { email, password });
-        if(!isLogin){
-            navigate('/setup');
+        if (isLogin) {
+            try {
+                // Pass username as UsernameorEmail
+                const data = await login(username, password);
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    navigate('/studentdashboard');
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+            }
+        } else {
+            // Registration logic
+            navigate('/setup', { state: { email, username, firstName, lastName, password } });
         }
     };
 
@@ -32,6 +47,20 @@ const Auth = () => {
             <form onSubmit={handleSubmit}>
             {!isLogin ? (
                     <>
+                        <input
+                            type="text"
+                            placeholder="FirstName"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            required
+                        />
+                        <input
+                            type="text"
+                            placeholder="LastName"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required
+                        />
                         <input
                             type="email"
                             placeholder="Email"
@@ -49,6 +78,7 @@ const Auth = () => {
                     </>
                 ) : (
                     <>
+                        
                         <input
                             type="text"
                             placeholder="Username / Email"
@@ -56,6 +86,7 @@ const Auth = () => {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                         />
+                        
                     </>
                 )}
 
@@ -84,7 +115,7 @@ const Auth = () => {
                         </>
                     ) : (
                         <>
-                            <p onClick={() => setIsLogin(true)}>Already have an account?</p>
+                            <p onClick={() => setIsLogin(true)}>Already have an    account?</p>
                             <p onClick={() => navigate('/')}>Cancel</p>
                         </>
                     )}
