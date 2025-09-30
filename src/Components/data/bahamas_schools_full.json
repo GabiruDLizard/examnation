@@ -1,0 +1,1322 @@
+[
+  {
+    "institution_name":"A. F. Adderley High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Abaco Central High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Abraham's Bay High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Acklins Central High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Adelaide Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Agape Christian School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Albury Sayle Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Alpha Omega Christian School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Amy Roberts Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Anatol Rodgers High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Angels Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Aquinas College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Arthur's Town High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Bahamas Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Bartlett Hill Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Bayview Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Behring Point Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Bertram A. Newton Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Bimini Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Bishop Michael Eldon",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Black Point All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Bowen Sound Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Bread of Life Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Burnt Rock Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"C. C. Sweeting Senior",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"C. H. Reeves Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"C. I. Gibson Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"C. R. Walker Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"C. V. Bethel Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"C. W. Sawyer Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Carlton Francis Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Centerville Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Central Abaco Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Central Andros High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Central Eleuthera High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Charles W. Saunders Baptist",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Cherokee Sound Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Cherub Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Christian Heritage School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Claridge Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Cleveland Eneas Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Columbus Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Cooper's Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Creative Vision Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Crooked Island High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Crossing Rocks Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Current Island Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Cyber Learning Center",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"D. W. Davis Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Dandy Lions Pre\/Primary School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Deep Creek Middle",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Deep Creek Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Discovery Learning & Development Center",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Doris Johnson Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Dumfries Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"E. P. Roberts Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Early Learning Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"East End Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"East End Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Eight Mile Rock High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Emma E. Cooper Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Eva Hilton Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Faithway Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Farmer's Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Final Hour Apostolic Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"First Step Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Forest Heights Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Forest Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Fox Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Freedom Baptist Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Freeport Bible Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Freeport Gospel Chapel",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Freeport Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Fresh Creek Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Galilee Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Gambier Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Garvin Tynes Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Gateway Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Genesis Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"George Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Gerald Cash Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Glinton's Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Governor's Harbour Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Grand Bahama Academy of SDA",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Grand Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Great Guana Cay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Green Castle Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Gregory Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"H. O. Hash Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Harbour Island All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"High Rock Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Hillcrest Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Holmes Rock Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Hope Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Horizons Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Hugh W. Campbell Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Inagua All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Jack Hayward Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Jack Hayward Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"James A. Pinder Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"James Cistern Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Jordan Prince William",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Kingsway Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"L. N. Coakley High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"L. W. Young Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Lewis Yard Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Long Bay School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Long Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Louise McDonald High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Lovely Bay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Lowe Sound Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Lower Deadman's Cay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Lucaya International School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Lyford Cay International School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Man-O-War Cay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Mangrove Bush Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Mangrove Cay High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Martin Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Mary E. Albury High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Mary Star Of The Sea Catholic Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Mastering Yourself Institute",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Mastic Point Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Maurice Moore Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Moore's Island All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Morrisville Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Moss Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Mount Thompson Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Mt. Carmel Preparatory Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"N. G. M. Major High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Nassau Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"New Bight Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"New Providence Classical School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Nicoll's Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"North Andros High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"North Eleuthera High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"North Eleuthera Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"North Long Island High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Old Bight High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Old Bight Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Orange Creek Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"P. A. Gibson Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Palmdale Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Pirates Well Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Plantation Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Preston H. Albury High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Progress Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Queens College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"R. M. Bailey Senior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"R. N. Gomez All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Ragged Island All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Revere Academy of Excellence",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Ridgeland Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Rock Sound Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Roker's Point Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Rolleville Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Rum Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"S. C. Bootle High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"S. C. McPherson Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Sadie Curtis Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Salina Point Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Samuel Guy Pinder All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"San Salvador High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Sandilands Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"See Saw Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Seed Life School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Simms Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Sister Mary Patricia Russell Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"Smith's Memorial Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Snug Corner Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"South Andros High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"South Haven Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"St. Andrews Anglican School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Andrews School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Anne's Anglican School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Augustine's College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Cecilia's Catholic School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Francis De Sales",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Francis\/St. Joseph's",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Georges' High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"St. John's College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Paul's Methodist College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"St. Thomas More Catholic",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Stafford Creek Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Staniard Creek Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Staniel Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Stephen Dillet Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Stuart Manor Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Summit Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Sunland Baptist Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Sunshine Development Centre",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Sweeting's Cay All Age",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"All Age"
+  },
+  {
+    "institution_name":"Sybil Strachan Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"T. A. Thompson Junior High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Junior High"
+  },
+  {
+    "institution_name":"T. G. Glover Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Tabernacle Baptist Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Tambearly School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Tarpum Bay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Teleos Christian School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Temple Christian Schools",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"The Dunmore School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"The Government High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"The Meridian School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Thelma Gibson Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Treasure Cay Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Trinity Christian Schools",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Ulric H. Ferguson Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"United Estates Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Uriah McPhee Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Walker Parker Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Wemyss Bight Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Wesley College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"West End Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Westminster College",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Williams Town Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Windermere High",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Senior High"
+  },
+  {
+    "institution_name":"Woodcock Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Worker's Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  },
+  {
+    "institution_name":"Xavier's Lower School",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Other"
+  },
+  {
+    "institution_name":"Yellow Elder Primary",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Primary"
+  },
+  {
+    "institution_name":"Zion Christian Academy",
+    "country":"Bahamas",
+    "address":null,
+    "institution_level":"Academy"
+  }
+]

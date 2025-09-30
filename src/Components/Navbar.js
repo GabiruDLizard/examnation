@@ -13,7 +13,7 @@ const Navbar = () => {
     // const userId = payload.sub;
     const handleLogout = () => {
         localStorage.clear();
-        window.location.href = '/';
+        window.location.href = '/login';
     };
 
     useEffect(() => {
@@ -33,6 +33,7 @@ const Navbar = () => {
                     }
                     const data = await response.json();
                     setUser(data);
+                    console.log(data);
                 } catch (error) {
                     console.error(error);
                 }
@@ -61,7 +62,7 @@ const Navbar = () => {
                     {isLoggedIn ? (
                         <li style = {{ position: 'relative' }}>
                             <FaUserCircle 
-                                size={24} 
+                                size={28} 
                                 style={{ cursor: 'pointer' }}
                                 onClick={() => setShowMenu(!showMenu)} 
                             />

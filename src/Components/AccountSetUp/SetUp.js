@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import questions from './SetupQuestions';
 import { useNavigate } from 'react-router-dom';
 import { register } from './SetUpService';
+import { login } from '../Authentication/AuthService';
 import '../../Styling/AccountSetUp/SetUp.css' // Assuming you have a questions.js file with your questions
 
 const SetUp = () => {
@@ -57,14 +58,21 @@ const SetUp = () => {
             FirstName: answers.firstName,
             LastName: answers.lastName,
             PasswordHash: answers.password,
-            Role: answers.role
+            Role: answers.role,
+            Birthdate: answers.birthday
         };
         try{
             //console.log(payload);
             const response = await register(payload);
             console.log(response);
             if(response.success || response.id){
-                navigate('/studentdashboard');
+                const data = await login(answers.username, answers.password);
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    navigate('/studentdashboard');
+                } else {
+                    alert(data.message || 'Login failed');
+                }
             }
             else{
                 alert(response.message || 'Registration failed');

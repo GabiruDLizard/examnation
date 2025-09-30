@@ -10,6 +10,7 @@ const UserPopUp = ({ user, onLogout, onClose }) => {
                 <p>{`Email: ${user?.email}`}</p>
                 <p>{`Role: ${user?.role}`}</p>
             </div>
+            <button className="user-popup-logout" onClick={() => { if(user.role == 'student'){window.location.href = '/studentdashboard'; }}}>My Dashboard</button>
             <button className="user-popup-logout" onClick={onLogout}>Logout</button>
         </div>
     );
