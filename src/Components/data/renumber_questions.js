@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, 'generated_bgcs_questions_200_named.json');
+const filePath = path.join(__dirname, 'generated_bgcs_questions_200_named_adjusted.json');
 const questions = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
 // Remove duplicates by "Question Text"

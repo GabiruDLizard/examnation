@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../../Styling/ExamPage/ExamPage.css';
 import { useNavigate } from 'react-router-dom';
-import questions from '../data/generated_bgcs_questions_200_named_adjusted.json';
+import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { BiSearch } from 'react-icons/bi';
 
 
@@ -23,7 +23,7 @@ const ExamPage = () => {
         <>
         <div className="exam-page">  
             <h2>filter by question topic</h2>
-            <ul>
+            <div className="topic-row">
                 {topics.map(topic => (
                     <button key = {topic} className={'topic-button' + (selectedTopic === topic ? ' active' : '')} onClick={() => setSelectedTopic(topic)} style={{
                             padding: '8px 18px',
@@ -38,10 +38,10 @@ const ExamPage = () => {
                             {topic}
                         </button>
                 ))}
-            </ul>
+            </div>
             <div>
                 <div>
-                    <input type="text" placeholder="search questions" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input className="search-input" type="text" placeholder="search questions" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     <label htmlFor="difficulty">Filter by Difficulty:</label>
                     <select id="difficulty" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)}>
                         <option value="">All</option>
@@ -60,6 +60,7 @@ const ExamPage = () => {
                     </li>
                 ))}
             </ol>
+            
         </div>
         </>
     );

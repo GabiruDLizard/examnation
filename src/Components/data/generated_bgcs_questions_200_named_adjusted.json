@@ -1655,5 +1655,1055 @@
     "Solution Breakdown": "Factorize: (x-2)(x-3)=0 ⇒ x=2,3.",
     "UniqueName": "QuadFactor101",
     "PaperSource": "Paper 3"
+  },
+  {
+    "Question ID": 184,
+    "Topic": "Number Properties",
+    "Difficulty": "Easy",
+    "Question Text": "Find the LCM of 8 and 12.",
+    "Solution": "24",
+    "Solution Breakdown": "LCM(8,12) = 24.",
+    "UniqueName": "LCMCalcLab",
+    "PaperSource": "Paper 2"
+  },
+  {
+    "Question ID": 185,
+    "Topic": "Geometry (Angles/Triangles)",
+    "Difficulty": "Medium",
+    "Question Text": "In a triangle, angles are in ratio 2:3:5. Find the angles.",
+    "Solution": "36°, 54°, 90°",
+    "Solution Breakdown": "Sum = 180°. Let angles be 2x, 3x, 5x ⇒ 10x=180 ⇒ x=18. Angles = 36°,54°,90°.",
+    "UniqueName": "TriangleAngleRatio",
+    "PaperSource": "Paper 1"
+  },
+  {
+    "Question ID": 186,
+    "Topic": "Probability",
+    "Difficulty": "Medium",
+    "Question Text": "A die is rolled. What is the probability of getting an even number?",
+    "Solution": "1/2",
+    "Solution Breakdown": "Even numbers: 2,4,6. Total outcomes:6. Probability=3/6=1/2.",
+    "UniqueName": "DieRollProb",
+    "PaperSource": "Paper 3"
+  },
+  {
+    "Question ID": 187,
+    "Topic": "Algebra (Linear Equations)",
+    "Difficulty": "Medium",
+    "Question Text": "Solve for x: 4x + 3 = -5.",
+    "Solution": "-2",
+    "Solution Breakdown": "4x = -8 ⇒ x = -2.",
+    "UniqueName": "LinearEqSolverY",
+    "PaperSource": "Paper 2"
+  },
+  {
+    "Question ID": 188,
+    "Topic": "Algebra (Simultaneous Equations)",
+    "Difficulty": "Medium",
+    "Question Text": "Solve for x and y: x + y = 7, x - y = 1.",
+    "Solution": "x = 4, y = 3",
+    "Solution Breakdown": "From x - y = 1 ⇒ y = x - 1. Sub into x + (x-1) = 7 ⇒ 2x - 1 = 7 ⇒ 2x = 8 ⇒ x = 4, y = 3.",
+    "UniqueName": "SimEqSolve102",
+    "PaperSource": "Paper 1"
+  },
+  {
+      "Question ID": 1,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_001",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 2,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_002",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 3,
+      "Topic": "Algebra",
+      "Difficulty": "Medium",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_003",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 4,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_004",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 5,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_005",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 6,
+      "Topic": "Statistics",
+      "Difficulty": "Medium",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_006",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 7,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_007",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 8,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_008",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 9,
+      "Topic": "Geometry",
+      "Difficulty": "Medium",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_009",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 10,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_010",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 11,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_011",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 12,
+      "Topic": "Graphs",
+      "Difficulty": "Medium",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_012",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 13,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_013",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 14,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_014",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 15,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Medium",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_015",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 16,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_016",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 17,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_017",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 18,
+      "Topic": "Mensuration",
+      "Difficulty": "Medium",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_018",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 19,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_019",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 20,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_020",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 21,
+      "Topic": "Probability",
+      "Difficulty": "Medium",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_021",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 22,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_022",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 23,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_023",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 24,
+      "Topic": "Trigonometry",
+      "Difficulty": "Medium",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_024",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 25,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_025",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 26,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_026",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 27,
+      "Topic": "Algebra",
+      "Difficulty": "Medium",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_027",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 28,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_028",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 29,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_029",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 30,
+      "Topic": "Statistics",
+      "Difficulty": "Medium",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_030",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 31,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_031",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 32,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_032",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 33,
+      "Topic": "Geometry",
+      "Difficulty": "Medium",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_033",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 34,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_034",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 35,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_035",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 36,
+      "Topic": "Graphs",
+      "Difficulty": "Medium",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_036",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 37,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_037",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 38,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_038",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 39,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Medium",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_039",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 40,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_040",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 41,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_041",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 42,
+      "Topic": "Mensuration",
+      "Difficulty": "Medium",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_042",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 43,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_043",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 44,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_044",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 45,
+      "Topic": "Probability",
+      "Difficulty": "Medium",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_045",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 46,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_046",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 47,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_047",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 48,
+      "Topic": "Trigonometry",
+      "Difficulty": "Medium",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_048",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 49,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_049",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 50,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_050",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 51,
+      "Topic": "Algebra",
+      "Difficulty": "Medium",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_051",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 52,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_052",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 53,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_053",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 54,
+      "Topic": "Statistics",
+      "Difficulty": "Medium",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_054",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 55,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_055",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 56,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_056",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 57,
+      "Topic": "Geometry",
+      "Difficulty": "Medium",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_057",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 58,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_058",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 59,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_059",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 60,
+      "Topic": "Graphs",
+      "Difficulty": "Medium",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_060",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 61,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_061",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 62,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_062",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 63,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Medium",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_063",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 64,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_064",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 65,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_065",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 66,
+      "Topic": "Mensuration",
+      "Difficulty": "Medium",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_066",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 67,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_067",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 68,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_068",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 69,
+      "Topic": "Probability",
+      "Difficulty": "Medium",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_069",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 70,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_070",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 71,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_071",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 72,
+      "Topic": "Trigonometry",
+      "Difficulty": "Medium",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_072",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 73,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_073",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 74,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_074",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 75,
+      "Topic": "Algebra",
+      "Difficulty": "Medium",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_075",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 76,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_076",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 77,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_077",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 78,
+      "Topic": "Statistics",
+      "Difficulty": "Medium",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_078",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 79,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_079",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 80,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_080",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 81,
+      "Topic": "Geometry",
+      "Difficulty": "Medium",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_081",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 82,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_082",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 83,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_083",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 84,
+      "Topic": "Graphs",
+      "Difficulty": "Medium",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_084",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 85,
+      "Topic": "Probability",
+      "Difficulty": "Hard",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_085",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 86,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_086",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 87,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Medium",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_087",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 88,
+      "Topic": "Trigonometry",
+      "Difficulty": "Hard",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_088",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 89,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_089",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 90,
+      "Topic": "Mensuration",
+      "Difficulty": "Medium",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_090",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 91,
+      "Topic": "Algebra",
+      "Difficulty": "Hard",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_091",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 92,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_092",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
+  },
+  {
+      "Question ID": 93,
+      "Topic": "Probability",
+      "Difficulty": "Medium",
+      "Question Text": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn without replacement. Find the probability that both are blue.",
+      "Solution": "2/33",
+      "Solution Breakdown": "Used multiplication rule without replacement.",
+      "UniqueName": "ProbHard_093",
+      "Image Description": "A bag of colored marbles (5 red, 4 blue, 3 green) with two blue marbles drawn, shown in a clean illustrative exam-style sketch."
+  },
+  {
+      "Question ID": 94,
+      "Topic": "Statistics",
+      "Difficulty": "Hard",
+      "Question Text": "The table below shows the number of goals scored by a football team in 10 matches. Construct a histogram and find the modal class.",
+      "Solution": "Modal class: 2\u20134 goals",
+      "Solution Breakdown": "Plotted frequency density and identified highest bar.",
+      "UniqueName": "StatsHist_094",
+      "Image Description": "A histogram on graph paper showing class intervals for goals scored, with the tallest bar between 2 and 4 goals."
+  },
+  {
+      "Question ID": 95,
+      "Topic": "Sequences and Functions",
+      "Difficulty": "Hard",
+      "Question Text": "The nth term of a sequence is given by Tn = 2n\u00b2 - 3n + 1. (a) Find the first four terms. (b) Determine the term number equal to 31.",
+      "Solution": "First four terms: 0, 3, 8, 15; Term number = 5",
+      "Solution Breakdown": "Substituted values and solved quadratic equation.",
+      "UniqueName": "SeqFunc_095",
+      "Image Description": "A table labeled n and Tn showing values for n = 1 to 5, representing the sequence Tn = 2n\u00b2 - 3n + 1."
+  },
+  {
+      "Question ID": 96,
+      "Topic": "Trigonometry",
+      "Difficulty": "Medium",
+      "Question Text": "In triangle ABC, AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0. (a) Calculate the length of BC. (b) Find the area of the triangle.",
+      "Solution": "BC \u2248 5.3 cm, Area \u2248 17.0 cm\u00b2",
+      "Solution Breakdown": "Used the cosine rule and \u00bdab sin(C) formula.",
+      "UniqueName": "TrigHard_096",
+      "Image Description": "A clean exam-style diagram showing triangle ABC with AB = 8 cm, AC = 6 cm, and angle A = 45\u00b0, labeled neatly on a white background."
+  },
+  {
+      "Question ID": 97,
+      "Topic": "Geometry",
+      "Difficulty": "Hard",
+      "Question Text": "Circle O has a chord AB = 12 cm and radius 10 cm. (a) Find the perpendicular distance from the center to the chord. (b) Calculate the angle subtended by the chord at the center.",
+      "Solution": "Distance = 6.63 cm, Angle \u2248 73.7\u00b0",
+      "Solution Breakdown": "Used right triangle and cosine rule relationships.",
+      "UniqueName": "CircleGeo_097",
+      "Image Description": "A circle with center O, chord AB = 12 cm, and radius 10 cm. A perpendicular from O meets AB at point M, labeled clearly."
+  },
+  {
+      "Question ID": 98,
+      "Topic": "Mensuration",
+      "Difficulty": "Hard",
+      "Question Text": "A cone has a height of 12 cm and a base radius of 5 cm. (a) Find the slant height. (b) Calculate its curved surface area.",
+      "Solution": "Slant height \u2248 13 cm, Surface area \u2248 204.2 cm\u00b2",
+      "Solution Breakdown": "Used Pythagoras\u2019 theorem and \u03c0rl formula.",
+      "UniqueName": "ConeMens_098",
+      "Image Description": "A right circular cone labeled with height 12 cm and base radius 5 cm. The slant height is shown as the hypotenuse of a right triangle inside the cone."
+  },
+  {
+      "Question ID": 99,
+      "Topic": "Algebra",
+      "Difficulty": "Medium",
+      "Question Text": "Solve the simultaneous equations: 2x + 3y = 12 and x - y = 1.",
+      "Solution": "x = 3, y = 2",
+      "Solution Breakdown": "Used substitution method to solve the linear pair.",
+      "UniqueName": "AlgebraSim_099",
+      "Image Description": "Coordinate axes with two intersecting straight lines labeled as 2x + 3y = 12 and x - y = 1, intersection marked clearly."
+  },
+  {
+      "Question ID": 100,
+      "Topic": "Graphs",
+      "Difficulty": "Hard",
+      "Question Text": "Plot the graph of y = x\u00b2 - 4x + 3 for -1 \u2264 x \u2264 5, and determine the coordinates of the vertex.",
+      "Solution": "Vertex at (2, -1)",
+      "Solution Breakdown": "Completed the square or used derivative dy/dx = 0.",
+      "UniqueName": "QuadGraph_100",
+      "Image Description": "A coordinate grid showing a parabola y = x\u00b2 - 4x + 3, labeled with vertex (2, -1) and x-intercepts marked clearly."
   }
 ]

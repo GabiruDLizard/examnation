@@ -36,9 +36,9 @@ const LandingPage = () => {
                     )}
                 </section>
                 <section className="landing-features">
-                    <div className="feature-card" onClick={() => navigate('/questions')} style={{ cursor: 'pointer' }}>
+                    <div className="feature-card" onClick={() => navigate('/exampage')} style={{ cursor: 'pointer' }}>
                         <h3>Practice Questions</h3>
-                        <p>Access a wide range of CXC, BGCSE and BJC practice questions and detailed answer breakdowns.</p>
+                        <p>Access a wide range of CXC, BGCSE and BJC practice questions and detailed answer breakdowns in our library.</p>
                     </div>
                     <div className="feature-card" onClick={() => navigate('/progress')} style={{ cursor: 'pointer' }}>
                         <h3>Progress Tracking</h3>

@@ -9,6 +9,8 @@ import StudentDashboard from './Components/Dashboards/StudentDashboard';
 import TeacherDashboard from './Components/Dashboards/TeacherDashboard';
 import ExamPage from './Components/ExamPage/ExamPage';
 import PracticeArea from './Components/PracticeArea/PracticeArea';
+import AdaptiveTest from './Components/Quizzes/AdaptiveTest';
+import TestEntrance from './Components/Quizzes/TestEntrance';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -28,6 +30,8 @@ function App() {
             <Route path="/teacherdashboard" element={<TeacherDashboard />} />
             <Route path="/exampage" element={<ExamPage />} />
             <Route path="/practice/:id" element={<PracticeArea />} />
+            <Route path="/adaptivetest" element={<AdaptiveTest />} />
+            <Route path="/testentrance" element={<TestEntrance />} />
           </Routes>
         </div>
         <div className="App-foot">
