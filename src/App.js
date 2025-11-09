@@ -11,15 +11,16 @@ import ExamPage from './Components/ExamPage/ExamPage';
 import PracticeArea from './Components/PracticeArea/PracticeArea';
 import AdaptiveTest from './Components/Quizzes/AdaptiveTest';
 import TestEntrance from './Components/Quizzes/TestEntrance';
+import TApageStudent from './Components/Dashboards/TAPage/TAPageStudent';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (
     <Router>
       <div className="App">
-        <div className="App-nav">
+        {/* <div className="App-nav">
           <Navbar />
-        </div>
+        </div> */}
         <div className="App-body">
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -32,6 +33,7 @@ function App() {
             <Route path="/practice/:id" element={<PracticeArea />} />
             <Route path="/adaptivetest" element={<AdaptiveTest />} />
             <Route path="/testentrance" element={<TestEntrance />} />
+            <Route path="/tapagestudent" element={<TApageStudent />} />
           </Routes>
         </div>
         <div className="App-foot">

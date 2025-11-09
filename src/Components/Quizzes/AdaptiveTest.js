@@ -8,7 +8,7 @@ import '../../Styling/PracticeArea/PracticeArea.css';
 import { renderFeedback } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
-import { saveTestResults } from './Servicing';
+import { saveTestResults, saveUserProgress } from './Servicing';
 
 const token = localStorage.getItem('token');
 
@@ -300,21 +300,27 @@ const AdaptiveTest = () => {
       // Get user's working steps and final answer
       let workingSteps = '';
       let finalAnswer = '';
+      let answerStepsJSON = [];
       
       if (currentQuestion?.Topic === "Graphs") {
         finalAnswer = graphState ? JSON.stringify(graphState.expressions) : '';
         workingSteps = finalAnswer; // For graphs, working = final
+
+       // answerSteps = { [currentQuestion['Question ID']]: workingSteps };
       } else {
         // Get all non-empty steps
         const nonEmptySteps = steps.filter(step => step.trim() !== '');
-        
+
+        //let answerStepsJSON = [];
         if (nonEmptySteps.length > 0) {
-          // Working steps = ALL steps (everything they wrote)
-          workingSteps = nonEmptySteps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-          
-          // Final answer = LAST step only
-          finalAnswer = nonEmptySteps[nonEmptySteps.length - 1];
-        }
+          answerStepsJSON = nonEmptySteps.map((step, idx) => ({
+          stepNumber: idx + 1,
+          stepText: step
+  }));
+}
+
+workingSteps = nonEmptySteps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
+finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       }
 
       // Check if answer is correct using the final answer
@@ -337,7 +343,8 @@ const AdaptiveTest = () => {
         questionText: currentQuestion["Question Text"],
         workingSteps: workingSteps,           // ALL steps they wrote
         finalAnswer: finalAnswer,             // LAST step only
-        userAnswer: finalAnswer,              // Keep for compatibility (same as finalAnswer)
+        userAnswer: finalAnswer,
+        answerStepsJSON: answerStepsJSON,
         correctAnswer: currentQuestion.Solution,
         isCorrect: correct,
         pointsEarned: questionPoints,
@@ -367,7 +374,7 @@ const AdaptiveTest = () => {
     }
   };
 
-  const goToNextQuestion = () => {
+  const goToNextQuestion = async () => {
     if (currentQuestionIndex < TOTAL_QUESTIONS - 1) {
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
@@ -398,11 +405,12 @@ const AdaptiveTest = () => {
 
       // Create API payload - transform testAnswers to match Answer model
       const apiPayload = testAnswers
-        .filter(answer => answer !== null) // Remove null entries
+        .filter(answer => answer !== null)
         .map(answer => ({
           UserId: userId,
           QuestionId: answer.questionId,
-          AnswerText: answer.workingSteps, // All working steps
+          AnswerText: answer.workingSteps, 
+          AnswerSteps: answer.answerStepsJSON, 
           IsCorrect: answer.isCorrect,
           AnsweredAt: new Date().toISOString(),
           TimeSpentSeconds: answer.timeSpent,
@@ -419,6 +427,23 @@ const AdaptiveTest = () => {
           console.error('Error saving test results:', error);
         });
       
+      const userProgress = {
+        userId: userId,
+        subjectId: 1,
+        questionsAttempted: 20,
+        questionsCorrect: correctAnswers,
+        score: totalScore,
+        lastPracticed: new Date().toISOString()
+      };
+
+      try {
+        const result = await saveUserProgress(userProgress);
+        console.log('Progress saved:', result);
+    // result will contain: { message, progress, action }
+      } catch (error) {
+        console.error('Failed to save progress:', error.message);
+      }
+      
       const finalResults = {
         totalScore: totalScore,
         correctAnswers: correctAnswers,
@@ -429,6 +454,7 @@ const AdaptiveTest = () => {
         completedAt: new Date().toISOString()
       };
       localStorage.setItem('adaptiveTestResults', JSON.stringify(finalResults));
+      localStorage.setItem('apiPayLoad', JSON.stringify(apiPayload)); 
     }
   };
 

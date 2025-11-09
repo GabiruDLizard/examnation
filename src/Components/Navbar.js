@@ -46,7 +46,8 @@ const Navbar = () => {
         <nav className="navbar">
             <div className="navbar-left">
                 <a className="logo" href="/">
-                    <img src={logo}/>
+                    Examnation
+                    {/* <img src={logo}/> */}
                 </a>
             </div>
             <div className="navbar-center">

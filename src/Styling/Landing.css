@@ -1,4 +1,221 @@
-.landing-bg {
+.landing-page {
+  font-family: "Poppins", sans-serif;
+  color: #111;
+  background-color: #fff;
+}
+
+/* Hero Section */
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4rem 10%;
+  flex-wrap: wrap;
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 500px;
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.hero-content p {
+  color: #555;
+  line-height: 1.6;
+}
+
+.hero-image img {
+  transform: scale(2);
+  transform-origin: center center; /* Center the scaling */
+  max-width: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 4rem 0; /* Add space above and below */
+}
+
+.cta-buttons {
+  margin-top: 2rem;
+}
+
+button {
+  padding: 0.8rem 1.8rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.primary {
+  background-color: #0078ff;
+  color: #fff;
+  margin-right: 1rem;
+}
+
+button.secondary {
+  background-color: #f3f3f3;
+  color: #333;
+}
+
+/* Features */
+.features {
+  text-align: center;
+  padding: 5rem 10%;
+  background: #fafafa;
+}
+
+.feature-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.feature-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 280px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.feature-card h3 {
+  margin-bottom: 0.5rem;
+}
+.insights-preview {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 5rem 10%;
+  gap: 2rem;
+}
+.dashboard-subsection-R, .dashboard-subsection-L {
+  flex: 1;
+  text-align: left;
+}
+.dashboard-subsection-R { 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dashboard-subsection-R img {
+  transform: scale(2);
+  transform-origin: center center; /* Center the scaling */
+  max-width: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 4rem 0; /* Add space above and below */
+}
+/* Testimonials */
+.testimonials {
+  text-align: center;
+  padding: 5rem 10%;
+}
+
+.testimonial-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.testimonial {
+  background: #0078ff;
+  color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 280px;
+}
+
+.testimonial span {
+  display: block;
+  margin-top: 1rem;
+  opacity: 0.9;
+}
+
+/* Footer CTA */
+.cta-footer {
+  text-align: center;
+  background-color: #111;
+  color: #fff;
+  padding: 4rem 10%;
+}
+
+.cta-footer h2 {
+  margin-bottom: 1.5rem;
+}
+
+.cta-footer button {
+  background-color: #0078ff;
+  color: #fff;
+}
+
+.floating-balls-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ball {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.35;
+  filter: blur(4px);
+}
+
+.ball1 {
+  width: 60px;
+  height: 60px;
+  background: #4da6ff;
+  top: 20%;
+  left: 10%;
+}
+
+.ball2 {
+  width: 80px;
+  height: 80px;
+  background: #3399ff;
+  top: 50%;
+  left: 70%;
+}
+
+.ball3 {
+  width: 100px;
+  height: 100px;
+  background: #66b2ff;
+  top: 70%;
+  left: 40%;
+}
+
+/* The big main orb */
+.main-ball {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #007bff, #003d99);
+  top: -350px; /* half-hidden position */
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+
+
+
+/* .landing-bg {
     min-height: 100vh;
     width: 100%;
     background: linear-gradient(135deg, #e3f7ff 0%, #b2ebf2 100%);
@@ -6,36 +223,6 @@
     flex-direction: column;
 }
 
-/* .landing-navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 32px 48px 0 48px;
-    background: transparent;
-}
-
-.logo {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #00796b;
-    letter-spacing: 2px;
-}
-
-.nav-btn {
-    margin-left: 16px;
-    padding: 10px 24px;
-    border: none;
-    border-radius: 6px;
-    background: #00796b;
-    color: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-.nav-btn:hover {
-    background: #004d40;
-} */
 
 .landing-main {
     flex: 1;
@@ -107,7 +294,7 @@
 .feature-card p {
     color: #444;
     font-size: 1rem;
-}
+} */
 
 /* .landing-footer {
     text-align: center;

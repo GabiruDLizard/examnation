@@ -1,0 +1,35 @@
+.topPage{
+    display: flex;
+    margin-bottom: 1.5rem;
+}
+
+.topPage h1 {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+}
+
+.BackButton {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #000000;
+}
+
+.BackButton:hover {
+  color: #61dafb;
+  cursor: pointer;
+  border: 2px solid #61dafb;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.breakdownTwo {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.breakdownTwo > div {
+  flex: 1;
+  min-width: 300px; /* Minimum width before wrapping */
+}
