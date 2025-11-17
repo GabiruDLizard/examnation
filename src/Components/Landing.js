@@ -3,11 +3,23 @@ import '../Styling/Landing.css';
 import { useNavigate } from 'react-router-dom';
 import mainPreview from '../Resources/undraw_online-test_cqv0.svg';
 import dashboardPreview from '../Resources/undraw_app-benchmarks_ls0m.svg';
+import teacherDashboardPreview from '../Resources/Landing/TeacherDashboardPreview.png';
 import { motion } from "framer-motion";
 
 export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
+    
+    // Add the scrollToSection function
+    const scrollToSection = (sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    };
     
     const handleLogin = () => {
         // Simulate login (replace with real auth logic)
@@ -43,6 +55,21 @@ export default function ExamNationLanding() {
 
     return (
         <div className="landing-page">
+            <nav className="landing-navbar">
+                <div className="navbar-container">
+                    <div className="navbar-brand">
+                        <h2>ExamNation</h2>
+                    </div>
+                    <div className="navbar-links">
+                        <button className="navbar-signup" onClick={() => scrollToSection('features')}>Features</button>
+                        <button className="navbar-signup" onClick={() => scrollToSection('about')}>About</button>
+                        <button className="navbar-signup" onClick={() => scrollToSection('contact')}>Contact</button>
+                        <button className="navbar-signup" onClick={handleLogin}>Login</button>
+                        <button className="navbar-signup" onClick={handleRegister}>Sign Up</button>
+                    </div>
+                </div>
+            </nav>
+
             {/* Hero Section */}
             <section className="hero">
                 <div className="floating-balls-bg">
@@ -88,8 +115,8 @@ export default function ExamNationLanding() {
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section className="features">
+            {/* Features Section - Add id for scrolling */}
+            <section id="features" className="features">
                 <h2>Why Students Love ExamNation</h2>
                 <div className="feature-grid">
                     <div className="feature-card">
@@ -129,13 +156,14 @@ export default function ExamNationLanding() {
                     </ul>
                 </div>
                 <div className="dashboard-subsection-R">
-                    <img src={dashboardPreview} alt="Insights Dashboard Preview" />
+                    <img src={teacherDashboardPreview} alt="Teacher Insights Dashboard Preview" />
+                    {/* <img src={dashboardPreview} alt="Insights Dashboard Preview" /> */}
                     <button className="primary" onClick={handleExploreInsights}>Explore Insights</button>
                 </div>
             </section>
 
-            {/* Testimonials */}
-            <section className="testimonials">
+            {/* Testimonials - Add id for about section */}
+            <section id="about" className="testimonials">
                 <h2>Trusted by Students & Schools</h2>
                 <div className="testimonial-grid">
                     <div className="testimonial">
@@ -155,8 +183,8 @@ export default function ExamNationLanding() {
                 </div>
             </section>
 
-            {/* CTA Footer */}
-            <footer className="cta-footer">
+            {/* CTA Footer - Add id for contact section */}
+            <footer id="contact" className="cta-footer">
                 <h2>Join the Next Generation of Learners</h2>
                 <button className="primary" onClick={handleRegister}>Sign Up Free</button>
             </footer>
