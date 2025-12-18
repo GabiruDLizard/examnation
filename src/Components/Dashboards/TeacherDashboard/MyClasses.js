@@ -1,86 +1,161 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook } from "react-icons/bi";
 import "../../../Styling/Dashboards/MyClasses.css";
+import { getTeacherClasses, createTeacherClass, deleteTeacherClass } from "./TeacherDashboardService";
 
-const classesData = [
-  {
-    id: 1,
-    name: "Algebra I - Period 1",
-    subject: "Mathematics",
-    grade: "9th Grade",
-    students: 24,
-    schedule: "Mon, Wed, Fri - 8:00 AM",
-    avgReadiness: 78,
-    activeAssignments: 3,
-    color: "#3b82f6"
-  },
-  {
-    id: 2,
-    name: "Geometry - Period 3",
-    subject: "Mathematics", 
-    grade: "10th Grade",
-    students: 28,
-    schedule: "Tue, Thu - 10:30 AM",
-    avgReadiness: 72,
-    activeAssignments: 2,
-    color: "#10b981"
-  },
-  {
-    id: 3,
-    name: "Pre-Calculus - Period 5",
-    subject: "Mathematics",
-    grade: "11th Grade", 
-    students: 19,
-    schedule: "Mon, Wed, Fri - 1:15 PM",
-    avgReadiness: 85,
-    activeAssignments: 4,
-    color: "#f59e0b"
-  }
-];
-
-export default function MyClasses() {
+export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [classesData, setClassesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
-  const handleClassClick = (classItem) => {
-    console.log('Clicked on class:', classItem.name);
-    // TODO: Navigate to class detail page or show class details
-    alert(`Opening ${classItem.name} details...`);
-  };
+  // Color options for the picker
+  const colorOptions = [
+    "#3b82f6", // Blue
+    "#10b981", // Green
+    "#f59e0b", // Yellow
+    "#ef4444", // Red
+    "#8b5cf6", // Purple
+    "#06b6d4", // Cyan
+    "#f97316", // Orange
+    "#84cc16", // Lime
+    "#ec4899", // Pink
+    "#6b7280", // Gray
+    "#14b8a6", // Teal
+    "#a855f7"  // Violet
+  ];
 
-  const handleEditClass = (e, classItem) => {
-    e.stopPropagation(); // Prevent card click
-    console.log('Edit class:', classItem.name);
-    // TODO: Open edit modal
-    alert(`Editing ${classItem.name}...`);
-  };
+  // Fetch teacher classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
 
-  const handleDeleteClass = (e, classItem) => {
-    e.stopPropagation(); // Prevent card click
-    if (window.confirm(`Are you sure you want to delete ${classItem.name}?`)) {
-      console.log('Delete class:', classItem.name);
-      // TODO: Delete class logic
-      alert(`${classItem.name} deleted!`);
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const teacherId = payload.sub;
+
+      const classes = await getTeacherClasses(teacherId);
+      
+      // Transform the API response to match your component's expected format
+      const transformedClasses = classes.map((classItem) => ({
+        id: classItem.id,
+        name: classItem.name,
+        subject: classItem.subject,
+        grade: classItem.gradeLevel,
+        students: classItem.currentEnrollment || 0,
+        schedule: classItem.schedule,
+        avgReadiness: Math.round(classItem.avgReadiness || 0),
+        activeAssignments: classItem.activeAssignments || 0,
+        color: classItem.color || "#3b82f6",
+        roomNumber: classItem.roomNumber,
+        maxStudents: classItem.maxStudents,
+        status: classItem.status,
+        term: classItem.term
+      }));
+
+      setClassesData(transformedClasses);
+      setError(null);
+      
+    } catch (error) {
+      console.error('Error fetching teacher classes:', error);
+      setError(error.message);
+      
+      // Fallback to empty array if API fails
+      setClassesData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleCreateClass = async (formData) => {
+    try {
+      await createTeacherClass(formData);
+      await fetchClasses(); // Refresh the list
+      setShowCreateForm(false);
+      setSelectedColor("#3b82f6"); // Reset color picker
+      alert('Class created successfully!');
+    } catch (error) {
+      console.error('Error creating class:', error);
+      alert('Error creating class: ' + error.message);
+    }
+  };
+
+  const handleClassClick = (classItem) => {
+    console.log('Clicked on class:', classItem.name);
+    // Call the parent function to switch views
+    if (onClassClick) {
+      onClassClick(classItem);
+    }
+  };
+
+  const handleEditClass = (e, classItem) => {
+    e.stopPropagation();
+    console.log('Edit class:', classItem.name);
+    alert(`Editing ${classItem.name}...`);
+  };
+
+  const handleDeleteClass = async (e, classItem) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete ${classItem.name}?`)) {
+      try {
+        await deleteTeacherClass(classItem.id);
+        await fetchClasses(); // Refresh the list
+        alert(`${classItem.name} deleted successfully!`);
+      } catch (error) {
+        console.error('Error deleting class:', error);
+        alert('Error deleting class: ' + error.message);
+      }
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="my-classes-container">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <h2>Loading Your Classes...</h2>
+          <p>Fetching class information from the server...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate stats from real data
+  const totalClasses = classesData.length;
+  const totalStudents = classesData.reduce((sum, cls) => sum + cls.students, 0);
+  const avgReadiness = totalClasses > 0 
+    ? Math.round(classesData.reduce((sum, cls) => sum + cls.avgReadiness, 0) / totalClasses)
+    : 0;
+
   return (
     <div className="my-classes-container">
-      {/* Header Stats */}
+      {/* Header Stats - Now using real data */}
       <div className="classes-header">
         <div className="classes-stats">
           <div className="stat-item">
-            <span className="stat-number">3</span>
+            <span className="stat-number">{totalClasses}</span>
             <span className="stat-label">Total Classes</span>
           </div>
           <div className="stat-item">
-            <span className="stat-number">71</span>
+            <span className="stat-number">{totalStudents}</span>
             <span className="stat-label">Total Students</span>
           </div>
           <div className="stat-item">
-            <span className="stat-number">78%</span>
+            <span className="stat-number">{avgReadiness}%</span>
             <span className="stat-label">Avg. Readiness</span>
           </div>
         </div>
+        
         <button 
           className="create-class-btn"
           onClick={() => setShowCreateForm(true)}
@@ -89,106 +164,208 @@ export default function MyClasses() {
           Create New Class
         </button>
       </div>
+
+      {/* Error notification */}
+      {error && (
+        <div className="error-notification">
+          ⚠️ Error: {error}
+          <button onClick={fetchClasses} className="retry-link">Try Again</button>
+        </div>
+      )}
+
+      {/* Classes Grid */}
       <div className="classes-grid">
-        {classesData.map((classItem) => (
-          <div 
-            key={classItem.id} 
-            className="class-card"
-            onClick={() => handleClassClick(classItem)}
-          >
-            <div className="class-header">
-              <div className="class-color-bar" style={{ backgroundColor: classItem.color }}></div>
-              <div className="class-actions">
-                <button 
-                  className="action-btn edit"
-                  onClick={(e) => handleEditClass(e, classItem)}
-                  title="Edit Class"
-                >
-                  <BiEdit />
-                </button>
-                <button 
-                  className="action-btn delete"
-                  onClick={(e) => handleDeleteClass(e, classItem)}
-                  title="Delete Class"
-                >
-                  <BiTrash />
-                </button>
-              </div>
-            </div>
-            
-            <div className="class-content">
-              <h3 className="class-name">{classItem.name}</h3>
-              <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
-              
-              <div className="class-details">
-                <div className="detail-item">
-                  <BiUser style={{ marginRight: '6px' }} />
-                  <span>{classItem.students} Students</span>
-                </div>
-                <div className="detail-item">
-                  <BiCalendar style={{ marginRight: '6px' }} />
-                  <span>{classItem.schedule}</span>
-                </div>
-                <div className="detail-item">
-                  <BiBook style={{ marginRight: '6px' }} />
-                  <span>{classItem.activeAssignments} Active Assignments</span>
-                </div>
-              </div>
-
-              <div className="class-metrics">
-                <div className="metric">
-                  <span className="metric-label">Avg. Readiness</span>
-                  <div className="metric-bar">
-                    <div 
-                      className="metric-fill" 
-                      style={{ 
-                        width: `${classItem.avgReadiness}%`,
-                        backgroundColor: classItem.color 
-                      }}
-                    ></div>
-                  </div>
-                  <span className="metric-value">{classItem.avgReadiness}%</span>
-                </div>
-              </div>
-
-              <div className="class-footer">
-                <button 
-                  className="view-class-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClassClick(classItem);
-                  }}
-                >
-                  View Class Details
-                </button>
-              </div>
-            </div>
+        {classesData.length === 0 ? (
+          <div className="empty-state">
+            <h3>No Classes Found</h3>
+            <p>You haven't created any classes yet.</p>
+            <button 
+              className="create-first-class-btn"
+              onClick={() => setShowCreateForm(true)}
+            >
+              <BiPlus /> Create Your First Class
+            </button>
           </div>
-        ))}
+        ) : (
+          classesData.map((classItem) => (
+            <div 
+              key={classItem.id} 
+              className="class-card"
+              onClick={() => handleClassClick(classItem)}
+            >
+              <div className="class-header">
+                <div className="class-color-bar" style={{ backgroundColor: classItem.color }}></div>
+                <div className="class-actions">
+                  <button 
+                    className="action-btn edit"
+                    onClick={(e) => handleEditClass(e, classItem)}
+                    title="Edit Class"
+                  >
+                    <BiEdit />
+                  </button>
+                  <button 
+                    className="action-btn delete"
+                    onClick={(e) => handleDeleteClass(e, classItem)}
+                    title="Delete Class"
+                  >
+                    <BiTrash />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="class-content">
+                <h3 className="class-name">{classItem.name}</h3>
+                <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
+                
+                <div className="class-details">
+                  <div className="detail-item">
+                    <BiUser style={{ marginRight: '6px' }} />
+                    <span>{classItem.students} Students</span>
+                  </div>
+                  <div className="detail-item">
+                    <BiCalendar style={{ marginRight: '6px' }} />
+                    <span>{classItem.schedule}</span>
+                  </div>
+                  <div className="detail-item">
+                    <BiBook style={{ marginRight: '6px' }} />
+                    <span>{classItem.activeAssignments} Active Assignments</span>
+                  </div>
+                </div>
+
+                <div className="class-metrics">
+                  <div className="metric">
+                    <span className="metric-label">Avg. Readiness</span>
+                    <div className="metric-bar">
+                      <div 
+                        className="metric-fill" 
+                        style={{ 
+                          width: `${classItem.avgReadiness}%`,
+                          backgroundColor: classItem.color 
+                        }}
+                      ></div>
+                    </div>
+                    <span className="metric-value">{classItem.avgReadiness}%</span>
+                  </div>
+                </div>
+
+                <div className="class-footer">
+                  <button 
+                    className="view-class-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClassClick(classItem);
+                    }}
+                  >
+                    View Class Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
+
+      {/* Create Form Modal with Color Picker */}
       {showCreateForm && (
         <div className="modal-overlay" onClick={() => setShowCreateForm(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Class</h2>
-            <input type="text" placeholder="Class Name" />
-            <select>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const classData = {
+                name: formData.get('name'),
+                subject: formData.get('subject'),
+                gradeLevel: formData.get('gradeLevel'),
+                schedule: formData.get('schedule'),
+                roomNumber: formData.get('roomNumber'),
+                maxStudents: parseInt(formData.get('maxStudents')) || 30,
+                color: selectedColor // Add the selected color
+              };
+              
+              if (!classData.name || !classData.subject || !classData.gradeLevel || !classData.schedule) {
+                alert('Please fill in all required fields');
+                return;
+              }
+              
+              handleCreateClass(classData);
+            }}>
+              <input 
+                type="text" 
+                name="name"
+                placeholder="Class Name" 
+                required 
+              />
+              <select name="gradeLevel" required>
                 <option value="">Select Grade Level</option>
-                <option value="7th">7th Grade</option>
-                <option value="8th">8th Grade</option>
-                <option value="9th">9th Grade</option>
-                <option value="10th">10th Grade</option>
-                <option value="11th">11th Grade</option>
-                <option value="12th">12th Grade</option>
-            </select>
-            <select>
-              <option value="">Select Subject</option>
-              <option value="math">Mathematics</option>
-              <option value="english">English</option>
-              <option value="history">History</option>
-            </select>
-            <input type="text" placeholder="Schedule" />
-            <p>Form coming soon...</p>
-            <button onClick={() => setShowCreateForm(false)}>Close</button>
+                <option value="7th Grade">7th Grade</option>
+                <option value="8th Grade">8th Grade</option>
+                <option value="9th Grade">9th Grade</option>
+                <option value="10th Grade">10th Grade</option>
+                <option value="11th Grade">11th Grade</option>
+                <option value="12th Grade">12th Grade</option>
+              </select>
+              <select name="subject" required>
+                <option value="">Select Subject</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="English">English</option>
+                <option value="Science">Science</option>
+                <option value="History">History</option>
+                <option value="Geography">Geography</option>
+                <option value="Biology">Biology</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option>
+              </select>
+              <input 
+                type="text" 
+                name="schedule"
+                placeholder="Schedule (e.g., Mon, Wed, Fri - 8:00 AM)" 
+                required 
+              />
+              <input 
+                type="text" 
+                name="roomNumber"
+                placeholder="Room Number" 
+              />
+              <input 
+                type="number" 
+                name="maxStudents"
+                placeholder="Max Students" 
+                min="1" 
+                max="50"
+                defaultValue="30"
+              />
+              
+              {/* Color Picker */}
+              <div className="color-picker-section">
+                <label>Choose Class Color:</label>
+                <div className="color-picker-preview">
+                  <div 
+                    className="selected-color-preview"
+                    style={{ backgroundColor: selectedColor }}
+                  ></div>
+                  <span>Selected: {selectedColor}</span>
+                </div>
+                <div className="color-options">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`color-option ${selectedColor === color ? 'selected' : ''}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setSelectedColor(color)}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <button type="submit">Create Class</button>
+              <button type="button" onClick={() => {
+                setShowCreateForm(false);
+                setSelectedColor("#3b82f6"); // Reset color when closing
+              }}>Close</button>
+            </form>
           </div>
         </div>
       )}

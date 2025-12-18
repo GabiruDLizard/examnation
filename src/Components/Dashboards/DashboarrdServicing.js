@@ -1,7 +1,9 @@
+const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
+
 export async function getUserProgress(userId) {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token'); // Changed from 'jwtToken' to 'token' for consistency
     
-    const response = await fetch(`http://localhost:5204/api/userprogress/user/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/userprogress/user/${userId}`, {
         method: 'GET',
         headers: { 
             'Content-Type': 'application/json',
@@ -16,18 +18,76 @@ export async function getUserProgress(userId) {
     return response.json();
 }
 
-export async function getStudentAnswers(userId) {  // Changed parameter name
-    const token = localStorage.getItem('jwtToken');
-    const response = await fetch(`http://localhost:5204/api/answer/user/${userId}`, {
+export async function getStudentAnswers(userId) {
+    const token = localStorage.getItem('token'); // Changed from 'jwtToken' to 'token' for consistency
+    
+    const response = await fetch(`${API_BASE_URL}/answer/user/${userId}`, {
         method: 'GET',
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Add this line!
+            'Authorization': `Bearer ${token}`
         }
     });
+    
     if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch student answers');
+    }
+    return response.json();
+}
+
+// Add other common API functions
+export async function getStudentInfo(userId) {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
+        method: 'GET',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to get student info');
+    }
+    return response.json();
+}
+
+export async function getQuestions() {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${API_BASE_URL}/question`, {
+        method: 'GET',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to fetch questions');
+    }
+    return response.json();
+}
+
+export async function submitAnswer(answerData) {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${API_BASE_URL}/answer`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(answerData)
+    });
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to submit answer');
     }
     return response.json();
 }

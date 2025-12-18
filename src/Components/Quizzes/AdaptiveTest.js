@@ -407,7 +407,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       const apiPayload = testAnswers
         .filter(answer => answer !== null)
         .map(answer => ({
-          UserId: userId,
+           UserId: userId,
           QuestionId: answer.questionId,
           AnswerText: answer.workingSteps, 
           AnswerSteps: answer.answerStepsJSON, 

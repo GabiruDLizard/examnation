@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome } from "react-icons/bi";
+import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome } from "react-icons/bi";
 import "../../../Styling/Dashboards/TeacherDashboard.css";
 
 // Import services
@@ -10,6 +11,7 @@ import { getTeacherInfo } from "./TeacherDashboardService";
 
 // Import the new components
 import MyClasses from "./MyClasses";
+import ClassOverview from "./ClassOverview";
 
 const token = localStorage.getItem('token');
 
@@ -41,18 +43,58 @@ const heatmap = [
   [0.4, 0.5, 0.6, 0.5, 0.3]
 ];
 
+function heatColor(v) {
+  const hue = 220 - v * 140;
+  return `hsl(${hue}deg 70% ${30 + v*30}%)`;
+}
+
 export default function TeacherDashboard() {
   const [activePage, setActivePage] = useState('overview');
   const [teacherInfo, setTeacherInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null); 
+  const [showClassOverview, setShowClassOverview] = useState(false); 
+  const [showInsights, setShowInsights] = useState(false);
+  const [showAssignments, setShowAssignments] = useState(false);
+  const [showTA, setShowTA] = useState(false);
+  const [showReports, setShowReports] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Fetch teacher info on component mount
+  const handleClassClick = (classItem) => {
+    console.log('Class clicked:', classItem.name);
+    setSelectedClass(classItem);
+    setShowClassOverview(true); // Show class overview without changing activePage
+  };
+
+  // Fixed the incomplete function
+  const handleInsightsClick = (classItem) => {
+    setSelectedClass(classItem);
+    setShowInsights(true);
+  };
+
+  const handleBackToInsights = () => {
+    setSelectedClass(null);
+    setShowInsights(false);
+  }; // Added missing semicolon
+
+  const handleBackToClasses = () => {
+    setSelectedClass(null);
+    setShowClassOverview(false);
+    // activePage stays as 'classes'
+  };
+
+  const navigate = useNavigate();
+   
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
-        const data = await getTeacherInfo();
+        console.log('Starting to fetch teacher data...'); // Debug log
+        
+        const data = await getTeacherInfo(); // No parameters needed
+        console.log('Teacher data received in component:', data); // Debug log
+        
         setTeacherInfo(data);
         setError(null);
       } catch (err) {
@@ -92,11 +134,35 @@ export default function TeacherDashboard() {
 
   // Function to render different page content
   const renderPageContent = () => {
+    // If we're showing class overview, show that regardless of activePage
+    if (showClassOverview && activePage === 'classes') {
+      return <ClassOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToClasses} />;
+    }
+    // Commented out undefined components for now
+    /*
+    else if(showInsights && activePage === 'insights'){
+      return <InsightsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToInsights} />;
+    }
+    else if(showAssignments && activePage === 'assignments'){
+      return <AssignmentsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToAssignments} />;
+    }
+    else if(showTA && activePage === 'ta'){
+      return <TAOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToTA} />;
+    }
+    else if(showReports && activePage === 'reports'){
+      return <ReportsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToReports} />;
+    }
+    else if(showSettings && activePage === 'settings'){
+      return <SettingsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToSettings} />;
+    }
+    */
+
+    // Otherwise, render based on activePage
     switch (activePage) {
       case 'classes':
-        return <MyClasses teacherInfo={teacherInfo} />;
+        return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
       case 'insights':
-        return <div className="coming-soon">Insights page coming soon...</div>;
+        return <div className="coming-soon">Insights page coming soon...</div>; // Keep insights as original
       case 'assignments':
         return <div className="coming-soon">Assignments page coming soon...</div>;
       case 'ta':
@@ -213,8 +279,12 @@ export default function TeacherDashboard() {
     </>
   );
 
-  // Get page title based on active page
+  // Get page title based on active page and class overview state
   const getPageTitle = () => {
+    if (showClassOverview && selectedClass) {
+      return `${selectedClass.name} - Students`;
+    }
+    
     switch (activePage) {
       case 'classes': return 'My Classes';
       case 'insights': return 'Insights';
@@ -276,9 +346,21 @@ export default function TeacherDashboard() {
           <button 
             className={`td-nav-item ${activePage === 'settings' ? 'active' : ''}`}
             onClick={() => setActivePage('settings')}
+            id="bottom-button"
           >
             <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
             Settings
+          </button>
+          <button
+            className="td-nav-item"
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/login');
+            }}
+            id="bottom-button"
+          >
+            <BiLogOut style={{ marginRight: '8px', fontSize: '18px'}} />
+            Logout
           </button>
         </nav>
       </aside>
@@ -295,8 +377,3 @@ export default function TeacherDashboard() {
   );
 }
 
-/* small helper to map 0..1 -> color */
-function heatColor(v) {
-  const hue = 220 - v * 140;
-  return `hsl(${hue}deg 70% ${30 + v*30}%)`;
-}

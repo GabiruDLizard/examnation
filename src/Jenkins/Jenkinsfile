@@ -1,0 +1,65 @@
+Pipeline{
+    agent any
+
+    triggers {
+        pollSCM('H/60 * * * *')
+    }
+
+    environment{
+        DOCKER_REGISTRY_URL = 'your-docker-registry-url'
+        DOCKER_REPOSITORY_NAME = 'your-docker-repository-name'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Pre-Build') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        // stage('Test') {
+        //     steps {
+        //         echo 'Testing...'
+        //         // Add test steps here
+        //     }
+        // }
+        stage('Image Push') {
+            steps {
+                sh '''
+                    docker build -t $DOCKER_REPOSITORY_NAME:latest .
+                    docker login $DOCKER_REGISTRY_URL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+                '''
+                sh '''
+                    docker tag $DOCKER_REPOSITORY_NAME:latest $DOCKER_REGISTRY_URL/$DOCKER_REPOSITORY_NAME:latest
+                    docker push $DOCKER_REGISTRY_URL/$DOCKER_REPOSITORY_NAME:latest
+                '''
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh '''
+                    ssh user@your-server-ip '
+                        docker pull $DOCKER_REGISTRY_URL/$DOCKER_REPOSITORY_NAME:latest &&
+                        docker stop examnation-frontend || true &&
+                        docker rm examnation-frontend || true &&
+                        docker run -d --name examnation-frontend -p 80:80 $DOCKER_REGISTRY_URL/$DOCKER_REPOSITORY_NAME:latest
+                    '
+                '''
+            }
+        }
+        stage('Post-deploy Cleanup') {
+            steps {
+                sh 'docker system prune -f'
+            }
+        }
+    }
+}

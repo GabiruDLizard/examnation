@@ -7,7 +7,7 @@ import Auth from './Components/Authentication/Auth';
 import ResetPassword from './Components/ResetPassword';
 import LandingPageAuth from './LandingPageAuth';
 import SetUp from './Components/AccountSetUp/SetUp';
-import StudentDashboard from './Components/Dashboards/StudentDashboard';
+import StudentDashboard from './Components/Dashboards/StudentDashboard/StudentDashboard';
 import TeacherDashboard from './Components/Dashboards/TeacherDashboard/TeacherDashboard';
 import ExamPage from './Components/ExamPage/ExamPage';
 import PracticeArea from './Components/PracticeArea/PracticeArea';
