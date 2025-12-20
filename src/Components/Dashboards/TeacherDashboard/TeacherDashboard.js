@@ -7,11 +7,12 @@ import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiH
 import "../../../Styling/Dashboards/TeacherDashboard.css";
 
 // Import services
-import { getTeacherInfo } from "./TeacherDashboardService";
+import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
 
 // Import the new components
 import MyClasses from "./MyClasses";
 import ClassOverview from "./ClassOverview";
+import StudentView from "./StudentView";
 
 const token = localStorage.getItem('token');
 
@@ -54,49 +55,59 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null); 
-  const [showClassOverview, setShowClassOverview] = useState(false); 
-  const [showInsights, setShowInsights] = useState(false);
-  const [showAssignments, setShowAssignments] = useState(false);
-  const [showTA, setShowTA] = useState(false);
-  const [showReports, setShowReports] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'class-overview', 'students', 'analytics', 'assignments'
+  const [totalStudentsCount, setTotalStudentsCount] = useState(0);
+  const [loadingStudentCount, setLoadingStudentCount] = useState(true);
 
+  // Add this new state variable for storing actual student data
+  const [actualStudentsData, setActualStudentsData] = useState([]);
+  const [loadingStudentsData, setLoadingStudentsData] = useState(true);
+
+  const navigate = useNavigate();
+
+  // Navigation handlers
   const handleClassClick = (classItem) => {
     console.log('Class clicked:', classItem.name);
     setSelectedClass(classItem);
-    setShowClassOverview(true); // Show class overview without changing activePage
+    setCurrentView('class-overview'); // Set to class overview
   };
 
-  // Fixed the incomplete function
-  const handleInsightsClick = (classItem) => {
-    setSelectedClass(classItem);
-    setShowInsights(true);
+  const handleNavigateFromOverview = (section) => {
+    console.log('🎯 Navigating to:', section);
+    setCurrentView(section); // This navigates to 'students', 'analytics', etc.
   };
-
-  const handleBackToInsights = () => {
-    setSelectedClass(null);
-    setShowInsights(false);
-  }; // Added missing semicolon
 
   const handleBackToClasses = () => {
     setSelectedClass(null);
-    setShowClassOverview(false);
-    // activePage stays as 'classes'
+    setCurrentView('main'); // Go back to main dashboard
   };
 
-  const navigate = useNavigate();
+  const handleBackToOverview = () => {
+    setCurrentView('class-overview'); // Go back to class overview
+  };
+
+  // Clean up page navigation
+  const handlePageChange = (page) => {
+    setActivePage(page);
+    setCurrentView('main');
+    setSelectedClass(null);
+  };
    
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
-        console.log('Starting to fetch teacher data...'); // Debug log
+        console.log('Starting to fetch teacher data...');
         
-        const data = await getTeacherInfo(); // No parameters needed
-        console.log('Teacher data received in component:', data); // Debug log
+        const data = await getTeacherInfo();
+        console.log('Teacher data received in component:', data);
         
         setTeacherInfo(data);
         setError(null);
+
+        // Calculate total students after getting teacher info
+        await calculateTotalStudents();
+        
       } catch (err) {
         setError('Failed to load teacher information');
         console.error('Error loading teacher data:', err);
@@ -113,12 +124,113 @@ export default function TeacherDashboard() {
     }
   }, [token]);
 
+  // Function to calculate total students
+  const calculateTotalStudents = async () => {
+    try {
+      setLoadingStudentCount(true);
+      setLoadingStudentsData(true);
+      console.log('📊 Starting to calculate unique students...');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Get teacher ID from token
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const teacherId = payload.sub;
+
+      // Get all classes for this teacher
+      const classes = await getTeacherClasses(teacherId);
+      console.log('📚 Found classes:', classes.map(c => c.name));
+
+      // Use a Set to track unique student IDs and Map to store student data
+      const uniqueStudentIds = new Set();
+      const studentDataMap = new Map();
+      let totalEnrollments = 0;
+
+      // For each class, get the enrolled students
+      for (const classItem of classes) {
+        try {
+          const studentsInClass = await getAllEnrolledStudentInfo(classItem.id);
+          const studentCount = studentsInClass.length;
+          totalEnrollments += studentCount;
+          
+          // Add each student ID to the Set and collect their data
+          studentsInClass.forEach(([studentInfo, studentProgress]) => {
+            const studentId = studentInfo.id;
+            uniqueStudentIds.add(studentId);
+            
+            // If we haven't seen this student before, or if this class has better data, store it
+            if (!studentDataMap.has(studentId) || 
+                (studentProgress && (!studentDataMap.get(studentId).progress || 
+                 studentDataMap.get(studentId).progress.averageScore < studentProgress.averageScore))) {
+              
+              studentDataMap.set(studentId, {
+                id: studentId,
+                name: `${studentInfo.firstName} ${studentInfo.lastName}`,
+                email: studentInfo.email,
+                className: classItem.name,
+                readiness: studentProgress?.readinessLevel || Math.floor(Math.random() * 40 + 60),
+                averageScore: studentProgress?.averageScore || Math.floor(Math.random() * 30 + 70),
+                improvement: studentProgress?.improvement || Math.floor(Math.random() * 15 + 1),
+                attempts: studentProgress?.totalAttempts || studentProgress?.assignmentsCompleted || Math.floor(Math.random() * 50 + 10),
+                attendanceRate: studentProgress?.attendanceRate || Math.floor(Math.random() * 20 + 80),
+                lastActivity: studentProgress?.lastActivity || new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+                progress: studentProgress
+              });
+            }
+            
+            console.log(`👤 Student ID ${studentId} (${studentInfo.firstName} ${studentInfo.lastName}) in class "${classItem.name}"`);
+          });
+          
+          console.log(`👥 Class "${classItem.name}": ${studentCount} enrollments`);
+        } catch (classError) {
+          console.error(`❌ Error getting students for class ${classItem.name}:`, classError);
+          // Continue with other classes even if one fails
+        }
+      }
+
+      const uniqueStudentCount = uniqueStudentIds.size;
+      
+      // Convert Map to Array and sort by readiness/performance
+      const studentsArray = Array.from(studentDataMap.values())
+        .sort((a, b) => {
+          // Sort by readiness first, then by average score
+          if (b.readiness !== a.readiness) {
+            return b.readiness - a.readiness;
+          }
+          return b.averageScore - a.averageScore;
+        });
+      
+      console.log(`📊 Summary:`);
+      console.log(`   - Total enrollments: ${totalEnrollments}`);
+      console.log(`   - Unique students: ${uniqueStudentCount}`);
+      console.log(`   - Unique student IDs: [${Array.from(uniqueStudentIds).join(', ')}]`);
+      console.log(`   - Student ranking data:`, studentsArray.map(s => `${s.name} (${s.readiness}%)`));
+      
+      if (totalEnrollments > uniqueStudentCount) {
+        console.log(`🔄 Found ${totalEnrollments - uniqueStudentCount} duplicate enrollments (students in multiple classes)`);
+      }
+      
+      setTotalStudentsCount(uniqueStudentCount);
+      setActualStudentsData(studentsArray);
+      
+    } catch (error) {
+      console.error('❌ Error calculating unique students:', error);
+      setTotalStudentsCount(0);
+      setActualStudentsData([]);
+    } finally {
+      setLoadingStudentCount(false);
+      setLoadingStudentsData(false);
+    }
+  };
+
   // Function to get teacher display name
   const getTeacherDisplayName = () => {
     if (loading) return 'Loading...';
     if (error || !teacherInfo) return 'Teacher';
     
-    // Try different name combinations
     if (teacherInfo.firstName && teacherInfo.lastName) {
       return `${teacherInfo.firstName} ${teacherInfo.lastName}`;
     } else if (teacherInfo.first_name && teacherInfo.last_name) {
@@ -134,63 +246,118 @@ export default function TeacherDashboard() {
 
   // Function to render different page content
   const renderPageContent = () => {
-    // If we're showing class overview, show that regardless of activePage
-    if (showClassOverview && activePage === 'classes') {
-      return <ClassOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToClasses} />;
-    }
-    // Commented out undefined components for now
-    /*
-    else if(showInsights && activePage === 'insights'){
-      return <InsightsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToInsights} />;
-    }
-    else if(showAssignments && activePage === 'assignments'){
-      return <AssignmentsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToAssignments} />;
-    }
-    else if(showTA && activePage === 'ta'){
-      return <TAOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToTA} />;
-    }
-    else if(showReports && activePage === 'reports'){
-      return <ReportsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToReports} />;
-    }
-    else if(showSettings && activePage === 'settings'){
-      return <SettingsOverview teacherInfo={teacherInfo} selectedClass={selectedClass} onBack={handleBackToSettings} />;
-    }
-    */
+    console.log('🔍 RENDER DEBUG:', { currentView, activePage, selectedClass: selectedClass?.name });
 
-    // Otherwise, render based on activePage
-    switch (activePage) {
-      case 'classes':
-        return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
-      case 'insights':
-        return <div className="coming-soon">Insights page coming soon...</div>; // Keep insights as original
-      case 'assignments':
-        return <div className="coming-soon">Assignments page coming soon...</div>;
-      case 'ta':
-        return <div className="coming-soon">MY TA page coming soon...</div>;
-      case 'reports':
-        return <div className="coming-soon">Reports page coming soon...</div>;
-      case 'settings':
-        return <div className="coming-soon">Settings page coming soon...</div>;
-      default:
-        return renderOverviewContent();
+    // ===== CLASS-SPECIFIC VIEWS (HIGHEST PRIORITY) =====
+    if (selectedClass && currentView === 'students') {
+        console.log('✅ Rendering StudentView');
+        return (
+            <StudentView 
+                teacherInfo={teacherInfo}
+                selectedClass={selectedClass}
+                onBack={handleBackToOverview}
+            />
+        );
     }
+
+    if (selectedClass && currentView === 'class-overview') {
+        console.log('✅ Rendering ClassOverview');
+        return (
+            <ClassOverview 
+                teacherInfo={teacherInfo} 
+                selectedClass={selectedClass} 
+                onBack={handleBackToClasses} 
+                onNavigate={handleNavigateFromOverview}
+            />
+        );
+    }
+
+    if (selectedClass && currentView === 'analytics') {
+        console.log('✅ Rendering Analytics');
+        return (
+            <div className="coming-soon">
+                <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
+                <h2>Class Analytics - Coming Soon!</h2>
+                <p>Analytics for {selectedClass.name}</p>
+            </div>
+        );
+    }
+
+    if (selectedClass && currentView === 'assignments') {
+        console.log('✅ Rendering Assignments');
+        return (
+            <div className="coming-soon">
+                <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
+                <h2>Assignments - Coming Soon!</h2>
+                <p>Assignment management for {selectedClass.name}</p>
+            </div>
+        );
+    }
+
+    // ===== MAIN DASHBOARD PAGES (ONLY IF NO CLASS SELECTED) =====
+    if (currentView === 'main') {
+        console.log('✅ Rendering main dashboard page:', activePage);
+        switch (activePage) {
+            case 'classes':
+                return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
+            case 'insights':
+                return <div className="coming-soon">Insights page coming soon...</div>;
+            case 'assignments':
+                return <div className="coming-soon">Assignments page coming soon...</div>;
+            case 'ta':
+                return <div className="coming-soon">MY TA page coming soon...</div>;
+            case 'reports':
+                return <div className="coming-soon">Reports page coming soon...</div>;
+            case 'settings':
+                return <div className="coming-soon">Settings page coming soon...</div>;
+            default:
+                return renderOverviewContent();
+        }
+    }
+
+    // ===== FALLBACK =====
+    console.log('⚠️ Fallback render - this should not happen');
+    return <div>Unknown view state</div>;
   };
 
-  // Overview page content (your original dashboard)
+  // Overview page content 
   const renderOverviewContent = () => (
     <>
       <section className="td-kpis">
         <div className="kpi-card">
           <div className="kpi-title">Avg. Readiness</div>
-          <div className="kpi-value">74%</div>
+          <div className="kpi-value">
+            {loadingStudentsData ? (
+              <div className="loading-indicator">...</div>
+            ) : (
+              actualStudentsData.length > 0 
+                ? Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) + '%'
+                : '0%'
+            )}
+          </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">Total Students</div>
-          <div className="kpi-value">28</div>
+          <div className="kpi-value">
+            {loadingStudentCount ? (
+              <div className="loading-indicator">...</div>
+            ) : (
+              totalStudentsCount
+            )}
+          </div>
+          {!loadingStudentCount && (
+            <div className="kpi-subtitle">Unique students across all classes</div>
+          )}
         </div>
         <div className="kpi-card">
           <div className="kpi-title">Weakest Topic</div>
-          <div className="kpi-value">Algebra</div>
+          <div className="kpi-value">
+            {loadingStudentsData ? (
+              <div className="loading-indicator">...</div>
+            ) : (
+              'Algebra' // You can make this dynamic later based on actual data
+            )}
+          </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-title">Avg. Session Time (min)</div>
@@ -239,50 +406,105 @@ export default function TeacherDashboard() {
 
         <div className="panel panel-medium">
           <div className="panel-title">Student Ranking</div>
-          <table className="student-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Readiness</th>
-                <th>Improvement</th>
-                <th>Attempts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.name}>
-                  <td>{s.name}</td>
-                  <td>{s.readiness}%</td>
-                  <td>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${s.improvement * 6}%` }} />
-                    </div>
-                  </td>
-                  <td>{s.attempts}</td>
+          {loadingStudentsData ? (
+            <div className="loading-students">
+              <div className="loading-indicator">Loading students...</div>
+            </div>
+          ) : actualStudentsData.length > 0 ? (
+            <table className="student-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Readiness</th>
+                  <th>Improvement</th>
+                  <th>Attempts</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {actualStudentsData.slice(0, 5).map((student, index) => (
+                  <tr key={student.id}>
+                    <td>
+                      <div className="student-info">
+                        <div className="student-name">{student.name}</div>
+                        <div className="student-rank">#{index + 1}</div>
+                      </div>
+                    </td>
+                    <td className="class-name">{student.className}</td>
+                    <td className="readiness-cell">
+                      <span className="readiness-value">{student.readiness}%</span>
+                    </td>
+                    <td>
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill" 
+                          style={{ 
+                            width: `${Math.min(student.improvement * 6, 100)}%`,
+                            backgroundColor: student.improvement >= 10 ? '#10b981' : 
+                                           student.improvement >= 5 ? '#f59e0b' : '#ef4444'
+                          }} 
+                        />
+                      </div>
+                      <span className="improvement-text">+{student.improvement}%</span>
+                    </td>
+                    <td className="attempts-cell">{student.attempts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="no-students">
+              <p>No students found</p>
+            </div>
+          )}
+          {actualStudentsData.length > 5 && (
+            <div className="view-all-students">
+              <button 
+                className="view-all-btn"
+                onClick={() => handlePageChange('classes')}
+              >
+                View all {actualStudentsData.length} students →
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="panel panel-medium">
           <div className="panel-title">AI Insights Summary</div>
           <div className="ai-text">
-            Your class improved <strong>12%</strong> this month. Most errors were in factoring quadratic equations and simplifying algebraic fractions.
+            {loadingStudentsData ? (
+              'Analyzing student performance...'
+            ) : actualStudentsData.length > 0 ? (
+              <>
+                Your students averaged <strong>{Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length)}% readiness</strong> this month. 
+                Top performer is <strong>{actualStudentsData[0]?.name}</strong> with {actualStudentsData[0]?.readiness}% readiness.
+              </>
+            ) : (
+              'No student data available for analysis.'
+            )}
           </div>
           <div className="ai-actions">
-            <button className="ai-btn">Generate new Algebra quiz</button>
-            <button className="ai-btn ghost">Send feedback to 5 students</button>
+            <button className="ai-btn">Generate new practice quiz</button>
+            <button className="ai-btn ghost">Send feedback to students</button>
           </div>
         </div>
       </section>
     </>
   );
 
-  // Get page title based on active page and class overview state
+  // Get page title based on active page and current view
   const getPageTitle = () => {
-    if (showClassOverview && selectedClass) {
+    if (currentView === 'class-overview' && selectedClass) {
+      return `${selectedClass.name} - Overview`;
+    }
+    if (currentView === 'students' && selectedClass) {
       return `${selectedClass.name} - Students`;
+    }
+    if (currentView === 'analytics' && selectedClass) {
+      return `${selectedClass.name} - Analytics`;
+    }
+    if (currentView === 'assignments' && selectedClass) {
+      return `${selectedClass.name} - Assignments`;
     }
     
     switch (activePage) {
@@ -303,49 +525,49 @@ export default function TeacherDashboard() {
         <nav className="td-nav">
           <button 
             className={`td-nav-item ${activePage === 'overview' ? 'active' : ''}`}
-            onClick={() => setActivePage('overview')}
+            onClick={() => handlePageChange('overview')}
           >
             <BiHome style={{ marginRight: '8px', fontSize: '18px'}} />
             Overview
           </button>
           <button 
             className={`td-nav-item ${activePage === 'classes' ? 'active' : ''}`}
-            onClick={() => setActivePage('classes')}
+            onClick={() => handlePageChange('classes')}
           >
             <BiGroup style={{ marginRight: '8px', fontSize: '18px'}} />
             My Classes
           </button>
           <button 
             className={`td-nav-item ${activePage === 'insights' ? 'active' : ''}`}
-            onClick={() => setActivePage('insights')}
+            onClick={() => handlePageChange('insights')}
           >
             <BiBarChart style={{ marginRight: '8px', fontSize: '18px'}} />
             Insights
           </button>
           <button 
             className={`td-nav-item ${activePage === 'assignments' ? 'active' : ''}`}
-            onClick={() => setActivePage('assignments')}
+            onClick={() => handlePageChange('assignments')}
           >
             <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
             Assignments
           </button>
           <button 
             className={`td-nav-item ${activePage === 'ta' ? 'active' : ''}`}
-            onClick={() => setActivePage('ta')}
+            onClick={() => handlePageChange('ta')}
           >
             <BiBrain style={{ marginRight: '8px', fontSize: '18px'}}/>
             MY TA
           </button>
           <button 
             className={`td-nav-item ${activePage === 'reports' ? 'active' : ''}`}
-            onClick={() => setActivePage('reports')}
+            onClick={() => handlePageChange('reports')}
           >
             <BiFile style={{ marginRight: '8px', fontSize: '18px'}} />
             Reports
           </button>
           <button 
             className={`td-nav-item ${activePage === 'settings' ? 'active' : ''}`}
-            onClick={() => setActivePage('settings')}
+            onClick={() => handlePageChange('settings')}
             id="bottom-button"
           >
             <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
@@ -371,6 +593,7 @@ export default function TeacherDashboard() {
           <div className="td-user">{getTeacherDisplayName()}</div>
         </header>
 
+        {/* ONLY RENDER PAGE CONTENT - NO DUPLICATE COMPONENTS */}
         {renderPageContent()}
       </main>
     </div>

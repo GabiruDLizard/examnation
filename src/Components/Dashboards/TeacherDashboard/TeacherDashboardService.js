@@ -195,7 +195,7 @@ export const getClassEnrollments = async (classId) => {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
+        const response = await fetch(`${API_BASE_URL}/classenrollment/class/${classId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

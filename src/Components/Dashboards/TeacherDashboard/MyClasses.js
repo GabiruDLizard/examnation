@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook } from "react-icons/bi";
+import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../../../Styling/Dashboards/MyClasses.css";
-import { getTeacherClasses, createTeacherClass, deleteTeacherClass } from "./TeacherDashboardService";
+import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments } from "./TeacherDashboardService";
 
 export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -9,6 +9,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedColor, setSelectedColor] = useState("#3b82f6");
+  const [viewMode, setViewMode] = useState("grid"); // "grid" or "column"
 
   // Color options for the picker
   const colorOptions = [
@@ -46,20 +47,34 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
       const classes = await getTeacherClasses(teacherId);
       
       // Transform the API response to match your component's expected format
-      const transformedClasses = classes.map((classItem) => ({
-        id: classItem.id,
-        name: classItem.name,
-        subject: classItem.subject,
-        grade: classItem.gradeLevel,
-        students: classItem.currentEnrollment || 0,
-        schedule: classItem.schedule,
-        avgReadiness: Math.round(classItem.avgReadiness || 0),
-        activeAssignments: classItem.activeAssignments || 0,
-        color: classItem.color || "#3b82f6",
-        roomNumber: classItem.roomNumber,
-        maxStudents: classItem.maxStudents,
-        status: classItem.status,
-        term: classItem.term
+      const transformedClasses = await Promise.all(classes.map(async (classItem) => {
+        let studentcount = 0;
+        try {
+          const enrolls = await getClassEnrollments(classItem.id);
+          studentcount = enrolls ? enrolls.length : 0;
+          console.log(`Class ${classItem.name} ID ${classItem.id} has ${studentcount} students.`);
+          studentcount = Array.isArray(enrolls) ? enrolls.length : 0;
+          console.log(studentcount);
+        } catch (error) {
+          console.error('Error fetching class enrollments:', error);
+          studentcount = 0;
+        }
+
+        return {
+          id: classItem.id,
+          name: classItem.name,
+          subject: classItem.subject,
+          grade: classItem.gradeLevel,
+          students: Number(studentcount) || 0,
+          schedule: classItem.schedule,
+          avgReadiness: Math.round(classItem.avgReadiness || 0),
+          activeAssignments: classItem.activeAssignments || 0,
+          color: classItem.color || "#3b82f6",
+          roomNumber: classItem.roomNumber,
+          maxStudents: classItem.maxStudents,
+          status: classItem.status,
+          term: classItem.term
+        };
       }));
 
       setClassesData(transformedClasses);
@@ -132,7 +147,10 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
   // Calculate stats from real data
   const totalClasses = classesData.length;
-  const totalStudents = classesData.reduce((sum, cls) => sum + cls.students, 0);
+  const totalStudents = classesData.reduce((sum, cls) => {
+    const students = Number(cls.students) || 0; // Convert to number, default to 0 if invalid
+    return sum + students;
+  }, 0);
   const avgReadiness = totalClasses > 0 
     ? Math.round(classesData.reduce((sum, cls) => sum + cls.avgReadiness, 0) / totalClasses)
     : 0;
@@ -156,13 +174,33 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
           </div>
         </div>
         
-        <button 
-          className="create-class-btn"
-          onClick={() => setShowCreateForm(true)}
-        >
-          <BiPlus style={{ marginRight: '8px' }} />
-          Create New Class
-        </button>
+        <div className="header-controls">
+          {/* View Mode Toggle */}
+          <div className="view-mode-toggle">
+            <button 
+              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Grid View"
+            >
+              <BiGridAlt />
+            </button>
+            <button 
+              className={`view-btn ${viewMode === 'column' ? 'active' : ''}`}
+              onClick={() => setViewMode('column')}
+              title="Column View"
+            >
+              <BiListUl />
+            </button>
+          </div>
+          
+          <button 
+            className="create-class-btn"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <BiPlus style={{ marginRight: '8px' }} />
+            Create New Class
+          </button>
+        </div>
       </div>
 
       {/* Error notification */}
@@ -173,8 +211,8 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
         </div>
       )}
 
-      {/* Classes Grid */}
-      <div className="classes-grid">
+      {/* Classes Display - Dynamic based on view mode */}
+      <div className={`classes-container ${viewMode}-view`}>
         {classesData.length === 0 ? (
           <div className="empty-state">
             <h3>No Classes Found</h3>
@@ -186,82 +224,147 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
               <BiPlus /> Create Your First Class
             </button>
           </div>
-        ) : (
-          classesData.map((classItem) => (
-            <div 
-              key={classItem.id} 
-              className="class-card"
-              onClick={() => handleClassClick(classItem)}
-            >
-              <div className="class-header">
-                <div className="class-color-bar" style={{ backgroundColor: classItem.color }}></div>
-                <div className="class-actions">
-                  <button 
-                    className="action-btn edit"
-                    onClick={(e) => handleEditClass(e, classItem)}
-                    title="Edit Class"
-                  >
-                    <BiEdit />
-                  </button>
-                  <button 
-                    className="action-btn delete"
-                    onClick={(e) => handleDeleteClass(e, classItem)}
-                    title="Delete Class"
-                  >
-                    <BiTrash />
-                  </button>
+        ) : viewMode === 'grid' ? (
+          // Grid View (4x4 smaller cards)
+          <div className="classes-grid">
+            {classesData.map((classItem) => (
+              <div 
+                key={classItem.id} 
+                className="class-card grid-card"
+                onClick={() => handleClassClick(classItem)}
+              >
+                <div className="class-header">
+                  <div className="class-color-bar" style={{ backgroundColor: classItem.color }}></div>
+                  <div className="class-actions">
+                    <button 
+                      className="action-btn edit"
+                      onClick={(e) => handleEditClass(e, classItem)}
+                      title="Edit Class"
+                    >
+                      <BiEdit />
+                    </button>
+                    <button 
+                      className="action-btn delete"
+                      onClick={(e) => handleDeleteClass(e, classItem)}
+                      title="Delete Class"
+                    >
+                      <BiTrash />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="class-content">
-                <h3 className="class-name">{classItem.name}</h3>
-                <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
                 
-                <div className="class-details">
-                  <div className="detail-item">
-                    <BiUser style={{ marginRight: '6px' }} />
-                    <span>{classItem.students} Students</span>
+                <div className="class-content">
+                  <h3 className="class-name">{classItem.name}</h3>
+                  <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
+                  
+                  <div className="class-stats-compact">
+                    <div className="stat-compact">
+                      <BiUser />
+                      <span>{classItem.students}</span>
+                    </div>
+                    <div className="stat-compact">
+                      <BiBook />
+                      <span>{classItem.activeAssignments}</span>
+                    </div>
                   </div>
-                  <div className="detail-item">
-                    <BiCalendar style={{ marginRight: '6px' }} />
-                    <span>{classItem.schedule}</span>
-                  </div>
-                  <div className="detail-item">
-                    <BiBook style={{ marginRight: '6px' }} />
-                    <span>{classItem.activeAssignments} Active Assignments</span>
-                  </div>
-                </div>
 
-                <div className="class-metrics">
-                  <div className="metric">
-                    <span className="metric-label">Avg. Readiness</span>
-                    <div className="metric-bar">
+                  <div className="readiness-compact">
+                    <span className="readiness-label">Readiness: {classItem.avgReadiness}%</span>
+                    <div className="readiness-bar-compact">
                       <div 
-                        className="metric-fill" 
+                        className="readiness-fill-compact" 
                         style={{ 
                           width: `${classItem.avgReadiness}%`,
                           backgroundColor: classItem.color 
                         }}
                       ></div>
                     </div>
-                    <span className="metric-value">{classItem.avgReadiness}%</span>
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Column View (larger detailed cards)
+          <div className="classes-column">
+            {classesData.map((classItem) => (
+              <div 
+                key={classItem.id} 
+                className="class-card column-card"
+                onClick={() => handleClassClick(classItem)}
+              >
+                <div className="class-header">
+                  <div className="class-color-bar" style={{ backgroundColor: classItem.color }}></div>
+                  <div className="class-actions">
+                    <button 
+                      className="action-btn edit"
+                      onClick={(e) => handleEditClass(e, classItem)}
+                      title="Edit Class"
+                    >
+                      <BiEdit />
+                    </button>
+                    <button 
+                      className="action-btn delete"
+                      onClick={(e) => handleDeleteClass(e, classItem)}
+                      title="Delete Class"
+                    >
+                      <BiTrash />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="class-content">
+                  <div className="class-info-section">
+                    <h3 className="class-name">{classItem.name}</h3>
+                    <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
+                    
+                    <div className="class-details-expanded">
+                      <div className="detail-item">
+                        <BiUser style={{ marginRight: '6px' }} />
+                        <span>{classItem.students} Students</span>
+                      </div>
+                      <div className="detail-item">
+                        <BiCalendar style={{ marginRight: '6px' }} />
+                        <span>{classItem.schedule}</span>
+                      </div>
+                      <div className="detail-item">
+                        <BiBook style={{ marginRight: '6px' }} />
+                        <span>{classItem.activeAssignments} Active Assignments</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="class-footer">
-                  <button 
-                    className="view-class-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleClassClick(classItem);
-                    }}
-                  >
-                    View Class Details
-                  </button>
+                  <div className="class-metrics-section">
+                    <div className="metric">
+                      <span className="metric-label">Avg. Readiness</span>
+                      <div className="metric-bar">
+                        <div 
+                          className="metric-fill" 
+                          style={{ 
+                            width: `${classItem.avgReadiness}%`,
+                            backgroundColor: classItem.color 
+                          }}
+                        ></div>
+                      </div>
+                      <span className="metric-value">{classItem.avgReadiness}%</span>
+                    </div>
+                  </div>
+
+                  <div className="class-footer">
+                    <button 
+                      className="view-class-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClassClick(classItem);
+                      }}
+                    >
+                      View Class Details
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
