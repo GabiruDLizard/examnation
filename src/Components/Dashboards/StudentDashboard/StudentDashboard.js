@@ -9,6 +9,7 @@ import '../../../Styling/Dashboards/StudentDashboard.css';
 import { getStudentAnswers } from './StudentDashboardService.js'; // Keep this for student answers
 import { abilityEstimate } from '../Charts/ReadinessLogic.js';
 import ReadinessChart from '../Charts/Readiness.js';
+import StudentMyClasses from './MyClasses.js';
 
 const token = localStorage.getItem('token');
 
@@ -284,7 +285,7 @@ export default function StudentDashboard() {
         }
     };
 
-    // Helper function to get the latest readiness info (same as old code)
+    // Helper function to get the latest readiness info (using cumulative calculation like the chart)
     const getLatestReadiness = () => {
         if (!readinessScores || readinessScores.length === 0) {
             return {
@@ -294,9 +295,10 @@ export default function StudentDashboard() {
             };
         }
         
-        const lastScore = readinessScores[readinessScores.length - 1];
-        const estimate = lastScore.abilityEstimate;
-        const percentage = Math.max(0, Math.min(100, ((estimate + 3) / 6) * 100));
+        // Use cumulative calculation - average of all ability estimates (same as chart)
+        const totalAbility = readinessScores.reduce((sum, score) => sum + score.abilityEstimate, 0);
+        const averageAbility = totalAbility / readinessScores.length;
+        const percentage = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
         
         let level;
         if (percentage >= 85) level = "Ready";
@@ -306,13 +308,13 @@ export default function StudentDashboard() {
         else level = "Beginner";
         
         return {
-            estimate: estimate,
+            estimate: averageAbility,
             level: level,
             percentage: Math.round(percentage)
         };
     };
 
-    // Get recent tests (same logic as old code)
+    // Get recent tests (with cumulative readiness calculation for each test)
     const getRecentTests = () => {
         if (!readinessScores || readinessScores.length === 0) {
             return [];
@@ -329,14 +331,18 @@ export default function StudentDashboard() {
                 };
             }
             testSessions[score.date].questions.push(score);
-            testSessions[score.date].finalReadiness = score.abilityEstimate;
         });
         
         const tests = Object.values(testSessions).map(session => {
             const correctAnswers = session.questions.filter(q => q.isCorrect).length;
             const totalQuestions = session.questions.length;
             const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-            const finalReadinessPercentage = Math.max(0, Math.min(100, ((session.finalReadiness + 3) / 6) * 100));
+            
+            // Calculate cumulative readiness for this test (average of all ability estimates in this session)
+            const totalAbility = session.questions.reduce((sum, q) => sum + q.abilityEstimate, 0);
+            const averageAbility = totalAbility / session.questions.length;
+            const finalReadinessPercentage = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
+            
             const testType = session.questions[0].attemptMode || 'practice';
             
             let displayTestType = 'Practice';
@@ -374,14 +380,8 @@ export default function StudentDashboard() {
                         <button onClick={() => navigate('/exampage')}>Go to Current Practice Page</button>
                     </div>
                 );
-            case 'topics':
-                return (
-                    <div className="coming-soon">
-                        <BiClipboard size={64} />
-                        <h2>Topics Overview</h2>
-                        <p>Topics breakdown coming soon...</p>
-                    </div>
-                );
+            case 'classes':
+                return <StudentMyClasses studentInfo={student} />;
             case 'readiness':
                 return (
                     <div className="coming-soon">
@@ -551,7 +551,7 @@ export default function StudentDashboard() {
     const getPageTitle = () => {
         switch (activePage) {
             case 'practice': return 'Practice Questions';
-            case 'topics': return 'Topics Overview';
+            case 'classes': return 'My Classes';
             case 'readiness': return 'Exam Readiness';
             case 'history': return 'Study History';
             case 'settings': return 'Settings';
@@ -579,11 +579,11 @@ export default function StudentDashboard() {
                         Practice
                     </button>
                     <button 
-                        className={`sd-nav-item ${activePage === 'topics' ? 'active' : ''}`}
-                        onClick={() => setActivePage('topics')}
+                        className={`sd-nav-item ${activePage === 'classes' ? 'active' : ''}`}
+                        onClick={() => setActivePage('classes')}
                     >
                         <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
-                        Topics
+                        My Classes
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'readiness' ? 'active' : ''}`}
@@ -602,23 +602,25 @@ export default function StudentDashboard() {
                     <button 
                         className={`sd-nav-item ${activePage === 'settings' ? 'active' : ''}`}
                         onClick={() => setActivePage('settings')}
-                        id="bottom-button"
                     >
                         <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
                         Settings
                     </button>
+                </nav>
+                
+                {/* Logout button positioned at bottom of sidebar */}
+                <div className="sd-sidebar-bottom">
                     <button
-                        className="sd-nav-item"
+                        className="sd-nav-item logout-btn"
                         onClick={() => {
                             localStorage.removeItem('token');
                             navigate('/login');
                         }}
-                        id="bottom-button"
                     >
                         <BiLogOut style={{ marginRight: '8px', fontSize: '18px'}} />
                         Logout
                     </button>
-                </nav>
+                </div>
             </aside>
 
             <main className="sd-main">

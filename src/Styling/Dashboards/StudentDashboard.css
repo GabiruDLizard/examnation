@@ -1,6 +1,5 @@
 /* ROOT LAYOUT */
 .sd-root {
-  display: flex;
   min-height: 100vh;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   color: #334155;
@@ -9,7 +8,11 @@
 
 /* SIDEBAR */
 .sd-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 220px;
+  height: 100vh;
   background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.98));
   padding: 28px 14px;
   box-shadow: 6px 0 18px rgba(0, 0, 0, 0.08);
@@ -17,6 +20,8 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  z-index: 1000;
+  overflow-y: auto;
 }
 
 .sd-brand {
@@ -31,6 +36,18 @@
   flex-direction: column;
   gap: 6px;
   margin-top: 8px;
+  flex: 1;
+}
+
+.sd-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sd-sidebar-bottom .sd-nav-item {
+  text-align: left;
+  width: 100%;
 }
 
 .sd-nav-item {
@@ -62,9 +79,10 @@
 
 /* MAIN AREA */
 .sd-main {
-  flex: 1;
+  margin-left: 220px;
   padding: 28px 36px;
   background: #ffffff;
+  min-height: 100vh;
 }
 
 /* HEADER */

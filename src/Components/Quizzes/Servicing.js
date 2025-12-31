@@ -1,19 +1,30 @@
-export async function saveTestResults(testAnswers) {
+const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
 
-    const response = await fetch('http://localhost:5204/api/answer/batch', {
+export async function saveTestResults(testAnswers) {
+    const token = localStorage.getItem('jwtToken');
+    const response = await fetch(`${API_BASE_URL}/answer/batch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testAnswers) // This should now work with your batch endpoint
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(testAnswers)
     });
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to save test results');
+    }
+    return response.json();
 }
 
-export async function getStudentAnswers(userId) {  // Changed parameter name
+export async function getStudentAnswers(userId) {
     const token = localStorage.getItem('jwtToken');
-    const response = await fetch(`http://localhost:5204/api/answer/user/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/answer/user/${userId}`, {
         method: 'GET',
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Add this line!
+            'Authorization': `Bearer ${token}`
         }
     });
     if (!response.ok) {
@@ -25,11 +36,11 @@ export async function getStudentAnswers(userId) {  // Changed parameter name
 
 export async function saveUserProgress(userProgress) {
     const token = localStorage.getItem('jwtToken');
-    const response = await fetch('http://localhost:5204/api/userprogress/upsert', {
+    const response = await fetch(`${API_BASE_URL}/userprogress/upsert`, {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Add this line!
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(userProgress)
     });

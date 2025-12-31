@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askGPT } from '../../Worker/chat';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
@@ -9,6 +9,7 @@ import { renderFeedback } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
 import { saveTestResults, saveUserProgress } from './Servicing';
+import { analyzeMistakePatterns } from '../PerformanceEngine/^PerformanceAnalysis';
 
 const token = localStorage.getItem('token');
 
@@ -20,9 +21,10 @@ addStyles();
 const AdaptiveTest = () => {
   const stepReference = useRef([]);
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // Test configuration
-  const TOTAL_QUESTIONS = 20;
+  // Get question count from navigation state or default to 10
+  const TOTAL_QUESTIONS = location.state?.questionCount || 5;
   const POINTS = {
     Easy: 1,
     Medium: 3,
@@ -394,7 +396,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       const getUserIdFromToken = (token) => {
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          return payload.userId || payload.sub || payload.id; // Adjust based on your token structure
+          return payload.userId || payload.sub || payload.id; 
         } catch (error) {
           console.error('Error parsing token:', error);
           return null;
@@ -403,7 +405,6 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
 
       const userId = getUserIdFromToken(token);
 
-      // Create API payload - transform testAnswers to match Answer model
       const apiPayload = testAnswers
         .filter(answer => answer !== null)
         .map(answer => ({
@@ -418,10 +419,32 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
           AttemptMode: "adaptive_test"
         }));
 
+      // Get working steps and question texts for analysis
+      const answercomponents = testAnswers.map(ans => ans && !ans.isCorrect ? ans.workingSteps : '').filter(step => step);
+      const questionTexts = testAnswers.map(ans => ans && !ans.isCorrect ? ans.questionText : '').filter(text => text);
+
+      console.log('🔍 DEBUG: Total test answers:', testAnswers.length);
+      console.log('🔍 DEBUG: Incorrect answers found:', testAnswers.filter(ans => ans && !ans.isCorrect).length);
+      console.log('🔍 DEBUG: Answer components for analysis:', answercomponents.length);
+      console.log('🔍 DEBUG: Question texts for analysis:', questionTexts.length);
+
       // Save to API
       saveTestResults(apiPayload)
-        .then(response => {
-          console.log('Test results saved to database:', response);
+        .then(async response => {
+          console.log('✅ Test results saved to database:', response);
+          
+          // Analyze mistake patterns for incorrect answers
+          if (answercomponents.length > 0) {
+            console.log('🚀 Starting mistake analysis...');
+            try {
+              const mistakeAnalysis = await analyzeMistakePatterns(answercomponents, questionTexts);
+              console.log('📊 MISTAKE PATTERNS ANALYSIS:', mistakeAnalysis);
+            } catch (error) {
+              console.error('❌ Error analyzing mistakes:', error);
+            }
+          } else {
+            console.log('ℹ️ No incorrect answers to analyze (all answers were correct!)');
+          }
         })
         .catch(error => {
           console.error('Error saving test results:', error);
@@ -430,7 +453,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       const userProgress = {
         userId: userId,
         subjectId: 1,
-        questionsAttempted: 20,
+        questionsAttempted: TOTAL_QUESTIONS,
         questionsCorrect: correctAnswers,
         score: totalScore,
         lastPracticed: new Date().toISOString()

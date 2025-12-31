@@ -13,6 +13,7 @@ import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./
 import MyClasses from "./MyClasses";
 import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
+import Assignments from "./Assignments";
 
 const token = localStorage.getItem('token');
 
@@ -74,7 +75,20 @@ export default function TeacherDashboard() {
 
   const handleNavigateFromOverview = (section) => {
     console.log('🎯 Navigating to:', section);
-    setCurrentView(section); // This navigates to 'students', 'analytics', etc.
+    
+    // Special case: if navigating to assignments, switch to main assignments page
+    if (section === 'assignments') {
+      setActivePage('assignments');     // Switch to assignments page
+      setCurrentView('main');          // Go to main view
+      setSelectedClass(null);          // Clear selected class
+    } else if(section === 'analytics') {
+      setActivePage('insights');
+      setCurrentView('main');          // Go to analytics view
+      setSelectedClass(null);          // Clear selected class
+    } else {
+      // For other sections (students), stay in class context
+      setCurrentView(section);         // Changes view to 'students', etc.
+    }
   };
 
   const handleBackToClasses = () => {
@@ -294,16 +308,16 @@ export default function TeacherDashboard() {
         );
     }
 
-    // ===== MAIN DASHBOARD PAGES (ONLY IF NO CLASS SELECTED) =====
+
     if (currentView === 'main') {
         console.log('✅ Rendering main dashboard page:', activePage);
         switch (activePage) {
             case 'classes':
                 return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
             case 'insights':
-                return <div className="coming-soon">Insights page coming soon...</div>;
+                return <div className="coming-soon">Insights page coming soon</div>;
             case 'assignments':
-                return <div className="coming-soon">Assignments page coming soon...</div>;
+                return <div className="coming-soon"><Assignments /></div>;
             case 'ta':
                 return <div className="coming-soon">MY TA page coming soon...</div>;
             case 'reports':

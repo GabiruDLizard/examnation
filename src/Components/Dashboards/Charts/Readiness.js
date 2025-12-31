@@ -49,57 +49,45 @@ const ReadinessChart = ({ readinessScores = [] }) => {
     );
   }
 
-  // Use your existing readiness calculation
-  const readinessData = readinessScores.map(score => {
-    const normalized = Math.max(0, Math.min(100, ((score.abilityEstimate + 3) / 6) * 100));
-    return Math.round(normalized);
-  });
-
-  // Group by date like your original code
-  const groupedByDate = readinessScores.reduce((acc, score) => {  
-    if (!acc[score.date]) {
-      acc[score.date] = [];
-    }
-    acc[score.date].push(score);
-    return acc;
-  }, {});
-
-  // Create datasets using your grouped data
-  const datasets = Object.entries(groupedByDate).map(([date, scores], index) => {
-    const colors = [
-      { border: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
-      { border: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
-      { border: "#f59e0b", bg: "rgba(245, 158, 11, 0.1)" },
-      { border: "#8b5cf6", bg: "rgba(139, 92, 246, 0.1)" },
-    ];
+  // Create cumulative readiness calculation considering all questions up to each point
+  const readinessData = [];
+  let runningTotal = 0;
+  
+  for (let i = 0; i < readinessScores.length; i++) {
+    // Get all scores up to this point
+    const scoresUpToNow = readinessScores.slice(0, i + 1);
     
-    const color = colors[index % colors.length];
+    // Calculate average ability estimate considering all questions so far
+    const totalAbility = scoresUpToNow.reduce((sum, score) => sum + score.abilityEstimate, 0);
+    const averageAbility = totalAbility / scoresUpToNow.length;
     
-    return {
-      label: `${new Date(date).toLocaleDateString()} (${scores.length} questions)`,
-      data: scores.map(score => {
-        const normalized = Math.max(0, Math.min(100, ((score.abilityEstimate + 3) / 6) * 100));
-        return Math.round(normalized);
-      }),
-      borderColor: color.border,
-      backgroundColor: color.bg,
-      tension: 0.4,
-      fill: index === 0, // Only fill the first line
-      borderWidth: 3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      pointBackgroundColor: color.border,
-      pointBorderColor: "#ffffff",
-      pointBorderWidth: 2,
-    };
-  });
+    // Normalize to percentage (same formula but using cumulative average)
+    const normalized = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
+    readinessData.push(Math.round(normalized));
+  }
 
-  // Add threshold lines using your existing logic
-  const maxLength = Math.max(...Object.values(groupedByDate).map(arr => arr.length));
+  // Create single dataset for continuous progress
+  const datasets = [{
+    label: "Readiness Progress",
+    data: readinessData,
+    borderColor: "#3b82f6",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    tension: 0.4,
+    fill: true,
+    borderWidth: 3,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    pointBackgroundColor: "#3b82f6",
+    pointBorderColor: "#ffffff",
+    pointBorderWidth: 2,
+  }];
+
+  // Add threshold lines
+  const totalQuestions = readinessData.length;
   
   datasets.push({
     label: "Ready (85%)",
-    data: Array(maxLength).fill(85),
+    data: Array(totalQuestions).fill(85),
     borderColor: "#10b981",
     borderDash: [8, 4],
     borderWidth: 2,
@@ -109,7 +97,7 @@ const ReadinessChart = ({ readinessScores = [] }) => {
 
   datasets.push({
     label: "Developing (50%)",
-    data: Array(maxLength).fill(50),
+    data: Array(totalQuestions).fill(50),
     borderColor: "#f59e0b",
     borderDash: [8, 4],
     borderWidth: 2,
@@ -118,7 +106,7 @@ const ReadinessChart = ({ readinessScores = [] }) => {
   });
 
   const data = {
-    labels: Array.from({ length: maxLength }, (_, i) => `Q${i + 1}`),
+    labels: Array.from({ length: totalQuestions }, (_, i) => `Q${i + 1}`),
     datasets,
   };
 
@@ -152,23 +140,17 @@ const ReadinessChart = ({ readinessScores = [] }) => {
         padding: 12,
         callbacks: {
           label: function(context) {
-            // Find the actual score data
-            const dateKeys = Object.keys(groupedByDate);
-            const datasetIndex = context.datasetIndex;
+            const dataIndex = context.dataIndex;
+            const score = readinessScores[dataIndex];
             
-            if (datasetIndex < dateKeys.length) {
-              const date = dateKeys[datasetIndex];
-              const scores = groupedByDate[date];
-              const score = scores[context.dataIndex];
-              
-              if (score) {
-                return [
-                  `${context.dataset.label}: ${context.parsed.y}%`,
-                  `Difficulty: ${score.difficulty}`,
-                  `Result: ${score.isCorrect ? 'Correct ✓' : 'Incorrect ✗'}`,
-                  `Ability: ${score.abilityEstimate?.toFixed(3)}`
-                ];
-              }
+            if (score && context.datasetIndex === 0) { // Only for main readiness line
+              return [
+                `Readiness: ${context.parsed.y}%`,
+                `Difficulty: ${score.difficulty}`,
+                `Result: ${score.isCorrect ? 'Correct ✓' : 'Incorrect ✗'}`,
+                `Date: ${new Date(score.date).toLocaleDateString()}`,
+                `Ability: ${score.abilityEstimate?.toFixed(3)}`
+              ];
             }
             return `${context.dataset.label}: ${context.parsed.y}%`;
           }
@@ -215,9 +197,11 @@ const ReadinessChart = ({ readinessScores = [] }) => {
     },
   };
 
-  // Use your existing stats calculation
+  // Calculate stats for continuous progress
   const latestReadiness = readinessData[readinessData.length - 1] || 0;
-  const totalSessions = Object.keys(groupedByDate).length;
+  const firstReadiness = readinessData[0] || 0;
+  const progressChange = latestReadiness - firstReadiness;
+  const totalSessions = new Set(readinessScores.map(score => score.date)).size;
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -226,7 +210,7 @@ const ReadinessChart = ({ readinessScores = [] }) => {
         <Line data={data} options={options} />
       </div>
       
-      {/* Your existing stats */}
+      {/* Updated stats for continuous progress */}
       <div style={{ 
         display: "flex", 
         justifyContent: "space-between", 
@@ -244,6 +228,14 @@ const ReadinessChart = ({ readinessScores = [] }) => {
         <div>
           <span style={{ fontWeight: "500", color: "#374151" }}>
             Latest: {latestReadiness}%
+          </span>
+        </div>
+        <div>
+          <span style={{ 
+            fontWeight: "500", 
+            color: progressChange >= 0 ? "#10b981" : "#ef4444" 
+          }}>
+            {progressChange >= 0 ? '+' : ''}{progressChange.toFixed(1)}% Progress
           </span>
         </div>
         <div>

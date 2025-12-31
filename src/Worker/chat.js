@@ -30,6 +30,27 @@ export async function askGPT(prompt) {
     return data.response || data; // Adjust based on your backend response format
 }
 
+export async function DetectStep(prompt) {
+    const txt = await getPromptFromFile('/stepDetect.txt');
+
+    const response = await fetch('https://examnationwebapi.azurewebsites.net/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: prompt,
+            systemPrompt: txt // Step detection system prompt
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Step detection API failed');
+    }
+
+    const data = await response.json();
+    return data.response || data;
+}
+
 // In your component or wherever you call askGPT
 export async function needAHint(prompt) {
     // Load hint system prompt

@@ -142,6 +142,11 @@ export default function ExamNationLanding() {
                     </div>
                 </div>
             </section>
+            <section className="practice-preview">
+                <div className="preview-subsection-L">
+                    
+                </div>
+            </section>
 
             <section className="insights-preview">
                 <div className="dashboard-subsection-L">

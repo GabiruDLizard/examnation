@@ -102,60 +102,6 @@
   gap: 1.5rem;
 }
 
-/* Grid View Styles */
-.grid-view .classes-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-.grid-card {
-  height: 200px;
-  padding: 15px;
-}
-
-.grid-card .class-name {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.grid-card .class-grade {
-  font-size: 12px;
-  margin-bottom: 10px;
-}
-
-.class-stats-compact {
-  display: flex;
-  gap: 15px;
-  margin: 10px 0;
-}
-
-.stat-compact {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.readiness-compact {
-  margin-top: 10px;
-}
-
-.readiness-label {
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 4px;
-  display: block;
-}
-
-.readiness-bar-compact {
-  height: 6px;
-  background: #f3f4f6;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
 .readiness-fill-compact {
   height: 100%;
   transition: width 0.3s ease;
@@ -535,6 +481,99 @@
 }
 
 /* Responsive Design */
+
+/* Table View Styling */
+.classes-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.classes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.classes-table th,
+.classes-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.classes-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.classes-table tr {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.classes-table tr:hover {
+  background: #f8fafc;
+}
+
+.classes-table tr:last-child td {
+  border-bottom: none;
+}
+
+.table-class-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.class-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.table-class-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.table-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-bar.small {
+  height: 6px;
+  width: 80px;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 @media (max-width: 1200px) {
   .grid-view .classes-grid {
     grid-template-columns: repeat(3, 1fr);
