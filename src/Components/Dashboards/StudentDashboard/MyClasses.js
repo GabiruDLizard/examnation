@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl, BiTrendingUp, BiBullseye } from "react-icons/bi";
-import "../../../Styling/Dashboards/MyClasses.css";
+import "../MyClasses.css";
 import { getStudentClassesWithDetails } from './StudentDashboardService.js';
 
 export default function StudentMyClasses({ studentInfo }) {

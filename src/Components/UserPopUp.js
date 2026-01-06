@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../Styling/userPopUp.css';
+import './userPopUp.css';
 
 const UserPopUp = ({ user, onLogout, onClose }) => {
     const navigate = useNavigate();

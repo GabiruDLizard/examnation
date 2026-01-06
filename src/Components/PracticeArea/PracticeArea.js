@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
-import '../../Styling/PracticeArea/PracticeArea.css';
+import './PracticeArea.css';
 import { renderFeedback } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';

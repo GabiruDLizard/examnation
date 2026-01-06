@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import '../../Styling/Auth.css';
+import './Auth.css';
 import logo from '../../Resources/PHold-logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from './AuthService';

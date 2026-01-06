@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome } from "react-icons/bi";
-import "../../../Styling/Dashboards/TeacherDashboard.css";
+import "../TeacherDashboard.css";
 
 // Import services
 import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
@@ -582,23 +582,25 @@ export default function TeacherDashboard() {
           <button 
             className={`td-nav-item ${activePage === 'settings' ? 'active' : ''}`}
             onClick={() => handlePageChange('settings')}
-            id="bottom-button"
           >
             <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
             Settings
           </button>
+        </nav>
+        
+        {/* Logout button positioned at bottom of sidebar */}
+        <div className="td-sidebar-bottom">
           <button
-            className="td-nav-item"
+            className="td-nav-item logout-btn"
             onClick={() => {
               localStorage.removeItem('token');
               navigate('/login');
             }}
-            id="bottom-button"
           >
             <BiLogOut style={{ marginRight: '8px', fontSize: '18px'}} />
             Logout
           </button>
-        </nav>
+        </div>
       </aside>
 
       <main className="td-main">

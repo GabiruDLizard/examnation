@@ -4,7 +4,7 @@ import questions from './SetupQuestions';
 import { useNavigate } from 'react-router-dom';
 import { register } from './SetUpService';
 import { login } from '../Authentication/AuthService';
-import '../../Styling/AccountSetUp/SetUp.css' // Assuming you have a questions.js file with your questions
+import './SetUp.css' // Assuming you have a questions.js file with your questions
 
 const SetUp = () => {
     const location = useLocation();

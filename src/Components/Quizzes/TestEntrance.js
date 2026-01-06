@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../Styling/Quizzes/TestEntrance.css'; // Add styling if you want
+import './TestEntrance.css'; // Add styling if you want
 
 const TestEntrance = () => {
   const navigate = useNavigate();

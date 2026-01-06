@@ -14,6 +14,8 @@ import PracticeArea from './Components/PracticeArea/PracticeArea';
 import AdaptiveTest from './Components/Quizzes/AdaptiveTest';
 import TestEntrance from './Components/Quizzes/TestEntrance';
 import TApageStudent from './Components/Dashboards/TAPage/TAPageStudent';
+import AssignmentQuestionCreationPage from './Components/Dashboards/TeacherDashboard/AssignmentQuestionPage';
+import ProtectedRoute from './Components/ProtectedRoute';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 function App() {
   // const [user, setUser] = useState(null);
@@ -65,18 +67,51 @@ function App() {
             <Route path="/login" element={<Auth />} />
             <Route path="/setup" element={<SetUp />} />
             <Route path="/passwordreset" element={<ResetPassword />} />
-            <Route path="/studentdashboard" element={<StudentDashboard student={{ firstName: 'John', setupComplete: true, questionsPracticed: 10, correctAnswers: 8 }} />} />
-            <Route path="/teacherdashboard" element={<TeacherDashboard />} />
-            <Route path="/exampage" element={<ExamPage />} />
-            <Route path="/practice/:id" element={<PracticeArea />} />
-            <Route path="/adaptivetest" element={<AdaptiveTest />} />
-            <Route path="/testentrance" element={<TestEntrance />} />
-            <Route path="/tapagestudent" element={<TApageStudent />} />
+            <Route path="/studentdashboard" element={
+              <ProtectedRoute requiredRole="student">
+                <StudentDashboard student={{ firstName: 'John', setupComplete: true, questionsPracticed: 10, correctAnswers: 8 }} />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacherdashboard" element={
+              <ProtectedRoute requiredRole="teacher">
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/exampage" element={
+              <ProtectedRoute requiredRole="student">
+                <ExamPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/practice/:id" element={
+              <ProtectedRoute requiredRole="student">
+                <PracticeArea />
+              </ProtectedRoute>
+            } />
+            <Route path="/adaptivetest" element={
+              <ProtectedRoute requiredRole="student">
+                <AdaptiveTest />
+              </ProtectedRoute>
+            } />
+            <Route path="/testentrance" element={
+              <ProtectedRoute requiredRole="student">
+                <TestEntrance />
+              </ProtectedRoute>
+            } />
+            <Route path="/tapagestudent" element={
+              <ProtectedRoute requiredRole="student">
+                <TApageStudent />
+              </ProtectedRoute>
+            } />
+            <Route path="/assignment-questions" element={
+              <ProtectedRoute requiredRole="teacher">
+                <AssignmentQuestionCreationPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
-        <div className="App-foot">
+        {/* <div className="App-foot">
           <Footer />
-        </div>
+        </div> */}
       </div>
     </Router>
   );

@@ -12,7 +12,8 @@
   top: 0;
   left: 0;
   width: 220px;
-  height: 100vh;
+  height: 94vh;
+  max-height: 100vh;
   background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.98));
   padding: 28px 14px;
   box-shadow: 6px 0 18px rgba(0, 0, 0, 0.08);

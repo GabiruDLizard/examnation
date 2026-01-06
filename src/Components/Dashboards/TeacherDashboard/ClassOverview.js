@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight } from 'react-icons/bi';
 import { getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
-import "../../../Styling/Dashboards/ClassOverview.css";
+import "../ClassOverview.css";
 
 export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNavigate }) {
     const [classStats, setClassStats] = useState({

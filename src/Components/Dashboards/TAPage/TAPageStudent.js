@@ -6,7 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { IoReturnUpBack } from "react-icons/io5";
-import '../../../Styling/Dashboards/TAPage/TAPageStudent.css';
+import './TAPageStudent.css';
 
 export default function MathInsights() {
     const navigate = useNavigate();

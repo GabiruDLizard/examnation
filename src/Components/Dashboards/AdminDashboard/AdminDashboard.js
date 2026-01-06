@@ -1,6 +1,5 @@
 import React, {useState, useEffect} from 'react'
 
-import '../../Styling/Dashboards/AdminDashboard.css';
 import { BiUserPlus, BiUserCheck } from 'react-icons/bi';
 
 export default function AdminDashboard() {

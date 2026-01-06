@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import '../Styling/Landing.css';
+import './Landing.css';
 import { useNavigate } from 'react-router-dom';
 import mainPreview from '../Resources/undraw_online-test_cqv0.svg';
 import dashboardPreview from '../Resources/undraw_app-benchmarks_ls0m.svg';

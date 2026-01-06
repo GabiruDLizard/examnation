@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../../Styling/ExamPage/ExamPage.css';
+import './ExamPage.css';
 import { useNavigate } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { BiSearch, BiMenu, BiX, BiBook, BiBrain } from 'react-icons/bi';

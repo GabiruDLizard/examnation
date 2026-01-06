@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiSearch, BiFilter, BiPlus, BiUser, BiEnvelope, BiPhone, BiCalendar, BiTrendingUp, BiGridAlt, BiListUl } from 'react-icons/bi';
 import { getTeacherClasses, enrollStudentByIdentifier, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
-import "../../../Styling/Dashboards/StudentView.css";
+import "../StudentView.css";
 
 export default function StudentView({ teacherInfo, selectedClass, onBack }) {
     const [studentsData, setStudentsData] = useState([]);

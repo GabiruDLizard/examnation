@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../Styling/Dashboards/Sidebar.css';
+import './Sidebar.css';
 
 const Sidebar = () => (
     <nav className="sidebar">

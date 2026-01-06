@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup } from 'react-icons/bi';
 import AssignmentCreation from './AssignmentCreation';
-import '../../../Styling/Dashboards/Assignments.css';
+import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
+import '../Assignments-new.css';
 
 const Assignments = ({ 
     teacherInfo, 
@@ -10,8 +11,7 @@ const Assignments = ({
     onNavigate, 
     onBack 
 }) => {
-    const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'results', 'manage', 'analytics'
-    const [selectedAssignment, setSelectedAssignment] = useState(null);
+    const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
     const [assignmentStats, setAssignmentStats] = useState({
         totalAssignments: 0,
         activeAssignments: 0,
@@ -24,7 +24,7 @@ const Assignments = ({
 
     useEffect(() => {
         fetchAssignmentData();
-    }, [teacherInfo, actualStudentsData]);
+    }, [actualStudentsData]); // Run when actualStudentsData changes
 
     const fetchAssignmentData = async () => {
         try {
@@ -33,11 +33,6 @@ const Assignments = ({
             // Use real context data when available
             const totalStudents = actualStudentsData.length;
             const uniqueClasses = Array.from(new Set(actualStudentsData.map(s => s.className)));
-            
-            console.log('📊 Assignment Dashboard Context:');
-            console.log(`   Teacher: ${teacherInfo?.firstName} ${teacherInfo?.lastName}`);
-            console.log(`   Total Students: ${totalStudents}`);
-            console.log(`   Classes: ${uniqueClasses.join(', ')}`);
             
             // Calculate realistic stats
             setAssignmentStats({
@@ -85,7 +80,10 @@ const Assignments = ({
 
     const handleBackToDashboard = () => {
         setCurrentView('dashboard');
-        setSelectedAssignment(null);
+    };
+
+    const handleGoToQuestions = () => {
+        setCurrentView('questions');
     };
 
     const assignmentCards = [
@@ -160,7 +158,15 @@ const Assignments = ({
     if (currentView === 'create') {
         return (
             <div className="assignments-dashboard">
-                <AssignmentCreation onBack={handleBackToDashboard} />
+                <AssignmentCreation onBack={handleBackToDashboard} onGoToQuestions={handleGoToQuestions} />
+            </div>
+        );
+    }
+
+    if (currentView === 'questions') {
+        return (
+            <div className="assignments-dashboard">
+                <AssignmentQuestionCreationPage onBack={handleBackToDashboard} />
             </div>
         );
     }
@@ -168,23 +174,15 @@ const Assignments = ({
     if (currentView !== 'dashboard') {
         return (
             <div className="assignments-dashboard">
-                <div style={{ padding: '40px', textAlign: 'center', color: '#f0f6fc' }}>
+                <div className="loading-container flex-col text-center" style={{ padding: '40px' }}>
                     <button 
                         onClick={handleBackToDashboard}
-                        style={{
-                            background: '#4ea8ff',
-                            border: 'none',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            marginBottom: '20px'
-                        }}
+                        className="btn btn-primary mb-lg"
                     >
                         ← Back to Assignments
                     </button>
-                    <h2>{currentView.charAt(0).toUpperCase() + currentView.slice(1)} - Coming Soon!</h2>
-                    <p>This feature will be available soon.</p>
+                    <h2 className="text-2xl mb-md">{currentView.charAt(0).toUpperCase() + currentView.slice(1)} - Coming Soon!</h2>
+                    <p className="text-secondary">This feature will be available soon.</p>
                 </div>
             </div>
         );
@@ -193,8 +191,9 @@ const Assignments = ({
     // Main Dashboard View
     if (loading || loadingStudentsData) {
         return (
-            <div className="assignments-dashboard loading">
-                <div className="loading-indicator">
+            <div className="assignments-dashboard">
+                <div className="loading-container">
+                    <div className="spinner"></div>
                     Loading assignment data for {teacherInfo?.firstName} {teacherInfo?.lastName}...
                 </div>
             </div>
@@ -205,51 +204,51 @@ const Assignments = ({
         <div className="assignments-dashboard">
             {/* Header Stats */}
             <section className="assignment-stats">
-                <div className="stat-card">
-                    <div className="stat-icon">
+                <div className="stat-card card card-md flex items-center gap-md">
+                    <div className="icon-box icon-xl icon-box-primary">
                         <BiFile />
                     </div>
-                    <div className="stat-content">
+                    <div>
                         <div className="stat-value">{assignmentStats.totalAssignments}</div>
                         <div className="stat-label">Total Assignments</div>
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-icon active">
+                <div className="stat-card card card-md flex items-center gap-md">
+                    <div className="icon-box icon-xl icon-box-info">
                         <BiCalendar />
                     </div>
-                    <div className="stat-content">
+                    <div>
                         <div className="stat-value">{assignmentStats.activeAssignments}</div>
                         <div className="stat-label">Active Assignments</div>
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-icon submissions">
+                <div className="stat-card card card-md flex items-center gap-md">
+                    <div className="icon-box icon-xl icon-box-warning">
                         <BiGroup />
                     </div>
-                    <div className="stat-content">
+                    <div>
                         <div className="stat-value">{assignmentStats.totalSubmissions}</div>
                         <div className="stat-label">Total Submissions</div>
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-icon score">
+                <div className="stat-card card card-md flex items-center gap-md">
+                    <div className="icon-box icon-xl icon-box-success">
                         <BiTrendingUp />
                     </div>
-                    <div className="stat-content">
+                    <div>
                         <div className="stat-value">{assignmentStats.avgScore}%</div>
                         <div className="stat-label">Average Score</div>
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-icon pending">
+                <div className="stat-card card card-md flex items-center gap-md">
+                    <div className="icon-box icon-xl icon-box-danger">
                         <BiBarChart />
                     </div>
-                    <div className="stat-content">
+                    <div>
                         <div className="stat-value">{assignmentStats.pendingGrading}</div>
                         <div className="stat-label">Pending Grading</div>
                     </div>
@@ -264,12 +263,13 @@ const Assignments = ({
                         {assignmentCards.map(card => (
                             <div 
                                 key={card.id}
-                                className="assignment-card"
+                                className="assignment-card card card-lg"
                                 onClick={() => handleCardClick(card.id)}
+                                style={{ '--card-color': card.color }}
                             >
                                 <div className="card-header">
                                     <div 
-                                        className="card-icon"
+                                        className="card-icon icon-box icon-lg"
                                         style={{ backgroundColor: card.color }}
                                     >
                                         {card.icon}
@@ -282,14 +282,14 @@ const Assignments = ({
                                 </div>
                                 
                                 {card.stats && (
-                                    <div className="card-stats">
+                                    <div className="card-stats text-sm text-muted">
                                         {card.stats}
                                     </div>
                                 )}
                                 
                                 <div className="card-footer">
                                     <button 
-                                        className="card-action-btn"
+                                        className="card-action-btn btn btn-primary"
                                         style={{ backgroundColor: card.color }}
                                     >
                                         {card.action} →
@@ -314,8 +314,11 @@ const Assignments = ({
                                         <h4 className="assignment-title">{assignment.title}</h4>
                                     </div>
                                     <span 
-                                        className="assignment-status"
-                                        style={{ backgroundColor: getStatusColor(assignment.status) }}
+                                        className={`assignment-status status-${
+                                            assignment.status === 'active' ? 'active' :
+                                            assignment.status === 'grading' ? 'warning' :
+                                            assignment.status === 'completed' ? 'success' : 'danger'
+                                        }`}
                                     >
                                         {getStatusText(assignment.status)}
                                     </span>
@@ -351,7 +354,7 @@ const Assignments = ({
                     </div>
                     
                     <button 
-                        className="view-all-assignments"
+                        className="view-all-assignments btn btn-secondary"
                         onClick={() => handleCardClick('manage')}
                     >
                         View All Assignments →

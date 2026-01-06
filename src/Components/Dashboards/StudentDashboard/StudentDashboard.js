@@ -5,7 +5,7 @@ import {
   BiTrendingUp, BiCog, BiLogOut, BiPlay, BiCheckCircle,
   BiTime, BiAward, BiBullseye
 } from 'react-icons/bi';
-import '../../../Styling/Dashboards/StudentDashboard.css';
+import '../StudentDashboard.css';
 import { getStudentAnswers } from './StudentDashboardService.js'; // Keep this for student answers
 import { abilityEstimate } from '../Charts/ReadinessLogic.js';
 import ReadinessChart from '../Charts/Readiness.js';

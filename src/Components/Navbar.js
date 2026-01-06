@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import '../Styling/Navbar.css'; 
+import './Navbar.css'; 
 import logo from '../Resources/PHold-logo.png';
 import { FaUserCircle } from 'react-icons/fa';
 import UserPopUp from './UserPopUp';

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
-import '../../../Styling/Dashboards/Assignments.css';
+import '../Assignments.css';
 import { getTeacherClasses, getAllEnrolledStudentInfo } from './TeacherDashboardService';
 
-const AssignmentCreation = ({ onBack }) => {
+const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -35,11 +35,32 @@ const AssignmentCreation = ({ onBack }) => {
         highReadinessCount: 0
     });
     const [loadingStudents, setLoadingStudents] = useState(false);
+    const [classesData, setClassesData] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('all');
+
 
     // Load student readiness data on component mount
     useEffect(() => {
         loadStudentReadinessData();
+        fetchClassData();
     }, []);
+
+    const fetchClassData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if(!token){
+                throw new Error('No authentication token found');
+            }
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const teacherId = payload.sub;
+
+            const classes = await getTeacherClasses(teacherId);
+            setClassesData(classes);
+        }
+        catch (error) {
+            console.error('Error fetching class data:', error);
+        }
+    }
 
     const loadStudentReadinessData = async () => {
         setLoadingStudents(true);
@@ -131,7 +152,7 @@ const AssignmentCreation = ({ onBack }) => {
 
         if (!formData.grade) {
             newErrors.grade = 'Grade level is required';
-        }1
+        }
 
         if (!formData.dueDate) {
             newErrors.dueDate = 'Due date is required';
@@ -167,10 +188,13 @@ const AssignmentCreation = ({ onBack }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log('🚀 Form submission started');
         
         if (!validateForm()) {
+            console.log('❌ Form validation failed');
             return;
         }
+        console.log('✅ Form validation passed');
 
         setIsSubmitting(true);
 
@@ -193,24 +217,20 @@ const AssignmentCreation = ({ onBack }) => {
                 };
             }
 
-            console.log('Assignment data with readiness integration:', assignmentData);
+            // Save assignment data to localStorage
+            localStorage.setItem('currentAssignmentData', JSON.stringify(assignmentData));
+            console.log('💾 Assignment data saved to localStorage:', assignmentData);
             
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            alert(`Assignment created successfully! 
-${readinessStats.lowReadinessCount > 0 ? 
-`\n⚠️ Note: ${readinessStats.lowReadinessCount} student${readinessStats.lowReadinessCount > 1 ? 's' : ''} may need additional support.` : 
-`\n✅ All students appear ready for this assignment.`}`);
-            
-            // Navigate back to assignments dashboard
-            if (onBack) {
-                onBack();
+            // Go to question creation page using callback
+            console.log('🧭 Calling onGoToQuestions callback');
+            if (onGoToQuestions) {
+                onGoToQuestions();
             }
+            console.log('🧭 Callback completed');
             
         } catch (error) {
-            console.error('Error creating assignment:', error);
-            alert('Error creating assignment. Please try again.');
+            console.error('❌ Error processing assignment data:', error);
+            alert('Error processing assignment. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -376,8 +396,22 @@ ${readinessStats.lowReadinessCount > 0 ?
                         
                         <div className="form-row">
                             <div className="form-group">
-                                <label htmlFor="totalMarks">Total Marks *</label>
-                                <input
+                                <label htmlFor="totalMarks">Assign to a class *</label>
+                                <select
+                                    value={selectedClass}
+                                    onChange={(e) => setSelectedClass(e.target.value)}
+                                    className="filter-select"
+                                >
+                                    <option value="all">Assign to all</option>
+                                    {classesData.map((cls) => (
+                                        <option key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </option>
+                                    ))}
+                                </select>
+                               
+
+                                {/* <input
                                     type="number"
                                     id="totalMarks"
                                     name="totalMarks"
@@ -387,7 +421,7 @@ ${readinessStats.lowReadinessCount > 0 ?
                                     min="1"
                                     className={errors.totalMarks ? 'error' : ''}
                                 />
-                                {errors.totalMarks && <span className="error-message">{errors.totalMarks}</span>}
+                                {errors.totalMarks && <span className="error-message">{errors.totalMarks}</span>} */}
                             </div>
 
                             <div className="form-group">
