@@ -1,5 +1,127 @@
 const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
 const API_BASE_URL_TEST = 'http://localhost:5204/api';
+const API_BASE_URL_BLOB = 'http://localhost:5290/api/file';
+
+// ================================================================
+// READINESS TRACKING API FUNCTIONS
+// ================================================================
+
+export const recordStudentReadiness = async (studentId, classId, readinessData) => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/Readiness/record`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                studentId,
+                classId,
+                readinessPercentage: readinessData.readinessPercentage,
+                questionsAnswered: readinessData.questionsAnswered || 0,
+                correctAnswers: readinessData.correctAnswers || 0,
+                studyTimeMinutes: readinessData.studyTimeMinutes || 0,
+                abilityEstimate: readinessData.abilityEstimate || null
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error recording student readiness:', error);
+        throw error;
+    }
+};
+
+export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/Readiness/student/${studentId}/history?weeksBack=${weeksBack}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching student readiness history:', error);
+        throw error;
+    }
+};
+
+export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/Readiness/class/${classId}/history?weeksBack=${weeksBack}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching class readiness history:', error);
+        throw error;
+    }
+};
+
+export const getTeacherReadinessChartData = async (teacherId, weeksBack = 8) => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/Readiness/teacher/${teacherId}/chart-data?weeksBack=${weeksBack}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching teacher readiness chart data:', error);
+        throw error;
+    }
+};
 
 export const getTeacherInfo = async () => {
     const token = localStorage.getItem('token');
@@ -412,5 +534,243 @@ export const getAllEnrolledStudentInfo = async (classId) => {
     } catch (error) {
         console.error('Error fetching all student details:', error);
         return []; // Return empty array instead of throwing
+    }
+};
+export const createAssignmentForClass = async (assignmentData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(assignmentData)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const createdAssignment = await response.json();
+        return createdAssignment;
+    } catch (error) {
+        console.error('Error creating assignment:', error);
+        throw error;
+    }
+};
+
+export const getAssignmentsForClass = async (classId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment/class/${classId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const assignments = await response.json();
+        return assignments;
+    } catch (error) {
+        console.error('Error fetching assignments for class:', error);
+        return []; // Return empty array instead of throwing
+    }
+};
+export const getAssignmentsByTeacher = async (teacherId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment/teacher/${teacherId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const assignments = await response.json();
+        return assignments;
+    } catch (error) {
+        console.error('Error fetching assignments for class:', error);
+        return []; // Return empty array instead of throwing
+    }
+};
+export const getAssignmentsById = async (assignmentId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const assignment = await response.json();
+        return assignment;
+    } catch (error) {
+        console.error('Error fetching assignment by ID:', error);
+        return null; // Return null instead of throwing
+    }
+};
+export const updateAssignment = async (assignmentId, assignmentData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(assignmentData)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const updatedAssignment = await response.json();
+        return updatedAssignment;
+    } catch (error) {
+        console.error('Error updating assignment:', error);
+        throw error;
+    }
+};
+export const deleteAssignment = async (assignmentId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return true;
+    } catch (error) {
+        console.error('Error deleting assignment:', error);
+        throw error;
+    }
+};
+
+export const uploadQuestionImage = async (imageFile) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const response = await fetch(`${API_BASE_URL_BLOB}/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+        const result = await response.json();
+        return result.fileUrl; // Assuming the API returns the URL in fileUrl property
+    } catch (error) {
+        console.error('Error uploading question image:', error);
+        throw error;
+    }
+};
+
+// Create a single question
+export const createQuestion = async (questionData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL_TEST}/question`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(questionData)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const createdQuestion = await response.json();
+        return createdQuestion;
+    } catch (error) {
+        console.error('Error creating question:', error);
+        throw error;
+    }
+};
+
+// Create assignment-question link
+export const createAssignmentQuestion = async (linkData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL_TEST}/assignmentquestion`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                assignmentId: linkData.assignmentId,
+                questionId: linkData.questionId,
+                points: linkData.points || 1.0
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const createdLink = await response.json();
+        return createdLink;
+    } catch (error) {
+        console.error('Error creating assignment question link:', error);
+        throw error;
     }
 };

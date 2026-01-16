@@ -49,6 +49,20 @@
   cursor: pointer;
   transition: all var(--transition-base);
   text-decoration: none;
+  min-height: 44px; /* Minimum touch target size for accessibility */
+  min-width: 44px;
+}
+
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+  min-height: 48px;
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  min-height: 36px;
 }
 
 .btn-primary {

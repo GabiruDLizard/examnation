@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
-import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments } from "./TeacherDashboardService";
+import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
 
 export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -10,6 +10,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   const [error, setError] = useState(null);
   const [selectedColor, setSelectedColor] = useState("#3b82f6");
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "column"
+  const [assignments, setAssignments] = useState({});
 
   // Color options for the picker
   const colorOptions = [
@@ -31,6 +32,31 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   useEffect(() => {
     fetchClasses();
   }, []);
+  useEffect(() => {
+    const fetchAllAssignments = async () => {
+      if (classesData.length > 0) {
+        const assignmentPromises = classesData.map(async (classItem) => {
+          try {
+            const classAssignments = await getAssignmentsForClass(classItem.id);
+            return { classId: classItem.id, assignments: classAssignments || [] };
+          } catch (error) {
+            console.error(`Error fetching assignments for class ${classItem.id}:`, error);
+            return { classId: classItem.id, assignments: [] };
+          }
+        });
+        
+        const results = await Promise.all(assignmentPromises);
+        const assignmentsMap = {};
+        results.forEach(({ classId, assignments: classAssignments }) => {
+          assignmentsMap[classId] = classAssignments;
+        });
+        
+        setAssignments(assignmentsMap);
+      }
+    };
+    
+    fetchAllAssignments();
+  }, [classesData]);
 
   const fetchClasses = async () => {
     try {
@@ -79,6 +105,8 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
       setClassesData(transformedClasses);
       setError(null);
+
+
       
     } catch (error) {
       console.error('Error fetching teacher classes:', error);
@@ -90,7 +118,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
       setLoading(false);
     }
   };
-
   const handleCreateClass = async (formData) => {
     try {
       await createTeacherClass(formData);
@@ -264,7 +291,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
                     </div>
                     <div className="stat-compact">
                       <BiBook />
-                      <span>{classItem.activeAssignments}</span>
+                      <span>{(assignments[classItem.id] || []).length}</span>
                     </div>
                   </div>
 
@@ -329,7 +356,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
                       </div>
                       <div className="detail-item">
                         <BiBook style={{ marginRight: '6px' }} />
-                        <span>{classItem.activeAssignments} Active Assignments</span>
+                        <span>{(assignments[classItem.id] || []).length} Active Assignments</span>
                       </div>
                     </div>
                   </div>

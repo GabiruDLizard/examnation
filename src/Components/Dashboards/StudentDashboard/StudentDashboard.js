@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   BiHome, BiUser, BiBookOpen, BiBarChart, BiClipboard, 
   BiTrendingUp, BiCog, BiLogOut, BiPlay, BiCheckCircle,
-  BiTime, BiAward, BiBullseye
+  BiTime, BiAward, BiBullseye, BiMenu, BiX
 } from 'react-icons/bi';
 import '../StudentDashboard.css';
 import { getStudentAnswers } from './StudentDashboardService.js'; // Keep this for student answers
@@ -85,7 +85,7 @@ const processGroupedAnswers = async (groupedAnswers) => {
     }
 };
 
-export default function StudentDashboard() {
+function StudentDashboard() {
     const [activePage, setActivePage] = useState('overview');
     const [student, setStudent] = useState({});
     const [studentprogress, setStudentProgress] = useState({});
@@ -93,6 +93,7 @@ export default function StudentDashboard() {
     const [readinessScores, setReadinessScores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
     // Stats
     const [qAnswered, setQAnswered] = useState(0);
@@ -101,6 +102,15 @@ export default function StudentDashboard() {
     const [studentId, setStudentId] = useState(null);
     
     const navigate = useNavigate();
+
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen(!mobileMenuOpen);
+    };
+
+    const handleNavClick = (page) => {
+        setActivePage(page);
+        setMobileMenuOpen(false); // Close mobile menu on navigation
+    };
 
     // Use the EXACT same useEffect pattern that worked in your old code
     useEffect(() => {
@@ -561,47 +571,56 @@ export default function StudentDashboard() {
 
     return (
         <div className="sd-root">
-            <aside className="sd-sidebar">
+            {/* Mobile Header with Hamburger */}
+            <div className="sd-mobile-header">
                 <div className="sd-brand">Examnation</div>
+                <button className="sd-mobile-menu-btn" onClick={toggleMobileMenu}>
+                    {mobileMenuOpen ? <BiX size={24} /> : <BiMenu size={24} />}
+                </button>
+            </div>
+
+            {/* Sidebar with mobile overlay */}
+            <aside className={`sd-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+                <div className="sd-brand desktop-only">Examnation</div>
                 <nav className="sd-nav">
                     <button 
                         className={`sd-nav-item ${activePage === 'overview' ? 'active' : ''}`}
-                        onClick={() => setActivePage('overview')}
+                        onClick={() => handleNavClick('overview')}
                     >
                         <BiHome style={{ marginRight: '8px', fontSize: '18px'}} />
                         Overview
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'practice' ? 'active' : ''}`}
-                        onClick={() => setActivePage('practice')}
+                        onClick={() => handleNavClick('practice')}
                     >
                         <BiBookOpen style={{ marginRight: '8px', fontSize: '18px'}} />
                         Practice
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'classes' ? 'active' : ''}`}
-                        onClick={() => setActivePage('classes')}
+                        onClick={() => handleNavClick('classes')}
                     >
                         <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
                         My Classes
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'readiness' ? 'active' : ''}`}
-                        onClick={() => setActivePage('readiness')}
+                        onClick={() => handleNavClick('readiness')}
                     >
                         <BiBullseye style={{ marginRight: '8px', fontSize: '18px'}} />
                         Readiness
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'history' ? 'active' : ''}`}
-                        onClick={() => setActivePage('history')}
+                        onClick={() => handleNavClick('history')}
                     >
                         <BiTime style={{ marginRight: '8px', fontSize: '18px'}} />
                         History
                     </button>
                     <button 
                         className={`sd-nav-item ${activePage === 'settings' ? 'active' : ''}`}
-                        onClick={() => setActivePage('settings')}
+                        onClick={() => handleNavClick('settings')}
                     >
                         <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
                         Settings
@@ -622,6 +641,9 @@ export default function StudentDashboard() {
                     </button>
                 </div>
             </aside>
+
+            {/* Mobile Overlay */}
+            {mobileMenuOpen && <div className="sd-mobile-overlay" onClick={toggleMobileMenu}></div>}
 
             <main className="sd-main">
                 <header className="sd-header">
@@ -648,3 +670,5 @@ export default function StudentDashboard() {
         </div>
     );
 }
+
+export default StudentDashboard;

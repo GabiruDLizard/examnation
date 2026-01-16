@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight } from 'react-icons/bi';
-import { getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
+import { getTeacherClasses, getAllEnrolledStudentInfo, getAssignmentsForClass } from "./TeacherDashboardService";
 import "../ClassOverview.css";
 
 export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNavigate }) {
@@ -11,12 +11,30 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
         recentActivity: 0
     });
     const [loading, setLoading] = useState(true);
+    const [assignments, setAssignments] = useState([]);
+
+    useEffect(() => {
+        const fetchAssignmentsForClass = async () => {
+            if(selectedClass.id){
+                try {
+                    const classAssignments = await getAssignmentsForClass(selectedClass.id);
+                    setAssignments(classAssignments);
+                    console.log('Selected class assignments:', classAssignments.length);
+                } catch (error) {
+                    console.error('Error fetching assignments for class:', error);
+                    setAssignments([]);
+                }
+            }
+        };
+        
+        fetchAssignmentsForClass();
+    }, [selectedClass]);
 
     useEffect(() => {
         if (selectedClass) {
             fetchClassStats();
         }
-    }, [selectedClass]);
+    }, [selectedClass, assignments]);
 
     const fetchClassStats = async () => {
         try {
@@ -34,7 +52,7 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
 
             setClassStats({
                 totalStudents,
-                activeAssignments: Math.floor(Math.random() * 5 + 3), // Mock for now
+                activeAssignments: assignments.length, 
                 averageReadiness,
                 recentActivity: Math.floor(Math.random() * totalStudents * 0.8) // Mock recent activity
             });

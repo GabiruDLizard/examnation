@@ -33,6 +33,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         return savedAssignmentData ? null : 'No assignment data found. Please create an assignment first.';
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAddingImgDescription, setIsAddingImgDescription] = useState(false);
 
     const handleAddMore = () => {
         // Add current formData to questions array
@@ -162,6 +163,19 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                                     type="file"
                                     onChange={(e) => setFormData({ ...formData, imageAssociated: e.target.files[0] })}
                                 />
+                                <label className="file-hint">Accepted formats: JPG, PNG, GIF. Max size: 5MB.</label>
+                                <input
+                                    type="checkbox"
+                                    checked={isAddingImgDescription}
+                                    onChange={(e) => setIsAddingImgDescription(e.target.checked)}
+                                /> Add Image Description
+                                {isAddingImgDescription && (
+                                    <textarea
+                                        value={formData.imageDescription || ''}
+                                        onChange={(e) => setFormData({ ...formData, imageDescription: e.target.value })}
+                                        placeholder="Enter image description for accessibility"
+                                    />
+                                )}
                             </div>
 
                             <div className="form-group">
@@ -216,8 +230,22 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                                     </button>
                                 </div>
                             )}
+                            <div className="form-group">
+                                <label>Solution</label>
+                                <textarea
+                                    value={formData.solution || ''}
+                                    onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+                                    placeholder='Enter the solution or answer here...'
+                                />
+                                <label>Answer Breakdown (optional)</label>
+                                <textarea
+                                    value={formData.answerBreakdown || ''}
+                                    onChange={(e) => setFormData({ ...formData, answerBreakdown: e.target.value })}
+                                    placeholder='Enter the answer breakdown here...'
+                                />
+                            </div>
                         </div>
-                        
+
                         {/* Show added questions
                         {questionsArray.length > 0 && (
                             <div className="added-questions">

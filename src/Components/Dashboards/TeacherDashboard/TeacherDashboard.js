@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from "recharts";
-import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome } from "react-icons/bi";
+import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome, BiMenu, BiX } from "react-icons/bi";
 import "../TeacherDashboard.css";
 
 // Import services
 import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
 
-// Import the new components
+// Import chart components
+import TeacherReadinessChart from "../Charts/TeacherReadinessChart";
+import { generateClassReadinessData, generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
+
+// Import the components
 import MyClasses from "./MyClasses";
 import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
@@ -17,24 +18,6 @@ import Assignments from "./Assignments";
 
 const token = localStorage.getItem('token');
 
-const lineData = [
-  { session: 1, readiness: 12 },
-  { session: 3, readiness: 18 },
-  { session: 6, readiness: 22 },
-  { session: 9, readiness: 28 },
-  { session: 12, readiness: 35 },
-  { session: 15, readiness: 45 },
-  { session: 18, readiness: 55 },
-  { session: 20, readiness: 72 }
-];
-
-const students = [
-  { name: "Abigall", readiness: 80, improvement: 12, attempts: 158 },
-  { name: "Grace", readiness: 85, improvement: 8, attempts: 22 },
-  { name: "Noah", readiness: 82, improvement: 6, attempts: 23 },
-  { name: "Victoria", readiness: 79, improvement: 4, attempts: 18 },
-  { name: "Ethan", readiness: 75, improvement: 2, attempts: 23 },
-];
 
 const topics = ["Algebra", "Geometry", "Statistics", "Trigonometry", "Number Theory"];
 const heatmap = [
@@ -59,12 +42,28 @@ export default function TeacherDashboard() {
   const [currentView, setCurrentView] = useState('main'); // 'main', 'class-overview', 'students', 'analytics', 'assignments'
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
   const [loadingStudentCount, setLoadingStudentCount] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [readinessChartData, setReadinessChartData] = useState([]);
+  const [classColors, setClassColors] = useState({});
+  const [teacherStats, setTeacherStats] = useState({});
 
   // Add this new state variable for storing actual student data
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
 
   const navigate = useNavigate();
+
+  // Mobile navigation handlers
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handlePageChangeWithMobile = (page) => {
+    setActivePage(page);
+    setCurrentView('main');
+    setSelectedClass(null);
+    setMobileMenuOpen(false); // Close mobile menu
+  };
 
   // Navigation handlers
   const handleClassClick = (classItem) => {
@@ -230,6 +229,9 @@ export default function TeacherDashboard() {
       setTotalStudentsCount(uniqueStudentCount);
       setActualStudentsData(studentsArray);
       
+      // Generate chart data after setting students data (now async)
+      await generateReadinessChartData(classes, studentsArray);
+      
     } catch (error) {
       console.error('❌ Error calculating unique students:', error);
       setTotalStudentsCount(0);
@@ -237,6 +239,32 @@ export default function TeacherDashboard() {
     } finally {
       setLoadingStudentCount(false);
       setLoadingStudentsData(false);
+    }
+  };
+
+  // Function to generate readiness chart data using the new logic
+  const generateReadinessChartData = (classes, studentsData) => {
+    try {
+      console.log('🎯 Generating readiness chart data with new logic...');
+      
+      // Use the new chart logic
+      const chartData = generateClassReadinessData(classes, studentsData, 8);
+      const colors = generateClassColors(classes);
+      const stats = calculateTeacherStats(chartData);
+      
+      setReadinessChartData(chartData);
+      setClassColors(colors);
+      setTeacherStats(stats);
+      
+      console.log('📊 Generated chart data:', chartData);
+      console.log('🎨 Generated colors:', colors);
+      console.log('📈 Calculated stats:', stats);
+      
+    } catch (error) {
+      console.error('Error generating chart data:', error);
+      setReadinessChartData([]);
+      setClassColors({});
+      setTeacherStats({});
     }
   };
 
@@ -317,7 +345,7 @@ export default function TeacherDashboard() {
             case 'insights':
                 return <div className="coming-soon">Insights page coming soon</div>;
             case 'assignments':
-                return <div className="coming-soon"><Assignments /></div>;
+                return <div className="coming-soon"><Assignments teacherInfo={teacherInfo}/></div>;
             case 'ta':
                 return <div className="coming-soon">MY TA page coming soon...</div>;
             case 'reports':
@@ -344,11 +372,16 @@ export default function TeacherDashboard() {
             {loadingStudentsData ? (
               <div className="loading-indicator">...</div>
             ) : (
-              actualStudentsData.length > 0 
-                ? Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) + '%'
-                : '0%'
+              teacherStats.averageReadiness ? teacherStats.averageReadiness + '%' : '0%'
             )}
           </div>
+          {!loadingStudentsData && teacherStats.improvementTrend !== undefined && (
+            <div className="kpi-subtitle" style={{ 
+              color: teacherStats.improvementTrend >= 0 ? '#10b981' : '#ef4444' 
+            }}>
+              {teacherStats.improvementTrend >= 0 ? '+' : ''}{teacherStats.improvementTrend}% this period
+            </div>
+          )}
         </div>
         <div className="kpi-card">
           <div className="kpi-title">Total Students</div>
@@ -381,17 +414,12 @@ export default function TeacherDashboard() {
 
       <section className="td-grid">
         <div className="panel panel-large">
-          <div className="panel-title">Class Performance</div>
+          <div className="panel-title">Class Readiness Over Time</div>
           <div style={{ width: "100%", height: 260 }}>
-            <ResponsiveContainer>
-              <LineChart data={lineData}>
-                <CartesianGrid stroke="rgba(255,255,255,0.03)" />
-                <XAxis dataKey="session" tick={{ fill: "#cfd8e3" }} />
-                <YAxis tick={{ fill: "#cfd8e3" }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="readiness" stroke="#4ea8ff" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <TeacherReadinessChart 
+              classReadinessData={readinessChartData}
+              classColors={classColors}
+            />
           </div>
         </div>
 
@@ -534,54 +562,54 @@ export default function TeacherDashboard() {
 
   return (
     <div className="td-root">
-      <aside className="td-sidebar">
+      <aside className={`td-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="td-brand">Examnation</div>
         <nav className="td-nav">
           <button 
             className={`td-nav-item ${activePage === 'overview' ? 'active' : ''}`}
-            onClick={() => handlePageChange('overview')}
+            onClick={() => handlePageChangeWithMobile('overview')}
           >
             <BiHome style={{ marginRight: '8px', fontSize: '18px'}} />
             Overview
           </button>
           <button 
             className={`td-nav-item ${activePage === 'classes' ? 'active' : ''}`}
-            onClick={() => handlePageChange('classes')}
+            onClick={() => handlePageChangeWithMobile('classes')}
           >
             <BiGroup style={{ marginRight: '8px', fontSize: '18px'}} />
             My Classes
           </button>
           <button 
             className={`td-nav-item ${activePage === 'insights' ? 'active' : ''}`}
-            onClick={() => handlePageChange('insights')}
+            onClick={() => handlePageChangeWithMobile('insights')}
           >
             <BiBarChart style={{ marginRight: '8px', fontSize: '18px'}} />
             Insights
           </button>
           <button 
             className={`td-nav-item ${activePage === 'assignments' ? 'active' : ''}`}
-            onClick={() => handlePageChange('assignments')}
+            onClick={() => handlePageChangeWithMobile('assignments')}
           >
             <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
             Assignments
           </button>
           <button 
             className={`td-nav-item ${activePage === 'ta' ? 'active' : ''}`}
-            onClick={() => handlePageChange('ta')}
+            onClick={() => handlePageChangeWithMobile('ta')}
           >
             <BiBrain style={{ marginRight: '8px', fontSize: '18px'}}/>
             MY TA
           </button>
           <button 
             className={`td-nav-item ${activePage === 'reports' ? 'active' : ''}`}
-            onClick={() => handlePageChange('reports')}
+            onClick={() => handlePageChangeWithMobile('reports')}
           >
             <BiFile style={{ marginRight: '8px', fontSize: '18px'}} />
             Reports
           </button>
           <button 
             className={`td-nav-item ${activePage === 'settings' ? 'active' : ''}`}
-            onClick={() => handlePageChange('settings')}
+            onClick={() => handlePageChangeWithMobile('settings')}
           >
             <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
             Settings
@@ -603,7 +631,18 @@ export default function TeacherDashboard() {
         </div>
       </aside>
 
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && <div className="td-mobile-overlay" onClick={toggleMobileMenu}></div>}
+
       <main className="td-main">
+        {/* Mobile Header */}
+        <div className="td-mobile-header">
+          <div className="td-brand">Examnation</div>
+          <button className="td-mobile-menu-btn" onClick={toggleMobileMenu}>
+            {mobileMenuOpen ? <BiX size={24} /> : <BiMenu size={24} />}
+          </button>
+        </div>
+
         <header className="td-header">
           <h1>{getPageTitle()}</h1>
           <div className="td-user">{getTeacherDisplayName()}</div>

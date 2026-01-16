@@ -43,8 +43,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center; /* Center vertically */
+  align-items: stretch;
+  justify-content: flex-start; /* Start from top instead of center */
   background-color: #fff;
   /* background-color: #f0f0f0; */
   width: 100%;

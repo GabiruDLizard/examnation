@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
 import '../Assignments.css';
-import { getTeacherClasses, getAllEnrolledStudentInfo } from './TeacherDashboardService';
+import { getTeacherClasses, getAllEnrolledStudentInfo, createAssignmentForClass } from './TeacherDashboardService';
 
 const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
     const [formData, setFormData] = useState({
@@ -11,7 +11,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         grade: '',
         dueDate: '',
         dueTime: '',
-        totalMarks: '',
+        assignedClass: '',
         passingMarks: '',
         duration: '',
         instructions: '',
@@ -162,16 +162,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             newErrors.dueTime = 'Due time is required';
         }
 
-        if (!formData.totalMarks || formData.totalMarks <= 0) {
-            newErrors.totalMarks = 'Total marks must be greater than 0';
-        }
-
         if (!formData.passingMarks || formData.passingMarks <= 0) {
             newErrors.passingMarks = 'Passing marks must be greater than 0';
-        }
-
-        if (formData.passingMarks > formData.totalMarks) {
-            newErrors.passingMarks = 'Passing marks cannot exceed total marks';
         }
 
         if (!formData.duration || formData.duration <= 0) {
@@ -199,27 +191,52 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         setIsSubmitting(true);
 
         try {
-            // Prepare assignment data with readiness considerations
+            // Get teacher ID from token
+            const token = localStorage.getItem('token');
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const teacherId = payload.sub;
+
+            // Prepare assignment data for API
             const assignmentData = {
-                ...formData,
-                readinessStats: readinessStats,
-                studentReadinessData: studentsData,
-                createdAt: new Date().toISOString(),
-                createdBy: localStorage.getItem('teacherId') || 'current_teacher'
+                title: formData.title,
+                description: formData.description,
+                dueDate: formData.dueDate ? new Date(formData.dueDate + 'T' + (formData.dueTime || '23:59')).toISOString() : null,
+                pointsPossible: parseInt(formData.passingMarks) || 100,
+                assignmentType: 'homework',
+                status: 'active',
+                classId: parseInt(formData.assignedClass),
+                teacherId: parseInt(teacherId),
+                // Additional metadata for future use
+                metadata: {
+                    subject: formData.subject,
+                    grade: formData.grade,
+                    duration: formData.duration,
+                    instructions: formData.instructions,
+                    allowLateSubmission: formData.allowLateSubmission,
+                    showResults: formData.showResults,
+                    randomizeQuestions: formData.randomizeQuestions,
+                    allowMultipleAttempts: formData.allowMultipleAttempts,
+                    maxAttempts: formData.maxAttempts,
+                    adjustDifficultyByReadiness: formData.adjustDifficultyByReadiness,
+                    minimumReadinessThreshold: formData.minimumReadinessThreshold,
+                    enableReadinessRecommendations: formData.enableReadinessRecommendations,
+                    readinessStats: readinessStats,
+                    studentReadinessData: studentsData
+                }
             };
 
-            // If readiness adjustment is enabled, add difficulty mapping
-            if (formData.adjustDifficultyByReadiness) {
-                assignmentData.difficultyMapping = {
-                    easy: studentsData.filter(s => s.readiness < formData.minimumReadinessThreshold).map(s => s.id),
-                    medium: studentsData.filter(s => s.readiness >= formData.minimumReadinessThreshold && s.readiness < 85).map(s => s.id),
-                    hard: studentsData.filter(s => s.readiness >= 85).map(s => s.id)
-                };
-            }
+            console.log('📤 Sending assignment data to API:', assignmentData);
 
-            // Save assignment data to localStorage
-            localStorage.setItem('currentAssignmentData', JSON.stringify(assignmentData));
-            console.log('💾 Assignment data saved to localStorage:', assignmentData);
+            // Create assignment via API
+            const createdAssignment = await createAssignmentForClass(assignmentData);
+            console.log('✅ Assignment created successfully:', createdAssignment);
+
+            // Save assignment data to localStorage for question creation
+            localStorage.setItem('currentAssignmentData', JSON.stringify({
+                ...assignmentData,
+                assignmentId: createdAssignment.id,
+                createdAt: new Date().toISOString()
+            }));
             
             // Go to question creation page using callback
             console.log('🧭 Calling onGoToQuestions callback');
@@ -229,8 +246,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             console.log('🧭 Callback completed');
             
         } catch (error) {
-            console.error('❌ Error processing assignment data:', error);
-            alert('Error processing assignment. Please try again.');
+            console.error('❌ Error creating assignment:', error);
+            alert('Error creating assignment: ' + (error.message || 'Please try again.'));
         } finally {
             setIsSubmitting(false);
         }
@@ -398,8 +415,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                             <div className="form-group">
                                 <label htmlFor="totalMarks">Assign to a class *</label>
                                 <select
-                                    value={selectedClass}
-                                    onChange={(e) => setSelectedClass(e.target.value)}
+                                    value={formData.assignedClass}
+                                    onChange={(e) => setFormData({ ...formData, assignedClass: e.target.value })}
                                     className="filter-select"
                                 >
                                     <option value="all">Assign to all</option>
@@ -459,17 +476,16 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                     </div>
 
                     {/* Settings Section */}
-                    <div className="form-section">
-                        <h3>Assignment Settings</h3>
+                    <div className="form-section" style={{opacity: 0.5, pointerEvents: 'none'}}>
+                        <h3>Assignment Settings <span style={{color: '#888', fontSize: '0.8em'}}>(Coming Soon)</span></h3>
                         
                         <div className="form-group">
                             <div className="checkbox-group">
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        name="allowLateSubmission"
-                                        checked={formData.allowLateSubmission}
-                                        onChange={handleInputChange}
+                                        disabled
+                                        style={{cursor: 'not-allowed'}}
                                     />
                                     Allow late submissions
                                 </label>
@@ -481,9 +497,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        name="showResults"
-                                        checked={formData.showResults}
-                                        onChange={handleInputChange}
+                                        disabled
+                                        style={{cursor: 'not-allowed'}}
                                     />
                                     Show results immediately after submission
                                 </label>
@@ -495,9 +510,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        name="randomizeQuestions"
-                                        checked={formData.randomizeQuestions}
-                                        onChange={handleInputChange}
+                                        disabled
+                                        style={{cursor: 'not-allowed'}}
                                     />
                                     Randomize question order
                                 </label>
@@ -509,117 +523,86 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                                 <label className="checkbox-label">
                                     <input
                                         type="checkbox"
-                                        name="allowMultipleAttempts"
-                                        checked={formData.allowMultipleAttempts}
-                                        onChange={handleInputChange}
+                                        disabled
+                                        style={{cursor: 'not-allowed'}}
                                     />
                                     Allow multiple attempts
                                 </label>
                             </div>
                         </div>
 
-                        {formData.allowMultipleAttempts && (
-                            <div className="form-group">
-                                <label htmlFor="maxAttempts">Maximum Attempts</label>
-                                <input
-                                    type="number"
-                                    id="maxAttempts"
-                                    name="maxAttempts"
-                                    value={formData.maxAttempts}
-                                    onChange={handleInputChange}
-                                    min="1"
-                                    max="10"
-                                    className={errors.maxAttempts ? 'error' : ''}
-                                />
-                                {errors.maxAttempts && <span className="error-message">{errors.maxAttempts}</span>}
-                            </div>
-                        )}
+                        <div className="form-group">
+                            <label htmlFor="maxAttempts">Maximum Attempts</label>
+                            <input
+                                type="text"
+                                value="--"
+                                disabled
+                                style={{cursor: 'not-allowed', backgroundColor: '#f5f5f5'}}
+                            />
+                        </div>
                     </div>
 
                     {/* Student Readiness Section */}
-                    <div className="form-section">
-                        <h3><BiBrain /> Student Readiness Insights</h3>
+                    <div className="form-section" style={{opacity: 0.5, pointerEvents: 'none'}}>
+                        <h3><BiBrain /> Student Readiness Insights <span style={{color: '#888', fontSize: '0.8em'}}>(Coming Soon)</span></h3>
                         
-                        {loadingStudents ? (
-                            <div className="readiness-loading">
-                                <div className="loading-indicator">Loading student readiness data...</div>
+                        <div className="readiness-overview">
+                            <div className="readiness-stats">
+                                <div className="stat-card">
+                                    <div className="stat-value">--</div>
+                                    <div className="stat-label">Average Readiness</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value">--</div>
+                                    <div className="stat-label">High Performers (≥85%)</div>
+                                </div>
+                                <div className="stat-card low-readiness">
+                                    <div className="stat-value">--</div>
+                                    <div className="stat-label">Need Support (&lt;70%)</div>
+                                </div>
                             </div>
-                        ) : studentsData.length > 0 ? (
-                            <div className="readiness-overview">
-                                <div className="readiness-stats">
-                                    <div className="stat-card">
-                                        <div className="stat-value">{readinessStats.averageReadiness}%</div>
-                                        <div className="stat-label">Average Readiness</div>
-                                    </div>
-                                    <div className="stat-card">
-                                        <div className="stat-value">{readinessStats.highReadinessCount}</div>
-                                        <div className="stat-label">High Performers (≥85%)</div>
-                                    </div>
-                                    <div className="stat-card low-readiness">
-                                        <div className="stat-value">{readinessStats.lowReadinessCount}</div>
-                                        <div className="stat-label">Need Support (&lt;70%)</div>
-                                    </div>
-                                </div>
 
-                                {readinessStats.lowReadinessCount > 0 && (
-                                    <div className="readiness-recommendation">
-                                        <BiBullseye /> 
-                                        <strong>Recommendation:</strong> {readinessStats.lowReadinessCount} student{readinessStats.lowReadinessCount > 1 ? 's' : ''} 
-                                        {readinessStats.lowReadinessCount > 1 ? ' have' : ' has'} readiness below 70%. 
-                                        Consider providing additional preparation time or resources.
-                                    </div>
-                                )}
+                            <div className="readiness-recommendation" style={{color: '#888'}}>
+                                <BiBullseye /> 
+                                <strong>Recommendation:</strong> Student readiness analysis will be available soon.
+                            </div>
 
-                                <div className="form-group">
-                                    <div className="checkbox-group">
-                                        <label className="checkbox-label">
-                                            <input
-                                                type="checkbox"
-                                                name="adjustDifficultyByReadiness"
-                                                checked={formData.adjustDifficultyByReadiness}
-                                                onChange={handleInputChange}
-                                            />
-                                            Adjust question difficulty based on individual student readiness
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <div className="checkbox-group">
-                                        <label className="checkbox-label">
-                                            <input
-                                                type="checkbox"
-                                                name="enableReadinessRecommendations"
-                                                checked={formData.enableReadinessRecommendations}
-                                                onChange={handleInputChange}
-                                            />
-                                            Provide readiness-based study recommendations to students
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {formData.adjustDifficultyByReadiness && (
-                                    <div className="form-group">
-                                        <label htmlFor="minimumReadinessThreshold">Minimum Readiness Threshold (%)</label>
+                            <div className="form-group">
+                                <div className="checkbox-group">
+                                    <label className="checkbox-label">
                                         <input
-                                            type="number"
-                                            id="minimumReadinessThreshold"
-                                            name="minimumReadinessThreshold"
-                                            value={formData.minimumReadinessThreshold}
-                                            onChange={handleInputChange}
-                                            min="1"
-                                            max="100"
-                                            placeholder="e.g., 70"
+                                            type="checkbox"
+                                            disabled
+                                            style={{cursor: 'not-allowed'}}
                                         />
-                                        <small>Students below this threshold will receive easier questions</small>
-                                    </div>
-                                )}
+                                        Adjust question difficulty based on individual student readiness
+                                    </label>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="no-readiness-data">
-                                <p>No student readiness data available. Students will need to complete some practice sessions first.</p>
+
+                            <div className="form-group">
+                                <div className="checkbox-group">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            disabled
+                                            style={{cursor: 'not-allowed'}}
+                                        />
+                                        Provide readiness-based study recommendations to students
+                                    </label>
+                                </div>
                             </div>
-                        )}
+
+                            <div className="form-group">
+                                <label htmlFor="minimumReadinessThreshold">Minimum Readiness Threshold (%)</label>
+                                <input
+                                    type="text"
+                                    value="--"
+                                    disabled
+                                    style={{cursor: 'not-allowed', backgroundColor: '#f5f5f5'}}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup } from 'react-icons/bi';
 import AssignmentCreation from './AssignmentCreation';
 import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
+import { getAssignmentsByTeacher } from './TeacherDashboardService';
 import '../Assignments-new.css';
 
 const Assignments = ({ 
@@ -13,20 +14,33 @@ const Assignments = ({
 }) => {
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
     const [assignmentStats, setAssignmentStats] = useState({
-        totalAssignments: 0,
+        totalAssignments: 0, 
         activeAssignments: 0,
         totalSubmissions: 0,
         avgScore: 0,
         pendingGrading: 0
     });
     const [recentAssignments, setRecentAssignments] = useState([]);
+    const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchAssignmentData();
-    }, [actualStudentsData]); // Run when actualStudentsData changes
+        const fetchAssignments = async () => {
+            if (teacherInfo?.id) {
+                try {
+                    const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
+                    setAssignments(teacherAssignments);
+                } catch (error) {
+                    console.error('Error fetching assignments:', error);
+                    setAssignments([]);
+                }
+            }
+        };
+        
+        fetchAssignments();
+    }, [teacherInfo?.id]);
 
-    const fetchAssignmentData = async () => {
+    const fetchAssignmentData = useCallback(async () => {
         try {
             setLoading(true);
             
@@ -36,13 +50,16 @@ const Assignments = ({
             
             // Calculate realistic stats
             setAssignmentStats({
-                totalAssignments: uniqueClasses.length * 4, // 4 assignments per class
-                activeAssignments: uniqueClasses.length * 2, // 2 active per class
+                totalAssignments: assignments.length, 
+                activeAssignments: assignments.length,
                 totalSubmissions: Math.floor(totalStudents * 3.5), // Realistic submission count
                 avgScore: actualStudentsData.length > 0 ? 
                     Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) : 82,
                 pendingGrading: Math.floor(totalStudents * 0.4)
             });
+
+            console.log("teacher id is", teacherInfo?.id);
+            console.log("teacher assignment count", assignments);
 
             // Create realistic assignments based on actual classes
             const mockAssignments = uniqueClasses.flatMap((className, classIndex) => {
@@ -71,7 +88,11 @@ const Assignments = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [actualStudentsData, assignments]);
+
+    useEffect(() => {
+        fetchAssignmentData();
+    }, [fetchAssignmentData]);
 
     const handleCardClick = (cardId) => {
         console.log('Assignment card clicked:', cardId);
