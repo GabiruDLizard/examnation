@@ -10,6 +10,9 @@ import { getStudentAnswers } from './StudentDashboardService.js'; // Keep this f
 import { abilityEstimate } from '../Charts/ReadinessLogic.js';
 import ReadinessChart from '../Charts/Readiness.js';
 import StudentMyClasses from './MyClasses.js';
+import StudentClassOverview from './ClassOverview.js';
+import AssignmentOverview from './AssignmentOverview.js';
+import AssignmentQuestionPage from './AssignmentQuestionPage.js';
 
 const token = localStorage.getItem('token');
 
@@ -95,6 +98,11 @@ function StudentDashboard() {
     const [error, setError] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
+    // Class overview navigation states
+    const [selectedClass, setSelectedClass] = useState(null);
+    const [currentView, setCurrentView] = useState('main'); // 'main', 'class-overview', 'assignments', 'assignment-questions', 'progress'
+    const [selectedAssignment, setSelectedAssignment] = useState(null);
+    
     // Stats
     const [qAnswered, setQAnswered] = useState(0);
     const [correctAns, setCorrectAns] = useState(0);
@@ -109,7 +117,33 @@ function StudentDashboard() {
 
     const handleNavClick = (page) => {
         setActivePage(page);
+        setCurrentView('main');
+        setSelectedClass(null);
         setMobileMenuOpen(false); // Close mobile menu on navigation
+    };
+
+    // Class navigation handlers (similar to teacher dashboard)
+    const handleClassClick = (classItem) => {
+        console.log('Class clicked:', classItem.name);
+        setSelectedClass(classItem);
+        setCurrentView('class-overview');
+    };
+
+    const handleNavigateFromOverview = (section, data = null) => {
+        console.log('🎯 Navigating to:', section, data);
+        if (section === 'assignment-questions' && data?.assignment) {
+            setSelectedAssignment(data.assignment);
+        }
+        setCurrentView(section);
+    };
+
+    const handleBackToClasses = () => {
+        setSelectedClass(null);
+        setCurrentView('main');
+    };
+
+    const handleBackToOverview = () => {
+        setCurrentView('class-overview');
     };
 
     // Use the EXACT same useEffect pattern that worked in your old code
@@ -380,48 +414,106 @@ function StudentDashboard() {
 
     // Function to render different page content
     const renderPageContent = () => {
-        switch (activePage) {
-            case 'practice':
-                return (
-                    <div className="coming-soon">
-                        <BiBookOpen size={64} />
-                        <h2>Practice Questions</h2>
-                        <p>Practice mode coming soon...</p>
-                        <button onClick={() => navigate('/exampage')}>Go to Current Practice Page</button>
-                    </div>
-                );
-            case 'classes':
-                return <StudentMyClasses studentInfo={student} />;
-            case 'readiness':
-                return (
-                    <div className="coming-soon">
-                        <BiBullseye size={64} />
-                        <h2>Exam Readiness</h2>
-                        <p>Detailed readiness analysis coming soon...</p>
-                        <button onClick={() => navigate('/tapagestudent')}>Go to Current Analytics</button>
-                    </div>
-                );
-            case 'history':
-                return (
-                    <div className="coming-soon">
-                        <BiTime size={64} />
-                        <h2>Study History</h2>
-                        <p>Study history coming soon...</p>
-                        <button onClick={() => navigate('/fullreview')}>Go to Current Review</button>
-                    </div>
-                );
-            case 'settings':
-                return (
-                    <div className="coming-soon">
-                        <BiCog size={64} />
-                        <h2>Settings</h2>
-                        <p>Settings page coming soon...</p>
-                        <button onClick={() => navigate('/updateprofile')}>Go to Current Profile</button>
-                    </div>
-                );
-            default:
-                return renderOverviewContent();
+        // Handle class overview navigation first
+        if (selectedClass && currentView === 'class-overview') {
+            console.log('✅ Rendering StudentClassOverview');
+            return (
+                <StudentClassOverview 
+                    studentInfo={student} 
+                    selectedClass={selectedClass} 
+                    onBack={handleBackToClasses} 
+                    onNavigate={handleNavigateFromOverview}
+                />
+            );
         }
+
+        if (selectedClass && currentView === 'assignments') {
+            console.log('✅ Rendering Assignment Overview');
+            return (
+                <AssignmentOverview 
+                    selectedClass={selectedClass} 
+                    onBack={handleBackToOverview} 
+                    onNavigate={handleNavigateFromOverview}
+                />
+            );
+        }
+
+        if (selectedClass && currentView === 'assignment-questions' && selectedAssignment) {
+            console.log('✅ Rendering Assignment Questions');
+            return (
+                <AssignmentQuestionPage 
+                    assignment={selectedAssignment}
+                    selectedClass={selectedClass} 
+                    questions={selectedAssignment.questions} // Pass preloaded questions
+                    onBack={() => setCurrentView('assignments')}
+                    onComplete={() => {
+                        setCurrentView('assignments');
+                        setSelectedAssignment(null);
+                    }}
+                />
+            );
+        }
+
+        if (selectedClass && currentView === 'progress') {
+            console.log('✅ Rendering Class Progress');
+            return (
+                <div className="coming-soon">
+                    <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
+                    <h2>Class Progress - Coming Soon!</h2>
+                    <p>Progress tracking for {selectedClass.name}</p>
+                </div>
+            );
+        }
+
+        // Handle main navigation
+        if (currentView === 'main') {
+            switch (activePage) {
+                case 'practice':
+                    return (
+                        <div className="coming-soon">
+                            <BiBookOpen size={64} />
+                            <h2>Practice Questions</h2>
+                            <p>Practice mode coming soon...</p>
+                            <button onClick={() => navigate('/exampage')}>Go to Current Practice Page</button>
+                        </div>
+                    );
+                case 'classes':
+                    return <StudentMyClasses studentInfo={student} onClassClick={handleClassClick} />;
+                case 'readiness':
+                    return (
+                        <div className="coming-soon">
+                            <BiBullseye size={64} />
+                            <h2>Exam Readiness</h2>
+                            <p>Detailed readiness analysis coming soon...</p>
+                            <button onClick={() => navigate('/tapagestudent')}>Go to Current Analytics</button>
+                        </div>
+                    );
+                case 'history':
+                    return (
+                        <div className="coming-soon">
+                            <BiTime size={64} />
+                            <h2>Study History</h2>
+                            <p>Study history coming soon...</p>
+                            <button onClick={() => navigate('/fullreview')}>Go to Current Review</button>
+                        </div>
+                    );
+                case 'settings':
+                    return (
+                        <div className="coming-soon">
+                            <BiCog size={64} />
+                            <h2>Settings</h2>
+                            <p>Settings page coming soon...</p>
+                            <button onClick={() => navigate('/updateprofile')}>Go to Current Profile</button>
+                        </div>
+                    );
+                default:
+                    return renderOverviewContent();
+            }
+        }
+
+        // Fallback
+        console.log('⚠️ Fallback render - unknown view state');
+        return <div>Unknown view state</div>;
     };
 
     // Overview page content
@@ -631,8 +723,11 @@ function StudentDashboard() {
                 <div className="sd-sidebar-bottom">
                     <button
                         className="sd-nav-item logout-btn"
-                        onClick={() => {
-                            localStorage.removeItem('token');
+                        onClick={async () => {
+                            await new Promise(resolve => {
+                                localStorage.removeItem('token');
+                                resolve();
+                            });
                             navigate('/login');
                         }}
                     >

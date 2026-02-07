@@ -27,6 +27,16 @@
     object-fit: contain;
 }
 
+.navbar-logo-img {
+    height: 45px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.navbar-logo-img:hover {
+    transform: scale(1.05);
+}
+
 .logo{
     font-size: 24px;
     font-weight: bold;

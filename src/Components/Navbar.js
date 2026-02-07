@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './Navbar.css'; 
-import logo from '../Resources/PHold-logo.png';
+import logo from '../Resources/ExamNationLogo.svg';
 import { FaUserCircle } from 'react-icons/fa';
 import UserPopUp from './UserPopUp';
 
@@ -46,8 +46,7 @@ const Navbar = () => {
         <nav className="navbar">
             <div className="navbar-left">
                 <a className="logo" href="/">
-                    Examnation
-                    {/* <img src={logo}/> */}
+                    <img src={logo} alt="ExamNation" className="navbar-logo-img" />
                 </a>
             </div>
             <div className="navbar-center">

@@ -8,7 +8,7 @@ import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./
 
 // Import chart components
 import TeacherReadinessChart from "../Charts/TeacherReadinessChart";
-import { generateClassReadinessData, generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
+import { generate , generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
 
 // Import the components
 import MyClasses from "./MyClasses";
@@ -67,19 +67,17 @@ export default function TeacherDashboard() {
 
   // Navigation handlers
   const handleClassClick = (classItem) => {
-    console.log('Class clicked:', classItem.name);
     setSelectedClass(classItem);
     setCurrentView('class-overview'); // Set to class overview
   };
 
   const handleNavigateFromOverview = (section) => {
-    console.log('🎯 Navigating to:', section);
-    
     // Special case: if navigating to assignments, switch to main assignments page
     if (section === 'assignments') {
       setActivePage('assignments');     // Switch to assignments page
       setCurrentView('main');          // Go to main view
-      setSelectedClass(null);          // Clear selected class
+      // Keep the selectedClass instead of clearing it - this will pass the class context
+      // setSelectedClass(null);       // Comment out or remove this line
     } else if(section === 'analytics') {
       setActivePage('insights');
       setCurrentView('main');          // Go to analytics view
@@ -110,10 +108,8 @@ export default function TeacherDashboard() {
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
-        console.log('Starting to fetch teacher data...');
         
         const data = await getTeacherInfo();
-        console.log('Teacher data received in component:', data);
         
         setTeacherInfo(data);
         setError(null);
@@ -142,7 +138,6 @@ export default function TeacherDashboard() {
     try {
       setLoadingStudentCount(true);
       setLoadingStudentsData(true);
-      console.log('📊 Starting to calculate unique students...');
       
       const token = localStorage.getItem('token');
       if (!token) {
@@ -155,7 +150,7 @@ export default function TeacherDashboard() {
 
       // Get all classes for this teacher
       const classes = await getTeacherClasses(teacherId);
-      console.log('📚 Found classes:', classes.map(c => c.name));
+
 
       // Use a Set to track unique student IDs and Map to store student data
       const uniqueStudentIds = new Set();
@@ -194,10 +189,8 @@ export default function TeacherDashboard() {
               });
             }
             
-            console.log(`👤 Student ID ${studentId} (${studentInfo.firstName} ${studentInfo.lastName}) in class "${classItem.name}"`);
+            console.log(`👥 Class "${classItem.name}": ${studentCount} enrollments`);
           });
-          
-          console.log(`👥 Class "${classItem.name}": ${studentCount} enrollments`);
         } catch (classError) {
           console.error(`❌ Error getting students for class ${classItem.name}:`, classError);
           // Continue with other classes even if one fails
@@ -215,12 +208,6 @@ export default function TeacherDashboard() {
           }
           return b.averageScore - a.averageScore;
         });
-      
-      console.log(`📊 Summary:`);
-      console.log(`   - Total enrollments: ${totalEnrollments}`);
-      console.log(`   - Unique students: ${uniqueStudentCount}`);
-      console.log(`   - Unique student IDs: [${Array.from(uniqueStudentIds).join(', ')}]`);
-      console.log(`   - Student ranking data:`, studentsArray.map(s => `${s.name} (${s.readiness}%)`));
       
       if (totalEnrollments > uniqueStudentCount) {
         console.log(`🔄 Found ${totalEnrollments - uniqueStudentCount} duplicate enrollments (students in multiple classes)`);
@@ -245,8 +232,6 @@ export default function TeacherDashboard() {
   // Function to generate readiness chart data using the new logic
   const generateReadinessChartData = (classes, studentsData) => {
     try {
-      console.log('🎯 Generating readiness chart data with new logic...');
-      
       // Use the new chart logic
       const chartData = generateClassReadinessData(classes, studentsData, 8);
       const colors = generateClassColors(classes);
@@ -255,10 +240,6 @@ export default function TeacherDashboard() {
       setReadinessChartData(chartData);
       setClassColors(colors);
       setTeacherStats(stats);
-      
-      console.log('📊 Generated chart data:', chartData);
-      console.log('🎨 Generated colors:', colors);
-      console.log('📈 Calculated stats:', stats);
       
     } catch (error) {
       console.error('Error generating chart data:', error);
@@ -288,11 +269,8 @@ export default function TeacherDashboard() {
 
   // Function to render different page content
   const renderPageContent = () => {
-    console.log('🔍 RENDER DEBUG:', { currentView, activePage, selectedClass: selectedClass?.name });
-
     // ===== CLASS-SPECIFIC VIEWS (HIGHEST PRIORITY) =====
     if (selectedClass && currentView === 'students') {
-        console.log('✅ Rendering StudentView');
         return (
             <StudentView 
                 teacherInfo={teacherInfo}
@@ -303,7 +281,6 @@ export default function TeacherDashboard() {
     }
 
     if (selectedClass && currentView === 'class-overview') {
-        console.log('✅ Rendering ClassOverview');
         return (
             <ClassOverview 
                 teacherInfo={teacherInfo} 
@@ -315,7 +292,6 @@ export default function TeacherDashboard() {
     }
 
     if (selectedClass && currentView === 'analytics') {
-        console.log('✅ Rendering Analytics');
         return (
             <div className="coming-soon">
                 <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
@@ -326,7 +302,6 @@ export default function TeacherDashboard() {
     }
 
     if (selectedClass && currentView === 'assignments') {
-        console.log('✅ Rendering Assignments');
         return (
             <div className="coming-soon">
                 <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
@@ -337,29 +312,32 @@ export default function TeacherDashboard() {
     }
 
 
-    if (currentView === 'main') {
-        console.log('✅ Rendering main dashboard page:', activePage);
-        switch (activePage) {
-            case 'classes':
-                return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
-            case 'insights':
-                return <div className="coming-soon">Insights page coming soon</div>;
-            case 'assignments':
-                return <div className="coming-soon"><Assignments teacherInfo={teacherInfo}/></div>;
-            case 'ta':
-                return <div className="coming-soon">MY TA page coming soon...</div>;
-            case 'reports':
-                return <div className="coming-soon">Reports page coming soon...</div>;
-            case 'settings':
-                return <div className="coming-soon">Settings page coming soon...</div>;
-            default:
-                return renderOverviewContent();
-        }
+    // ===== MAIN PAGE VIEWS (LOWEST PRIORITY) =====
+    switch (activePage) {
+      case 'assignments':
+        return (
+          <Assignments
+            teacherInfo={teacherInfo}
+            actualStudentsData={actualStudentsData}
+            loadingStudentsData={loadingStudentsData}
+            onNavigate={handlePageChange}
+            onBack={() => setActivePage('overview')}
+            selectedClass={selectedClass} // Pass the selected class
+          />
+        );
+      case 'classes':
+        return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
+      case 'insights':
+        return <div className="coming-soon">Insights page coming soon</div>;
+      case 'ta':
+        return <div className="coming-soon">MY TA page coming soon...</div>;
+      case 'reports':
+        return <div className="coming-soon">Reports page coming soon...</div>;
+      case 'settings':
+        return <div className="coming-soon">Settings page coming soon...</div>;
+      default:
+        return renderOverviewContent();
     }
-
-    // ===== FALLBACK =====
-    console.log('⚠️ Fallback render - this should not happen');
-    return <div>Unknown view state</div>;
   };
 
   // Overview page content 
@@ -423,11 +401,15 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        <div className="panel panel-small">
-          <div className="panel-title">Topic Mastery</div>
+        <div className="panel panel-small" style={{ 
+          opacity: 0.7, 
+          pointerEvents: 'none',
+          position: 'relative'
+        }}>
+          <div className="panel-title" style={{ color: '#888' }}>Topic Mastery (Coming Soon)</div>
           <div className="heatmap">
             <div className="heatmap-label-column">
-              {topics.map((t) => <div key={t} className="heatmap-label">{t}</div>)}
+              {topics.map((t) => <div key={t} className="heatmap-label" style={{ color: '#aaa' }}>{t}</div>)}
             </div>
             <div className="heatmap-grid">
               {heatmap.map((row, rIdx) => (
@@ -436,7 +418,11 @@ export default function TeacherDashboard() {
                     <div
                       key={cIdx}
                       className="heatmap-cell"
-                      style={{ background: heatColor(cell) }}
+                      style={{ 
+                        background: heatColor(cell),
+                        cursor: 'not-allowed',
+                        filter: 'grayscale(50%)'
+                      }}
                       title={`${topics[rIdx]} - ${(cell*100).toFixed(0)}%`}
                     />
                   ))}
@@ -620,8 +606,11 @@ export default function TeacherDashboard() {
         <div className="td-sidebar-bottom">
           <button
             className="td-nav-item logout-btn"
-            onClick={() => {
-              localStorage.removeItem('token');
+            onClick={async () => {
+              await new Promise(resolve => {
+                localStorage.removeItem('token');
+                resolve();
+              });
               navigate('/login');
             }}
           >

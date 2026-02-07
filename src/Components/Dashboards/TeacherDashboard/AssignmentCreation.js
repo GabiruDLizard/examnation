@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
 import '../Assignments.css';
 import { getTeacherClasses, getAllEnrolledStudentInfo, createAssignmentForClass } from './TeacherDashboardService';
+import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
 
 const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
     const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
 
     // Load student readiness data on component mount
     useEffect(() => {
-        loadStudentReadinessData();
+        // loadStudentReadinessData(); // Temporarily disabled - userprogress endpoint is dead
         fetchClassData();
     }, []);
 
@@ -244,6 +245,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                 onGoToQuestions();
             }
             console.log('🧭 Callback completed');
+            
+            // Don't remove localStorage data immediately - let the question page handle it
             
         } catch (error) {
             console.error('❌ Error creating assignment:', error);

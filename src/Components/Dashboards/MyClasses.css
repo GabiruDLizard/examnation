@@ -98,7 +98,7 @@
 /* Classes Grid */
 .classes-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -141,7 +141,7 @@
 .class-actions {
   display: flex;
   gap: 0.5rem;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.2s ease;
 }
 

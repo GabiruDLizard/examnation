@@ -15,6 +15,8 @@ import AdaptiveTest from './Components/Quizzes/AdaptiveTest';
 import TestEntrance from './Components/Quizzes/TestEntrance';
 import TApageStudent from './Components/Dashboards/TAPage/TAPageStudent';
 import AssignmentQuestionCreationPage from './Components/Dashboards/TeacherDashboard/AssignmentQuestionPage';
+import AssignmentOverview from './Components/Dashboards/StudentDashboard/AssignmentOverview';
+import AssignmentQuestionPage from './Components/Dashboards/StudentDashboard/AssignmentQuestionPage';
 import ProtectedRoute from './Components/ProtectedRoute';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 function App() {
@@ -105,6 +107,16 @@ function App() {
             <Route path="/assignment-questions" element={
               <ProtectedRoute requiredRole="teacher">
                 <AssignmentQuestionCreationPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/assignment-overview/:classId" element={
+              <ProtectedRoute requiredRole="student">
+                <AssignmentOverview />
+              </ProtectedRoute>
+            } />
+            <Route path="/assignment/:assignmentId/question/:questionIndex" element={
+              <ProtectedRoute requiredRole="student">
+                <AssignmentQuestionPage />
               </ProtectedRoute>
             } />
           </Routes>

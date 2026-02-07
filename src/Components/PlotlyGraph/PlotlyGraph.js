@@ -1,68 +1,33 @@
-import React, { useEffect, useRef, useState } from "react";
-import Plotly from "plotly.js-dist";
+// TEMPORARILY DISABLED FOR MVP LAUNCH - Feb 2026
+// Competition requires faster deployment - removing graphing features
+// To restore: see PlotlyGraph.js.backup
+// 
+// Original component: Interactive Cartesian plotting with Plotly
+// Features: Click to add points, drag to move points, cartesian grid
+//
+import React from "react";
 
 const InteractiveCartesianPlot = () => {
-  const plotRef = useRef(null);
-  const [points, setPoints] = useState([]);
-
-  useEffect(() => {
-    if (!plotRef.current) return;
-
-    // Initialize trace
-    const trace = {
-      x: points.map(p => p.x),
-      y: points.map(p => p.y),
-      mode: "lines+markers",
-      type: "scatter",
-      line: { color: "red" },
-      marker: { size: 10, color: "blue" }
-    };
-
-    // Layout with Cartesian axes
-    const layout = {
-      title: "Interactive Cartesian Plane",
-      xaxis: { title: "X", range: [-10, 10], zeroline: true, showgrid: true },
-      yaxis: { title: "Y", range: [-10, 10], zeroline: true, showgrid: true },
-      width: 600,
-      height: 600,
-      dragmode: "closest", // allows dragging points
-      editable: true
-    };
-
-    // Plot
-    Plotly.newPlot(plotRef.current, [trace], layout, { responsive: true });
-
-    // Handle click to add points
-    const handleClick = (event) => {
-      const x = event.points[0].x;
-      const y = event.points[0].y;
-      setPoints(prev => [...prev, { x, y }]);
-    };
-
-    plotRef.current.on("plotly_click", handleClick);
-
-    // Handle drag: update points
-    const handleRelayout = (eventData) => {
-      if (eventData["xaxis.range[0]"]) return; // ignore axis changes
-
-      const updatedPoints = points.map((p, i) => {
-        const x = eventData[`x[${i}]`] ?? p.x;
-        const y = eventData[`y[${i}]`] ?? p.y;
-        return { x, y };
-      });
-      setPoints(updatedPoints);
-    };
-
-    plotRef.current.on("plotly_relayout", handleRelayout);
-
-    return () => {
-      if (plotRef.current) {
-        Plotly.purge(plotRef.current);
-      }
-    };
-  }, [points]);
-
-  return <div ref={plotRef} style={{ width: "100%", height: "600px" }} />;
+  return (
+    <div style={{ padding: "20px", textAlign: "center" }}>
+      <h3>📊 Graphing Feature</h3>
+      <p style={{ color: "#666", fontStyle: "italic" }}>
+        Interactive plotting temporarily unavailable.<br/>
+        Coming soon in the next update!
+      </p>
+      <div style={{ 
+        border: "2px dashed #ccc", 
+        height: "300px", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        backgroundColor: "#f9f9f9",
+        borderRadius: "8px"
+      }}>
+        <span style={{ color: "#999", fontSize: "24px" }}>📈</span>
+      </div>
+    </div>
+  );
 };
 
 export default InteractiveCartesianPlot;

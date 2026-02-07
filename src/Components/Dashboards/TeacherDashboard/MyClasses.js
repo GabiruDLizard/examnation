@@ -281,8 +281,8 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
                 </div>
                 
                 <div className="class-content">
-                  <h3 className="class-name">{classItem.name}</h3>
-                  <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
+                  <h3 className="class-name"><b>{classItem.name}</b></h3>
+                  <p className="class-grade"><b>{classItem.grade} • {classItem.subject}</b></p>
                   
                   <div className="class-stats-compact">
                     <div className="stat-compact">
@@ -342,8 +342,8 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
                 
                 <div className="class-content">
                   <div className="class-info-section">
-                    <h3 className="class-name">{classItem.name}</h3>
-                    <p className="class-grade">{classItem.grade} • {classItem.subject}</p>
+                    <h3 className="class-name"><b>{classItem.name}</b></h3>
+                    <p className="class-grade"><b>{classItem.grade} • {classItem.subject}</b></p>
                     
                     <div className="class-details-expanded">
                       <div className="detail-item">

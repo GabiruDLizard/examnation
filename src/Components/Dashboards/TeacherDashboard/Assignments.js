@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup } from 'react-icons/bi';
 import AssignmentCreation from './AssignmentCreation';
 import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
+import ManageAssignment from './ManageAssignment';
 import { getAssignmentsByTeacher } from './TeacherDashboardService';
 import '../Assignments-new.css';
 
@@ -10,7 +11,8 @@ const Assignments = ({
     actualStudentsData = [], 
     loadingStudentsData = false, 
     onNavigate, 
-    onBack 
+    onBack,
+    selectedClass = null // Add this new prop
 }) => {
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
     const [assignmentStats, setAssignmentStats] = useState({
@@ -30,6 +32,7 @@ const Assignments = ({
                 try {
                     const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
                     setAssignments(teacherAssignments);
+                    console.log('Fetched assignments:', teacherAssignments); // Log the actual data
                 } catch (error) {
                     console.error('Error fetching assignments:', error);
                     setAssignments([]);
@@ -40,62 +43,43 @@ const Assignments = ({
         fetchAssignments();
     }, [teacherInfo?.id]);
 
-    const fetchAssignmentData = useCallback(async () => {
-        try {
-            setLoading(true);
-            
-            // Use real context data when available
-            const totalStudents = actualStudentsData.length;
-            const uniqueClasses = Array.from(new Set(actualStudentsData.map(s => s.className)));
-            
-            // Calculate realistic stats
-            setAssignmentStats({
-                totalAssignments: assignments.length, 
-                activeAssignments: assignments.length,
-                totalSubmissions: Math.floor(totalStudents * 3.5), // Realistic submission count
-                avgScore: actualStudentsData.length > 0 ? 
-                    Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) : 82,
-                pendingGrading: Math.floor(totalStudents * 0.4)
-            });
-
-            console.log("teacher id is", teacherInfo?.id);
-            console.log("teacher assignment count", assignments);
-
-            // Create realistic assignments based on actual classes
-            const mockAssignments = uniqueClasses.flatMap((className, classIndex) => {
-                const studentsInClass = actualStudentsData.filter(s => s.className === className);
-                return Array.from({ length: 3 }, (_, index) => ({
-                    id: classIndex * 10 + index + 1,
-                    title: `${className} - ${['Quiz', 'Test', 'Practice'][index]} ${index + 1}`,
-                    className: className,
-                    type: ['quiz', 'test', 'practice'][index],
-                    dueDate: new Date(Date.now() + (classIndex + index + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    createdDate: new Date(Date.now() - (classIndex + index + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    submissions: Math.floor(studentsInClass.length * (0.6 + Math.random() * 0.4)),
-                    totalStudents: studentsInClass.length,
-                    avgScore: studentsInClass.length > 0 ? 
-                        Math.round(studentsInClass.reduce((sum, s) => sum + s.readiness, 0) / studentsInClass.length) + (Math.random() * 20 - 10) : 0,
-                    status: ['active', 'grading', 'completed'][index % 3],
-                    questions: 10 + index * 5,
-                    timeLimit: (15 + index * 15) // minutes
-                }));
-            });
-
-            setRecentAssignments(mockAssignments.slice(0, 6));
-            
-        } catch (error) {
-            console.error('Error fetching assignment data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [actualStudentsData, assignments]);
+    // Add this useEffect to log when assignments state actually updates
+    useEffect(() => {
+        console.log('Assignments state updated:', assignments);
+    }, [assignments]);
 
     useEffect(() => {
-        fetchAssignmentData();
-    }, [fetchAssignmentData]);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                
+                // Use real context data when available
+                const totalStudents = actualStudentsData.length;
+                
+                // Calculate realistic stats
+                setAssignmentStats({
+                    totalAssignments: assignments.length, 
+                    activeAssignments: assignments.length,
+                    totalSubmissions: 0, // Realistic submission count
+                    avgScore: actualStudentsData.length > 0 ? 
+                        Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) : 82,
+                    pendingGrading: Math.floor(totalStudents * 0.4)
+                });
+
+                // Use real assignments instead of mock data
+                setRecentAssignments(assignments.slice(0, 6));
+                
+            } catch (error) {
+                console.error('Error fetching assignment data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [teacherInfo?.id, assignments]); // Add assignments as dependency
 
     const handleCardClick = (cardId) => {
-        console.log('Assignment card clicked:', cardId);
         setCurrentView(cardId);
     };
 
@@ -179,7 +163,22 @@ const Assignments = ({
     if (currentView === 'create') {
         return (
             <div className="assignments-dashboard">
-                <AssignmentCreation onBack={handleBackToDashboard} onGoToQuestions={handleGoToQuestions} />
+                <AssignmentCreation 
+                    onBack={handleBackToDashboard} 
+                    onGoToQuestions={handleGoToQuestions}
+                    selectedClass={selectedClass} // Pass selected class
+                />
+            </div>
+        );
+    }
+
+    if(currentView === 'manage') {
+        return (
+            <div className="assignments-dashboard">
+                <ManageAssignment 
+                    onBack={handleBackToDashboard}
+                    selectedClass={selectedClass} // Pass selected class
+                />
             </div>
         );
     }
@@ -187,7 +186,10 @@ const Assignments = ({
     if (currentView === 'questions') {
         return (
             <div className="assignments-dashboard">
-                <AssignmentQuestionCreationPage onBack={handleBackToDashboard} />
+                <AssignmentQuestionCreationPage 
+                    onBack={handleBackToDashboard}
+                    selectedClass={selectedClass} // Pass selected class
+                />
             </div>
         );
     }

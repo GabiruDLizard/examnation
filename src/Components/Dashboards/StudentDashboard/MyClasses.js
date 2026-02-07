@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl, BiTrendingUp, BiBullseye } from "react-icons/bi";
 import "../MyClasses.css";
-import { getStudentClassesWithDetails } from './StudentDashboardService.js';
+import { getStudentClassesWithDetails, getAssignmentsForClass } from './StudentDashboardService.js';
 
-export default function StudentMyClasses({ studentInfo }) {
+export default function StudentMyClasses({ studentInfo, onClassClick }) {
   const [classesData, setClassesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +33,36 @@ export default function StudentMyClasses({ studentInfo }) {
       
       console.log('Classes with details received:', classesWithDetails);
 
-      setClassesData(classesWithDetails);
+      // Now fetch assignments for each class
+      const classesWithAssignments = await Promise.all(
+        classesWithDetails.map(async (classItem) => {
+          try {
+            console.log(`Fetching assignments for class ${classItem.classId}:`, classItem.name);
+            const assignments = await getAssignmentsForClass(classItem.classId);
+            
+            console.log(`Assignments for class ${classItem.name}:`, assignments);
+            
+            return {
+              ...classItem,
+              assignmentIds: assignments.map(assignment => assignment.id),
+              actualTotalAssignments: assignments.length,
+              assignments: assignments
+            };
+          } catch (error) {
+            console.error(`Error fetching assignments for class ${classItem.classId}:`, error);
+            return {
+              ...classItem,
+              assignmentIds: [],
+              actualTotalAssignments: 0,
+              assignments: []
+            };
+          }
+        })
+      );
+
+      console.log('Classes with assignment data:', classesWithAssignments);
+
+      setClassesData(classesWithAssignments);
       setError(null);
       
     } catch (error) {
@@ -47,7 +76,9 @@ export default function StudentMyClasses({ studentInfo }) {
 
   const handleClassClick = (classItem) => {
     console.log('Clicked on class:', classItem.name);
-    // Could navigate to class detail page or practice for that class
+    if (onClassClick) {
+      onClassClick(classItem);
+    }
   };
 
   // Loading state
@@ -68,7 +99,7 @@ export default function StudentMyClasses({ studentInfo }) {
   const avgReadiness = totalClasses > 0 
     ? Math.round(classesData.reduce((sum, cls) => sum + (cls.avgReadiness || 0), 0) / totalClasses)
     : 0;
-  const totalAssignments = classesData.reduce((sum, cls) => sum + (cls.totalAssignments || 0), 0);
+  const totalAssignments = classesData.reduce((sum, cls) => sum + (cls.actualTotalAssignments || 0), 0);
 
   // Render class card in grid view (matching teacher dashboard)
   const renderClassCard = (classItem) => (
@@ -120,12 +151,12 @@ export default function StudentMyClasses({ studentInfo }) {
               <div 
                 className="metric-fill" 
                 style={{ 
-                  width: `${classItem.totalAssignments > 0 ? (classItem.completedAssignments / classItem.totalAssignments) * 100 : 0}%`, 
+                  width: `${classItem.actualTotalAssignments > 0 ? (classItem.completedAssignments / classItem.actualTotalAssignments) * 100 : 0}%`, 
                   backgroundColor: '#10b981' 
                 }}
               ></div>
             </div>
-            <span className="metric-value">{classItem.completedAssignments}/{classItem.totalAssignments}</span>
+            <span className="metric-value">{classItem.completedAssignments}/{classItem.actualTotalAssignments}</span>
           </div>
         </div>
       </div>
@@ -167,7 +198,7 @@ export default function StudentMyClasses({ studentInfo }) {
           <span className="metric-value">{classItem.avgReadiness}%</span>
         </div>
       </td>
-      <td>{classItem.completedAssignments}/{classItem.totalAssignments}</td>
+      <td>{classItem.completedAssignments}/{classItem.actualTotalAssignments}</td>
       <td>
         <span className={`status ${classItem.status.toLowerCase()}`}>
           {classItem.status}

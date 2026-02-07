@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import mainPreview from '../Resources/undraw_online-test_cqv0.svg';
 import dashboardPreview from '../Resources/undraw_app-benchmarks_ls0m.svg';
 import teacherDashboardPreview from '../Resources/Landing/TeacherDashboardPreview.png';
+import logo from '../Resources/ExamNationLogo.svg';
 import { motion } from "framer-motion";
 
 export default function ExamNationLanding() {
@@ -59,6 +60,7 @@ export default function ExamNationLanding() {
                 <div className="navbar-container">
                     <div className="navbar-brand">
                         <h2>ExamNation</h2>
+                        <span className="brand-tagline">Elevate Your Learning</span>
                     </div>
                     <div className="navbar-links">
                         <button className="navbar-signup" onClick={() => scrollToSection('features')}>Features</button>
@@ -143,8 +145,28 @@ export default function ExamNationLanding() {
                 </div>
             </section>
             <section className="practice-preview">
-                <div className="preview-subsection-L">
-                    
+                <div className="practice-content">
+                    <h2>Smart Practice Engine</h2>
+                    <div className="practice-features">
+                        <div className="practice-feature">
+                            <div className="feature-icon">📚</div>
+                            <h3>Adaptive Questions</h3>
+                            <p>AI selects questions based on your current skill level and learning progress.</p>
+                        </div>
+                        <div className="practice-feature">
+                            <div className="feature-icon">🎯</div>
+                            <h3>Instant Feedback</h3>
+                            <p>Get detailed explanations and step-by-step solutions immediately after each answer.</p>
+                        </div>
+                        <div className="practice-feature">
+                            <div className="feature-icon">📊</div>
+                            <h3>Progress Analytics</h3>
+                            <p>Track your improvement with detailed statistics and performance insights.</p>
+                        </div>
+                    </div>
+                    <div className="practice-cta">
+                        <button className="primary" onClick={handleGetStarted}>Start Practicing Now</button>
+                    </div>
                 </div>
             </section>
 
@@ -169,21 +191,52 @@ export default function ExamNationLanding() {
 
             {/* Testimonials - Add id for about section */}
             <section id="about" className="testimonials">
-                <h2>Trusted by Students & Schools</h2>
+                <h2>Trusted by Students & Schools Across The Caribbean</h2>
                 <div className="testimonial-grid">
                     <div className="testimonial">
-                        <p>
-                            "ExamNation helped me boost my Math grade from a C to an A in
-                            under 2 months!"
-                        </p>
-                        <span>- BGCSE Student</span>
+                        <div className="testimonial-content">
+                            <p>
+                                "ExamNation helped me boost my Math grade from a C to an A in
+                                under 2 months! The adaptive questions really targeted my weak areas."
+                            </p>
+                        </div>
+                        <div className="testimonial-author">
+                            <div className="author-avatar">👨‍🎓</div>
+                            <div className="author-info">
+                                <span className="author-name">Marcus Johnson</span>
+                                <span className="author-role">BGCSE Student, Nassau</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="testimonial">
-                        <p>
-                            "As a teacher, I love how easy it is to track student readiness by
-                            topic. Game changer!"
-                        </p>
-                        <span>- High School Teacher</span>
+                        <div className="testimonial-content">
+                            <p>
+                                "As a teacher, I love how easy it is to track student readiness by
+                                topic. The insights help me focus my lessons where they're needed most."
+                            </p>
+                        </div>
+                        <div className="testimonial-author">
+                            <div className="author-avatar">👩‍🏫</div>
+                            <div className="author-info">
+                                <span className="author-name">Mrs. Thompson</span>
+                                <span className="author-role">Math Teacher, Freeport High</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="testimonial">
+                        <div className="testimonial-content">
+                            <p>
+                                "The step-by-step explanations are incredible. My daughter finally
+                                understands algebra concepts that confused her for months!"
+                            </p>
+                        </div>
+                        <div className="testimonial-author">
+                            <div className="author-avatar">👩‍💼</div>
+                            <div className="author-info">
+                                <span className="author-name">Sarah Williams</span>
+                                <span className="author-role">Parent, Grand Bahama</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

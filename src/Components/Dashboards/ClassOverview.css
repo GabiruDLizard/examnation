@@ -226,6 +226,178 @@
     color: #64748b;
 }
 
+/* Recent Assignments Section */
+.recent-assignments {
+    margin-bottom: 40px;
+}
+
+.recent-assignments h2 {
+    margin-bottom: 20px;
+    color: #1e293b;
+    font-size: 20px;
+}
+
+.assignments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.assignment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    min-height: 48px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+}
+
+.assignment-icon {
+    width: 32px;
+    height: 32px;
+    background: #3b82f6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.assignment-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.assignment-content h4 {
+    margin: 0 0 2px;
+    color: #1e293b;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.assignment-content p {
+    margin: 0 0 4px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.1;
+}
+
+.assignment-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.assignment-status.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.assignment-status.completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.assignment-btn {
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.assignment-btn:hover {
+    background: #2563eb;
+}
+
+.view-all-assignments {
+    width: 100%;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #3b82f6;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.view-all-assignments:hover {
+    background: #f1f5f9;
+}
+
+/* Study Recommendations Section */
+.study-recommendations {
+    margin-bottom: 40px;
+}
+
+.study-recommendations h2 {
+    margin-bottom: 20px;
+    color: #1e293b;
+    font-size: 20px;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.recommendation-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    text-align: center;
+}
+
+.recommendation-icon {
+    font-size: 32px;
+    color: #3b82f6;
+    margin-bottom: 12px;
+}
+
+.recommendation-card h4 {
+    margin: 0 0 8px;
+    color: #1e293b;
+    font-size: 16px;
+}
+
+.recommendation-card p {
+    margin: 0 0 16px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.recommendation-card button {
+    width: 100%;
+    padding: 10px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.recommendation-card button:hover {
+    background: #2563eb;
+}
+
 /* Responsive Design */
 @media (max-width: 900px) {
   .quick-stats {
@@ -233,6 +405,10 @@
   }
   
   .cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .recommendations-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -246,5 +422,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+  
+  .assignment-item {
+    flex-direction: column;
+    text-align: center;
   }
 }

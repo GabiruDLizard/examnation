@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
+import { createCompleteAssignment } from './AssignmentService';
 import '../Assignments.css';
 
 const AssignmentQuestionCreationPage = ({ onBack }) => {
@@ -9,6 +10,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         difficultyLevel: 1,
         answerType: 'Short Answer',
         multipleChoiceOptions: [],
+        points: 1.0
     });
     const [questionsArray, setQuestionsArray] = useState([]); // Store all questions
     
@@ -40,6 +42,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         const newQuestion = {
             id: Date.now(), // Simple ID generation
             ...formData,
+            subject: assignmentData?.subject || 'General',
             createdAt: new Date().toISOString()
         };
         
@@ -63,6 +66,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                 finalQuestionsArray.push({
                     id: Date.now(),
                     ...formData,
+                    subject: assignmentData?.subject || 'General',
                     createdAt: new Date().toISOString()
                 });
             }
@@ -83,11 +87,9 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             
             console.log('Complete assignment for submission:', completeAssignment);
             
-            // Here you would send completeAssignment to your backend API
-            // await createAssignment(completeAssignment);
-            
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Call the real API to create complete assignment with questions
+            const result = await createCompleteAssignment(assignmentData, finalQuestionsArray);
+            console.log('✅ Assignment created successfully:', result);
             
             // Clear localStorage
             localStorage.removeItem('currentAssignmentData');
@@ -114,6 +116,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             difficultyLevel: 1,
             answerType: 'Short Answer',
             multipleChoiceOptions: [],
+            points: 1.0
         });
     };
 
@@ -203,6 +206,18 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                                 </select>
                             </div>
 
+                            <div className="form-group">
+                                <label>Points</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    min="0.1"
+                                    value={formData.points}
+                                    onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
+                                    placeholder="Question points value"
+                                />
+                            </div>
+
                             {formData.answerType === 'Multiple Choice' && (
                                 <div className="form-group">
                                     <label>Multiple Choice Options</label>
@@ -231,11 +246,12 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                                 </div>
                             )}
                             <div className="form-group">
-                                <label>Solution</label>
+                                <label>Solution *</label>
                                 <textarea
                                     value={formData.solution || ''}
                                     onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
                                     placeholder='Enter the solution or answer here...'
+                                    required
                                 />
                                 <label>Answer Breakdown (optional)</label>
                                 <textarea

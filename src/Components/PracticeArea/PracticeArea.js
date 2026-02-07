@@ -167,6 +167,12 @@ const PracticeArea = () => {
           <button onClick={goToPrevious} disabled={loading}>Previous question</button>
           <div className="timer">Time Elapsed: {formatTime(elapsedTime)}</div>
           <button onClick={goToNext} disabled={loading}>Next question</button>
+          <button 
+            onClick={() => navigate('/studentdashboard')} 
+            title="Back to dashboard"
+          >
+            ←
+          </button>
         </div>
         <div className="practiceareagrid">
           <div className= "questionCard">

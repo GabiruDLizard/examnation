@@ -85,9 +85,9 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
             icon: <BiBarChart size={32} />,
             color: '#10b981',
             stats: [
-                { label: 'Performance Trend', value: '+5.2%' },
-                { label: 'Completion Rate', value: '87%' },
-                { label: 'Engagement Score', value: '92%' }
+                { label: 'Performance Trend', value: '--%' },
+                { label: 'Completion Rate', value: '--%' },
+                { label: 'Engagement Score', value: '--%' }
             ],
             action: 'View Analytics'
         },
@@ -99,7 +99,7 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
             color: '#f59e0b',
             stats: [
                 { label: 'Active Assignments', value: classStats.activeAssignments },
-                { label: 'Pending Reviews', value: Math.floor(Math.random() * 15 + 5) },
+                { label: 'Pending Reviews', value: 0 },
                 { label: 'Avg. Score', value: '84%' }
             ],
             action: 'Manage Assignments'
@@ -221,35 +221,39 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                 </div>
             </div>
 
-            {/* Recent Activity Section */}
-            <div className="recent-activity">
-                <h3>Recent Activity</h3>
+            {/* Recent Activity Section - Deactivated */}
+            <div className="recent-activity" style={{ 
+                opacity: 0.7, 
+                pointerEvents: 'none',
+                position: 'relative'
+            }}>
+                <h3 style={{ color: '#888' }}>Recent Activity (Coming Soon)</h3>
                 <div className="activity-list">
-                    <div className="activity-item">
-                        <div className="activity-icon">
+                    <div className="activity-item" style={{ cursor: 'not-allowed' }}>
+                        <div className="activity-icon" style={{ color: '#aaa' }}>
                             <BiUser />
                         </div>
                         <div className="activity-content">
-                            <p><strong>3 new students</strong> enrolled in the class</p>
-                            <span className="activity-time">2 hours ago</span>
+                            <p style={{ color: '#777' }}><strong>-- new students</strong> enrolled in the class</p>
+                            <span className="activity-time" style={{ color: '#999' }}>-- hours ago</span>
                         </div>
                     </div>
-                    <div className="activity-item">
-                        <div className="activity-icon">
+                    <div className="activity-item" style={{ cursor: 'not-allowed' }}>
+                        <div className="activity-icon" style={{ color: '#aaa' }}>
                             <BiBookOpen />
                         </div>
                         <div className="activity-content">
-                            <p><strong>Assignment "Chapter 5 Quiz"</strong> was submitted by 12 students</p>
-                            <span className="activity-time">1 day ago</span>
+                            <p style={{ color: '#777' }}><strong>Assignment "--"</strong> was submitted by -- students</p>
+                            <span className="activity-time" style={{ color: '#999' }}>-- day ago</span>
                         </div>
                     </div>
-                    <div className="activity-item">
-                        <div className="activity-icon">
+                    <div className="activity-item" style={{ cursor: 'not-allowed' }}>
+                        <div className="activity-icon" style={{ color: '#aaa' }}>
                             <BiTrendingUp />
                         </div>
                         <div className="activity-content">
-                            <p><strong>Class average readiness</strong> improved by 5.2%</p>
-                            <span className="activity-time">3 days ago</span>
+                            <p style={{ color: '#777' }}><strong>Class average readiness</strong> improved by --%</p>
+                            <span className="activity-time" style={{ color: '#999' }}>-- days ago</span>
                         </div>
                     </div>
                 </div>

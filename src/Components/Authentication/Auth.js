@@ -96,10 +96,25 @@ const Auth = () => {
 
     if(!token) {
         return (
-            <div className="auth-container">
-                <div className="logo">
-                    <img src={logo} alt="Logo" onClick={() => navigate('/')} />
+            <>
+                {/* Floating Background */}
+                <div className="auth-page-wrapper">
+                    <div className="auth-floating-bg">
+                        <div className="auth-circle auth-circle1"></div>
+                        <div className="auth-circle auth-circle2"></div>
+                        <div className="auth-circle auth-circle3"></div>
+                        <div className="auth-circle auth-circle4"></div>
+                        <div className="auth-circle auth-circle5"></div>
+                        <div className="auth-main-orb"></div>
+                    </div>
                 </div>
+
+                {/* Content Area */}
+                <div className="auth-content-area">
+                    <div className="auth-container">
+                        <div className="logo">
+                            <img src={logo} alt="Logo" onClick={() => navigate('/')} />
+                        </div>
                 <form onSubmit={handleSubmit}>
                 {!isLogin ? (
                         <>
@@ -204,13 +219,30 @@ const Auth = () => {
                     </div>
                 </form>
             </div>
-        );
+        </div>
+    </>
+    );
     } else {
         return(
-            <div className="auth-container">
-                <div className="logo">
-                    <img src={logo} alt="Logo"/>
+            <>
+                {/* Floating Background */}
+                <div className="auth-page-wrapper">
+                    <div className="auth-floating-bg">
+                        <div className="auth-circle auth-circle1"></div>
+                        <div className="auth-circle auth-circle2"></div>
+                        <div className="auth-circle auth-circle3"></div>
+                        <div className="auth-circle auth-circle4"></div>
+                        <div className="auth-circle auth-circle5"></div>
+                        <div className="auth-main-orb"></div>
+                    </div>
                 </div>
+
+                {/* Content Area */}
+                <div className="auth-content-area">
+                    <div className="auth-container">
+                        <div className="logo">
+                            <img src={logo} alt="Logo"/>
+                        </div>
                 <div className="already-logged-in">
                     <h2>You are already logged in as the user below</h2>
                     <FaUserCircle size={20}/> {user ? user.username : 'User'}
@@ -242,6 +274,8 @@ const Auth = () => {
                     }}>Go to Dashboard</button>
                 </div>
             </div>
+        </div>
+    </>
         );
     }
 }

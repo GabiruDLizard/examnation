@@ -38,14 +38,17 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
 
             // Format question data to match API expectations
             const formattedQuestionData = {
-                subject: questionData.subject || 'General',
                 questionText: questionData.questionText,
-                options: questionData.answerType === 'Multiple Choice' ? questionData.multipleChoiceOptions : null,
+                subject: questionData.subject || 'General',
                 correctAnswer: questionData.solution,
-                answerBreakdown: questionData.answerBreakdown,
+                options: questionData.answerType === 'Multiple Choice' ? (questionData.multipleChoiceOptions || []) : [],
                 difficultyLevel: mapDifficultyLevel(questionData.difficultyLevel),
+                answerBreakdown: questionData.answerBreakdown || null,
+                solutionSteps: null,
                 figureDescription: questionData.imageDescription || null,
-                figureBlobUrl: figureBlobUrl
+                figureBlobUrl: figureBlobUrl || null,
+                createdAt: new Date().toISOString(),
+                subjectId: null
             };
 
             const question = await createQuestion(formattedQuestionData);
@@ -55,10 +58,19 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
 
         // Step 3: Link questions to assignment
         console.log('Step 3: Linking questions to assignment...');
+        console.log('🔍 Assignment ID to link:', createdAssignment.id);
+        
+        // Validate assignment ID before proceeding
+        if (!createdAssignment.id) {
+            console.error('❌ No valid assignment ID found:', createdAssignment);
+            throw new Error('Assignment was created but returned no valid ID');
+        }
+        
         const assignmentQuestions = [];
         
         for (let i = 0; i < createdQuestions.length; i++) {
             const question = createdQuestions[i];
+            console.log(`🔗 Linking question ${question.id} to assignment ${createdAssignment.id}`);
             const assignmentQuestion = await createAssignmentQuestion({
                 assignmentId: createdAssignment.id,
                 questionId: question.id,

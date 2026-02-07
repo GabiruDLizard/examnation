@@ -135,8 +135,6 @@ export const getTeacherInfo = async () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userId = payload.sub;
 
-        console.log('Fetching teacher info for userId:', userId); // Debug log
-
         const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
             method: 'GET',
             headers: {
@@ -150,7 +148,6 @@ export const getTeacherInfo = async () => {
         }
 
         const teacherData = await response.json();
-        console.log('Teacher data received:', teacherData); // Debug log
         return teacherData;
     } catch (error) {
         console.error('Error fetching teacher info:', error);
@@ -437,7 +434,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
     try {
         // Get enrolled students using the correct endpoint from your controller
-        console.log(`Fetching enrollments for class ${classId}...`);
         const response = await fetch(`${API_BASE_URL}/classenrollment/class/${classId}`, {
             method: 'GET',
             headers: {
@@ -448,7 +444,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
         if (!response.ok) {
             if (response.status === 404) {
-                console.log(`No enrollments found for class ${classId}`);
                 return []; // Return empty array if no enrollments
             }
             const errorText = await response.text();
@@ -456,7 +451,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         }
 
         const enrollments = await response.json();
-        console.log(`Enrollments received for class ${classId}:`, enrollments);
 
         // Check if enrollments is an array
         if (!Array.isArray(enrollments)) {
@@ -465,7 +459,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         }
 
         if (enrollments.length === 0) {
-            console.log(`No students enrolled in class ${classId}`);
             return [];
         }
         
@@ -480,8 +473,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
                     return null;
                 }
 
-                console.log(`Fetching details for student ${studentId}...`);
-                
                 // Get student info
                 const studentInfoResponse = await fetch(`${API_BASE_URL}/user/${studentId}`, {
                     method: 'GET',
@@ -527,7 +518,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         
         // Filter out null results
         const validStudentDetails = studentDetails.filter(detail => detail !== null);
-        console.log(`Successfully fetched ${validStudentDetails.length} student details for class ${classId}`);
         
         return validStudentDetails;
         
@@ -541,6 +531,7 @@ export const createAssignmentForClass = async (assignmentData) => {
     if (!token) {
         throw new Error('No authentication token found');
     }
+
     try {
         const response = await fetch(`${API_BASE_URL}/assignment`, {
             method: 'POST',
@@ -553,6 +544,12 @@ export const createAssignmentForClass = async (assignmentData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('❌ Assignment creation failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorBody: errorText,
+                sentData: JSON.stringify(assignmentData, null, 2)
+            });
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
@@ -704,7 +701,7 @@ export const uploadQuestionImage = async (imageFile) => {
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         const result = await response.json();
-        return result.fileUrl; // Assuming the API returns the URL in fileUrl property
+        return result.blobUrl; // API returns blobUrl, not fileUrl
     } catch (error) {
         console.error('Error uploading question image:', error);
         throw error;
@@ -718,18 +715,35 @@ export const createQuestion = async (questionData) => {
         throw new Error('No authentication token found');
     }
 
+    // Fix null values that cause PostgreSQL parameter errors
+    const sanitizedData = {
+        ...questionData,
+        answerBreakdown: questionData.answerBreakdown || "",
+        solutionSteps: questionData.solutionSteps || "",
+        figureDescription: questionData.figureDescription || "",
+        figureBlobUrl: questionData.figureBlobUrl || "",
+        subjectId: questionData.subjectId || null
+    };
+
     try {
-        const response = await fetch(`${API_BASE_URL_TEST}/question`, {
+        const response = await fetch(`${API_BASE_URL}/question`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(questionData)
+            body: JSON.stringify(sanitizedData)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('❌ Question creation failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorBody: errorText,
+                sentData: JSON.stringify(sanitizedData, null, 2)
+            });
+            
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
@@ -748,22 +762,30 @@ export const createAssignmentQuestion = async (linkData) => {
         throw new Error('No authentication token found');
     }
 
+    const requestBody = {
+        assignmentId: parseInt(linkData.assignmentId),
+        questionId: parseInt(linkData.questionId),
+        points: parseFloat(linkData.points || 1.0)
+    };
+
     try {
-        const response = await fetch(`${API_BASE_URL_TEST}/assignmentquestion`, {
+        const response = await fetch(`${API_BASE_URL}/assignmentquestion`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                assignmentId: linkData.assignmentId,
-                questionId: linkData.questionId,
-                points: linkData.points || 1.0
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('❌ Assignment question link failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorBody: errorText,
+                sentData: JSON.stringify(requestBody, null, 2)
+            });
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
@@ -771,6 +793,178 @@ export const createAssignmentQuestion = async (linkData) => {
         return createdLink;
     } catch (error) {
         console.error('Error creating assignment question link:', error);
+        throw error;
+    }
+};
+
+// Get questions linked to an assignment
+export const getAssignmentQuestions = async (assignmentId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignmentquestion/assignment/${assignmentId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return []; // Return empty array if no questions found
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const assignmentQuestions = await response.json();
+        return assignmentQuestions;
+    } catch (error) {
+        console.error('Error fetching assignment questions:', error);
+        return []; // Return empty array instead of throwing
+    }
+};
+
+// Get full assignment details with questions
+export const getAssignmentWithQuestions = async (assignmentId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        // Get the assignment details
+        const assignment = await getAssignmentsById(assignmentId);
+        if (!assignment) {
+            return null;
+        }
+
+        // Get the questions linked to this assignment
+        const assignmentQuestions = await getAssignmentQuestions(assignmentId);
+        
+        // If there are linked questions, get the full question details
+        const questionsWithDetails = await Promise.all(
+            assignmentQuestions.map(async (aq) => {
+                try {
+                    const questionResponse = await fetch(`${API_BASE_URL}/question/${aq.questionId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (questionResponse.ok) {
+                        const questionDetail = await questionResponse.json();
+                        return {
+                            ...questionDetail,
+                            points: aq.points // Include the points from assignment-question link
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error(`Error fetching question ${aq.questionId}:`, error);
+                    return null;
+                }
+            })
+        );
+
+        // Filter out failed question fetches
+        const validQuestions = questionsWithDetails.filter(q => q !== null);
+
+        return {
+            ...assignment,
+            questions: validQuestions
+        };
+    } catch (error) {
+        console.error('Error fetching assignment with questions:', error);
+        return null;
+    }
+};
+
+// Get assignments for class with questions included
+export const getAssignmentsForClassWithQuestions = async (classId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    try {
+        // Get all assignments for the class
+        const assignments = await getAssignmentsForClass(classId);
+        
+        // Get questions for each assignment
+        const assignmentsWithQuestions = await Promise.all(
+            assignments.map(async (assignment) => {
+                const assignmentQuestions = await getAssignmentQuestions(assignment.id);
+                
+                // Get full question details
+                const questionsWithDetails = await Promise.all(
+                    assignmentQuestions.map(async (aq) => {
+                        try {
+                            const questionResponse = await fetch(`${API_BASE_URL}/question/${aq.questionId}`, {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (questionResponse.ok) {
+                                const questionDetail = await questionResponse.json();
+                                return {
+                                    ...questionDetail,
+                                    points: aq.points
+                                };
+                            }
+                            return null;
+                        } catch (error) {
+                            console.error(`Error fetching question ${aq.questionId}:`, error);
+                            return null;
+                        }
+                    })
+                );
+
+                const validQuestions = questionsWithDetails.filter(q => q !== null);
+
+                return {
+                    ...assignment,
+                    questions: validQuestions,
+                    totalQuestions: validQuestions.length,
+                    totalPoints: validQuestions.reduce((sum, q) => sum + (q.points || 0), 0)
+                };
+            })
+        );
+
+        return assignmentsWithQuestions;
+    } catch (error) {
+        console.error('Error fetching assignments with questions:', error);
+        return [];
+    }
+};
+
+export const getStudentReadiness = async (studentId, classId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/Readiness/student/${studentId}/class/${classId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const readinessData = await response.json();
+        return readinessData;
+    } catch (error) {
+        console.error('Error fetching student readiness:', error);
         throw error;
     }
 };
