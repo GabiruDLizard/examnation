@@ -6,9 +6,11 @@ import dashboardPreview from '../Resources/undraw_app-benchmarks_ls0m.svg';
 import teacherDashboardPreview from '../Resources/Landing/TeacherDashboardPreview.png';
 import logo from '../Resources/ExamNationLogo.svg';
 import { motion } from "framer-motion";
+import { BiMenu, BiX } from 'react-icons/bi';
 
 export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
     
     // Add the scrollToSection function
@@ -20,6 +22,11 @@ export default function ExamNationLanding() {
                 block: 'start'
             });
         }
+        setMobileMenuOpen(false); // Close mobile menu after navigation
+    };
+
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen(!mobileMenuOpen);
     };
     
     const handleLogin = () => {
@@ -62,14 +69,37 @@ export default function ExamNationLanding() {
                         <h2>ExamNation</h2>
                         <span className="brand-tagline">Elevate Your Learning</span>
                     </div>
-                    <div className="navbar-links">
+                    
+                    {/* Desktop Navigation */}
+                    <div className="navbar-links desktop-nav">
                         <button className="navbar-signup" onClick={() => scrollToSection('features')}>Features</button>
                         <button className="navbar-signup" onClick={() => scrollToSection('about')}>About</button>
                         <button className="navbar-signup" onClick={() => scrollToSection('contact')}>Contact</button>
                         <button className="navbar-signup" onClick={handleLogin}>Login</button>
                         <button className="navbar-signup" onClick={handleRegister}>Sign Up</button>
                     </div>
+
+                    {/* Mobile Hamburger Button */}
+                    <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
+                        {mobileMenuOpen ? <BiX size={24} /> : <BiMenu size={24} />}
+                    </button>
                 </div>
+
+                {/* Mobile Dropdown Menu */}
+                {mobileMenuOpen && (
+                    <div className="mobile-menu">
+                        <div className="mobile-menu-content">
+                            <button className="mobile-nav-item" onClick={() => scrollToSection('features')}>Features</button>
+                            <button className="mobile-nav-item" onClick={() => scrollToSection('about')}>About</button>
+                            <button className="mobile-nav-item" onClick={() => scrollToSection('contact')}>Contact</button>
+                            <button className="mobile-nav-item" onClick={handleLogin}>Login</button>
+                            <button className="mobile-nav-item primary" onClick={handleRegister}>Sign Up</button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Mobile Overlay */}
+                {mobileMenuOpen && <div className="mobile-overlay" onClick={toggleMobileMenu}></div>}
             </nav>
 
             {/* Hero Section */}

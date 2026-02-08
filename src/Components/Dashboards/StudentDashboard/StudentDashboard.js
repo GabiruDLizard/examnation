@@ -14,8 +14,6 @@ import StudentClassOverview from './ClassOverview.js';
 import AssignmentOverview from './AssignmentOverview.js';
 import AssignmentQuestionPage from './AssignmentQuestionPage.js';
 
-const token = localStorage.getItem('token');
-
 // Helper function for grouping answers by date
 const groupAnswersByDate = (answers) => {
     const grouped = {};
@@ -148,6 +146,8 @@ function StudentDashboard() {
 
     // Use the EXACT same useEffect pattern that worked in your old code
     useEffect(() => {
+        const token = localStorage.getItem('token'); // Get token fresh each time
+        
         if (!token) {
             console.log('No token found, redirecting to login');
             navigate('/login');
@@ -308,7 +308,7 @@ function StudentDashboard() {
     };
 
     fetchAllData();
-}, [token, navigate]);
+}, [navigate]); // Removed token from dependencies since we get it fresh each time
 
     // Function to get student display name using the same pattern as old code
     const getStudentDisplayName = () => {

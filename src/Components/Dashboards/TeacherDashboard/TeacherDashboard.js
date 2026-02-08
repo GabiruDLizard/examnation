@@ -8,15 +8,14 @@ import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./
 
 // Import chart components
 import TeacherReadinessChart from "../Charts/TeacherReadinessChart";
-import { generate , generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
+import { generateClassReadinessData, generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
 
 // Import the components
 import MyClasses from "./MyClasses";
+
 import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
 import Assignments from "./Assignments";
-
-const token = localStorage.getItem('token');
 
 
 const topics = ["Algebra", "Geometry", "Statistics", "Trigonometry", "Number Theory"];
@@ -105,6 +104,14 @@ export default function TeacherDashboard() {
   };
    
   useEffect(() => {
+    const token = localStorage.getItem('token'); // Get token fresh each time
+    
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      navigate('/login');
+      return;
+    }
+
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
@@ -125,13 +132,8 @@ export default function TeacherDashboard() {
       }
     };
 
-    if (token) {
-      fetchTeacherData();
-    } else {
-      setError('No authentication token found');
-      setLoading(false);
-    }
-  }, [token]);
+    fetchTeacherData();
+  }, [navigate]); // Removed token from dependencies since we get it fresh each time
 
   // Function to calculate total students
   const calculateTotalStudents = async () => {
