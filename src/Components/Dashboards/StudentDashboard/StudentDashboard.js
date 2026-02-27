@@ -6,7 +6,11 @@ import {
   BiTime, BiAward, BiBullseye, BiMenu, BiX
 } from 'react-icons/bi';
 import '../StudentDashboard.css';
-import { getStudentAnswers } from './StudentDashboardService.js'; // Keep this for student answers
+import { getStudentAnswers, getStudentEnrollments } from './StudentDashboardService.js'; // Keep this for student answers
+import { getStudentReadinessHistory, recordStudentReadiness } from '../TeacherDashboard/TeacherDashboardService.js';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useDashboardNav } from '../../../hooks/useDashboardNav';
+import { authFetch } from '../../../utils/api';
 import { abilityEstimate } from '../Charts/ReadinessLogic.js';
 import ReadinessChart from '../Charts/Readiness.js';
 import StudentMyClasses from './MyClasses.js';
@@ -87,45 +91,37 @@ const processGroupedAnswers = async (groupedAnswers) => {
 };
 
 function StudentDashboard() {
-    const [activePage, setActivePage] = useState('overview');
+    const { userId, authLoading, logout } = useAuth();
+    const {
+        activePage,
+        currentView, setCurrentView,
+        selectedClass,
+        mobileMenuOpen,
+        handleNavClick,
+        handleClassClick,
+        handleBackToClasses,
+        handleBackToOverview,
+        toggleMobileMenu,
+    } = useDashboardNav();
+
     const [student, setStudent] = useState({});
     const [studentprogress, setStudentProgress] = useState({});
     const [studentAnswers, setStudentAnswers] = useState([]);
     const [readinessScores, setReadinessScores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
-    // Class overview navigation states
-    const [selectedClass, setSelectedClass] = useState(null);
-    const [currentView, setCurrentView] = useState('main'); // 'main', 'class-overview', 'assignments', 'assignment-questions', 'progress'
     const [selectedAssignment, setSelectedAssignment] = useState(null);
-    
+    const [classReadinessHistory, setClassReadinessHistory] = useState([]);
+
+    // Chart view state
+    const [activeChartView, setActiveChartView] = useState('progress'); // 'progress' or 'class'
+
     // Stats
     const [qAnswered, setQAnswered] = useState(0);
     const [correctAns, setCorrectAns] = useState(0);
     const [averageCorrectness, setAverageCorrectness] = useState(0);
-    const [studentId, setStudentId] = useState(null);
-    
+
     const navigate = useNavigate();
-
-    const toggleMobileMenu = () => {
-        setMobileMenuOpen(!mobileMenuOpen);
-    };
-
-    const handleNavClick = (page) => {
-        setActivePage(page);
-        setCurrentView('main');
-        setSelectedClass(null);
-        setMobileMenuOpen(false); // Close mobile menu on navigation
-    };
-
-    // Class navigation handlers (similar to teacher dashboard)
-    const handleClassClick = (classItem) => {
-        console.log('Class clicked:', classItem.name);
-        setSelectedClass(classItem);
-        setCurrentView('class-overview');
-    };
 
     const handleNavigateFromOverview = (section, data = null) => {
         console.log('🎯 Navigating to:', section, data);
@@ -135,49 +131,31 @@ function StudentDashboard() {
         setCurrentView(section);
     };
 
-    const handleBackToClasses = () => {
-        setSelectedClass(null);
-        setCurrentView('main');
-    };
-
-    const handleBackToOverview = () => {
-        setCurrentView('class-overview');
-    };
-
     // Use the EXACT same useEffect pattern that worked in your old code
     useEffect(() => {
-        const token = localStorage.getItem('token'); // Get token fresh each time
-        
-        if (!token) {
-            console.log('No token found, redirecting to login');
+        if (authLoading) return;
+
+        const id = userId;
+
+        if (!id) {
             navigate('/login');
             return;
         }
-
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const id = payload.sub;
-        console.log('Token decoded, user ID:', id);
-        setStudentId(id);
 
         const fetchAllData = async () => {
             if (!id) {
                 console.log('No user ID found');
                 return;
             }
-            
+
             setLoading(true);
             
             try {
                 console.log('Starting data fetch for user:', id);
                 
-                // 1. Fetch student data (this works!)
+                // 1. Fetch student data
                 console.log('Fetching student data...');
-                const studentResponse = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const studentResponse = await authFetch(`/user/${id}`);
                 
                 if (studentResponse.ok) {
                     const studentData = await studentResponse.json();
@@ -188,15 +166,22 @@ function StudentDashboard() {
                     throw new Error(`Failed to fetch student data: ${studentResponse.status}`);
                 }
 
+                // Fetch enrollments (needed for readiness save later)
+                let studentEnrollments = [];
+                try {
+                    studentEnrollments = await getStudentEnrollments(id);
+                } catch { /* non-fatal */ }
+
+                // Fetch class readiness history for the per-class chart
+                try {
+                    const history = await getStudentReadinessHistory(id, 8);
+                    setClassReadinessHistory(history);
+                } catch { /* non-fatal */ }
+
                 // 2. Try to fetch progress data (skip if it fails)
                 console.log('Trying to fetch progress data...');
                 try {
-                    const progressResponse = await fetch(`https://examnationwebapi.azurewebsites.net/api/userprogress/${id}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
+                    const progressResponse = await authFetch(`/userprogress/${id}`);
                     
                     if (progressResponse.ok) {
                         const progressData = await progressResponse.json();
@@ -217,20 +202,15 @@ function StudentDashboard() {
                 try {
                     // Try multiple possible endpoints for answers
                     const answerEndpoints = [
-                        `https://examnationwebapi.azurewebsites.net/api/answer/user/${id}`,
-                        `https://examnationwebapi.azurewebsites.net/api/studentanswers/${id}`,
-                        `https://examnationwebapi.azurewebsites.net/api/answers/${id}`
+                        `/answer/user/${id}`,
+                        `/studentanswers/${id}`,
+                        `/answers/${id}`
                     ];
 
                     for (const endpoint of answerEndpoints) {
                         try {
                             console.log('Trying answers endpoint:', endpoint);
-                            const response = await fetch(endpoint, {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                            }
-                        });
+                            const response = await authFetch(endpoint);
                         
                         if (response.ok) {
                             answersResponse = await response.json();
@@ -287,6 +267,24 @@ function StudentDashboard() {
                     const readinessResults = await processGroupedAnswers(groupedByDate);
                     setReadinessScores(readinessResults);
                     console.log('✅ Readiness scores processed:', readinessResults.length);
+
+                    // Save readiness to API for each enrolled class
+                    if (readinessResults.length > 0 && studentEnrollments.length > 0) {
+                        const totalAbility = readinessResults.reduce((s, r) => s + r.abilityEstimate, 0);
+                        const avgAbility = totalAbility / readinessResults.length;
+                        const pct = Math.max(0, Math.min(100, ((avgAbility + 3) / 6) * 100));
+                        for (const enrollment of studentEnrollments) {
+                            try {
+                                await recordStudentReadiness(id, enrollment.classId, {
+                                    readinessPercentage: pct,
+                                    questionsAnswered: readinessResults.length,
+                                    correctAnswers: readinessResults.filter(r => r.isCorrect).length,
+                                    studyTimeMinutes: 0,
+                                    abilityEstimate: avgAbility
+                                });
+                            } catch { /* non-fatal */ }
+                        }
+                    }
                 } catch (readinessError) {
                     console.error('Error processing readiness:', readinessError);
                     setReadinessScores([]);
@@ -308,7 +306,7 @@ function StudentDashboard() {
     };
 
     fetchAllData();
-}, [navigate]); // Removed token from dependencies since we get it fresh each time
+}, [navigate, userId, authLoading]);
 
     // Function to get student display name using the same pattern as old code
     const getStudentDisplayName = () => {
@@ -548,9 +546,38 @@ function StudentDashboard() {
 
                 <section className="sd-grid">
                     <div className="panel panel-large">
-                        <div className="panel-title">Readiness Progress Over Time</div>
-                        <div style={{ width: "100%", height: 260 }}>
-                            <ReadinessChart readinessScores={readinessScores} />
+                        <div className="panel-header">
+                            <div className="chart-tabs">
+                                <button 
+                                    className={`chart-tab ${activeChartView === 'progress' ? 'active' : ''}`}
+                                    onClick={() => setActiveChartView('progress')}
+                                >
+                                    <BiTrendingUp size={16} />
+                                    Progress Over Time
+                                </button>
+                                <button 
+                                    className={`chart-tab ${activeChartView === 'class' ? 'active' : ''}`}
+                                    onClick={() => setActiveChartView('class')}
+                                >
+                                    <BiBarChart size={16} />
+                                    By Class (Weekly)
+                                </button>
+                            </div>
+                        </div>
+                        <div className="chart-container">
+                            {activeChartView === 'progress' ? (
+                                <ReadinessChart 
+                                    readinessScores={readinessScores} 
+                                    classHistory={[]} 
+                                    viewType="progress"
+                                />
+                            ) : (
+                                <ReadinessChart 
+                                    readinessScores={[]} 
+                                    classHistory={classReadinessHistory}
+                                    viewType="class" 
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -723,13 +750,7 @@ function StudentDashboard() {
                 <div className="sd-sidebar-bottom">
                     <button
                         className="sd-nav-item logout-btn"
-                        onClick={async () => {
-                            await new Promise(resolve => {
-                                localStorage.removeItem('token');
-                                resolve();
-                            });
-                            navigate('/login');
-                        }}
+                        onClick={() => logout(navigate)}
                     >
                         <BiLogOut style={{ marginRight: '8px', fontSize: '18px'}} />
                         Logout

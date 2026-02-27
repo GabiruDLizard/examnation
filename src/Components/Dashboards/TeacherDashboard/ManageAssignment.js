@@ -11,13 +11,15 @@ import {
     updateAssignment, 
 } from './TeacherDashboardService';
 import AssignmentCreation from './AssignmentCreation';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import EnhancedManageAssignment from './EnhancedManageAssignment';
 
 const ManageAssignment = ({ onBack }) => {
     const [classes, setClasses] = useState([]);
     const [assignments, setAssignments] = useState([]);
     const [selectedClassId, setSelectedClassId] = useState(null);
     const [selectedClass, setSelectedClass] = useState(null);
-    const [view, setView] = useState('list'); // 'list', 'create', 'edit'
+    const [view, setView] = useState('list'); // 'list', 'create', 'edit', 'enhanced-edit'
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     
@@ -44,9 +46,11 @@ const ManageAssignment = ({ onBack }) => {
             const teacherClasses = await getTeacherClasses();
             setClasses(teacherClasses);
             
-            // Load all assignments for the teacher
-            const teacherAssignments = await getAssignmentsByTeacher();
-            setAssignments(teacherAssignments);
+            const teacherId = getUserIdFromToken();
+            if (teacherId) {
+                const teacherAssignments = await getAssignmentsByTeacher(teacherId);
+                setAssignments(teacherAssignments);
+            }
             
             setLoading(false);
         } catch (error) {
@@ -116,10 +120,7 @@ const ManageAssignment = ({ onBack }) => {
 
     const handleEditAssignment = (assignment) => {
         setEditingAssignment(assignment);
-        setAssignmentTitle(assignment.title);
-        setAssignmentDescription(assignment.description || assignment.instructions || '');
-        setDueDate(assignment.dueDate ? new Date(assignment.dueDate).toISOString().split('T')[0] : '');
-        setView('edit');
+        setView('enhanced-edit');
     };
 
     const handleUpdateAssignment = async () => {
@@ -274,6 +275,20 @@ const ManageAssignment = ({ onBack }) => {
                     onBack={() => setView('list')}
                     onAssignmentCreated={() => {
                         setView('list');
+                        loadAssignments();
+                    }}
+                />
+            )}
+
+            {/* Enhanced Assignment Edit Component */}
+            {view === 'enhanced-edit' && editingAssignment && (
+                <EnhancedManageAssignment
+                    assignment={editingAssignment}
+                    onBack={() => {
+                        setView('list');
+                        setEditingAssignment(null);
+                    }}
+                    onAssignmentUpdated={() => {
                         loadAssignments();
                     }}
                 />

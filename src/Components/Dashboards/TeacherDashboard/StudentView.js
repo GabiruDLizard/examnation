@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiSearch, BiFilter, BiPlus, BiUser, BiEnvelope, BiPhone, BiCalendar, BiTrendingUp, BiGridAlt, BiListUl } from 'react-icons/bi';
 import { getTeacherClasses, enrollStudentByIdentifier, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import "../StudentView.css";
 
 export default function StudentView({ teacherInfo, selectedClass, onBack }) {
@@ -20,16 +21,12 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
     const fetchStudentsData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
+            const teacherId = getUserIdFromToken();
+            if (!teacherId) {
                 throw new Error('No authentication token found');
             }
 
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const teacherId = payload.sub;
-
-            const classes = await getTeacherClasses(teacherId);
+            const classes = await getTeacherClasses();
             setClassesData(classes);
 
             let allStudents = [];

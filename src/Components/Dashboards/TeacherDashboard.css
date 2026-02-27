@@ -3,7 +3,6 @@
   min-height: 100vh;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   color: #334155;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
 /* sidebar */
@@ -153,6 +152,7 @@
 
 .panel-large { grid-column: 1 / 2; min-height: 320px; }
 .panel-small { grid-column: 2 / 3; min-height: 320px; display: flex; flex-direction: column; }
+.panel-medium { grid-column: 1 / -1; }
 
 /* heatmap */
 .heatmap { display: flex; gap: 12px; align-items: flex-start; }
@@ -177,7 +177,7 @@
 .student-table th, .student-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid #373e47;
+  border-bottom: 1px solid #e2e8f0;
 }
 .student-table th { 
   font-size: 12px;
@@ -256,15 +256,15 @@
   gap: 8px;
 }
 .student-name {
-  font-size: 13px;  /* Reduced from default */
+  font-size: 13px;
   font-weight: 500;
-  color: #f0f6fc;
+  color: #1e293b;
   line-height: 1.2;
 }
 .student-rank {
   font-size: 10px;
-  color: #4ea8ff;
-  background: rgba(78, 168, 255, 0.1);
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 600;
@@ -284,12 +284,12 @@
 }
 .improvement-text {
   font-size: 10px;
-  color: rgb(47, 64, 83);
+  color: #64748b;
   font-weight: 500;
 }
 .attempts-cell {
   font-size: 13px;
-  color: #f0f6fc;
+  color: #334155;
   font-weight: 500;
 }
 .no-students {
@@ -304,12 +304,12 @@
   text-align: center;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #373e47;
+  border-top: 1px solid #e2e8f0;
 }
 .view-all-btn {
   background: none;
   border: none;
-  color: #4ea8ff;
+  color: #4f46e5;
   font-size: 12px;
   cursor: pointer;
   text-decoration: none;
@@ -318,13 +318,56 @@
   transition: background-color 0.2s;
 }
 .view-all-btn:hover {
-  background-color: rgba(78, 168, 255, 0.1);
+  background-color: rgba(79, 70, 229, 0.1);
   text-decoration: underline;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
+}
+
+/* missing utility classes */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: #64748b;
+  text-align: center;
+}
+.coming-soon h2 { color: #1e293b; margin: 0; }
+.coming-soon p { margin: 0; font-size: 14px; }
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
 }
 
 /* MOBILE NAVIGATION */
@@ -411,8 +454,26 @@
 
 /* Small tablets and large phones */
 @media (max-width: 768px) {
+  .td-mobile-header {
+    display: flex; /* Show mobile header */
+  }
+
+  .td-main {
+    margin-left: 0; /* Remove sidebar margin */
+  }
+
+  .td-grid {
+    grid-template-columns: 1fr; /* Stack panels vertically */
+  }
+
+  .panel-large,
+  .panel-small,
+  .panel-medium {
+    grid-column: auto; /* Reset grid column */
+  }
+
   .td-kpis {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr; /* 2 columns on tablet */
     gap: 16px;
   }
 
@@ -425,33 +486,75 @@
   .td-sidebar {
     position: fixed;
     top: 60px;
-    left: -280px;
-    width: 280px;
-    height: calc(100vh - 60px);
-    background: #ffffff;
-    transition: left 0.3s ease;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: calc(100vh - 60px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    transition: all 0.3s ease;
     z-index: 1000;
-    box-shadow: 4px 0 12px rgba(0,0,0,0.15);
-    display: flex;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-bottom: 1px solid #e2e8f0;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .td-sidebar.mobile-open {
-    left: 0;
+    display: flex; /* Show when open */
+  }
+
+  /* Ensure logout button stays at bottom on mobile */
+  .td-sidebar-bottom {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 20px; /* Add bottom margin for mobile */
   }
 
   .td-mobile-overlay {
     display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
   }
 
   .td-nav-item {
     font-size: 16px;
     padding: 16px 20px;
     min-height: 48px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    text-align: left;
+    width: 100%;
   }
 }
 
 /* Mobile phones */
 @media (max-width: 480px) {
+  .td-kpis {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
   .td-main {
     padding: 12px;
     padding-top: 72px;
@@ -464,10 +567,68 @@
 
   .td-sidebar {
     top: 56px;
-    height: calc(100vh - 56px);
-    width: 100vw;
-    left: -100vw;
+    padding: 16px; /* Adjust padding for smaller phones */
   }
+
+  /* Ensure logout button is visible on small phones */
+  .td-sidebar-bottom {
+    margin-bottom: 30px; /* Extra bottom margin for small phones */
+  }
+
+  .td-grid {
+    grid-template-columns: 1fr; /* Ensure single column */
+    gap: 16px;
+  }
+
+  /* Teacher table responsive */
+  .teacher-table {
+    font-size: 14px;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .teacher-table thead,
+  .teacher-table tbody,
+  .teacher-table th,
+  .teacher-table td,
+  .teacher-table tr {
+    display: block;
+  }
+
+  .teacher-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .teacher-table tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  .teacher-table td {
+    border: none;
+    position: relative;
+    padding: 8px 8px 8px 50%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .teacher-table td:before {
+    content: attr(data-label) ": ";
+    position: absolute;
+    left: 6px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #64748b;
+  }
+
 
   .panel {
     padding: 16px;

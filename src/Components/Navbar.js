@@ -1,39 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import './Navbar.css'; 
+import './Navbar.css';
 import logo from '../Resources/ExamNationLogo.svg';
 import { FaUserCircle } from 'react-icons/fa';
 import UserPopUp from './UserPopUp';
+import { getToken, removeToken, getUserIdFromToken } from '../utils/tokenUtils';
+import { authFetch } from '../utils/api';
 
 const Navbar = () => {
     const [showMenu, setShowMenu] = useState(false);
     const [user, setUser] = useState(null);
-    const isLoggedIn = !!localStorage.getItem('token');
-    const token = localStorage.getItem('token');
-    // const payload = JSON.parse(atob(token?.split('.')[1]));
-    // const userId = payload.sub;
+    const token = getToken();
+    const isLoggedIn = !!token;
+
     const handleLogout = () => {
-        localStorage.clear();
+        removeToken();
         window.location.href = '/login';
     };
 
     useEffect(() => {
         const fetchUserData = async () => {
-            if(token){
+            if (token) {
                 try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const userId = payload.sub;
-                    const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${userId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
+                    const userId = getUserIdFromToken();
+                    const response = await authFetch(`/user/${userId}`);
                     if (!response.ok) {
                         throw new Error('Failed to fetch user data');
                     }
                     const data = await response.json();
                     setUser(data);
-                    console.log(data);
                 } catch (error) {
                     console.error(error);
                 }
@@ -41,8 +35,8 @@ const Navbar = () => {
         };
         fetchUserData();
     }, [token]);
-    return (
 
+    return (
         <nav className="navbar">
             <div className="navbar-left">
                 <a className="logo" href="/">
@@ -51,7 +45,7 @@ const Navbar = () => {
             </div>
             <div className="navbar-center">
                 <form>
-                    
+
                 </form>
             </div>
             <div className="navbar-Right">
@@ -60,14 +54,14 @@ const Navbar = () => {
                     <li><a href="/about">About</a></li>
                     <li><a href="/contact">Contact</a></li>
                     {isLoggedIn ? (
-                        <li style = {{ position: 'relative' }}>
-                            <FaUserCircle 
-                                size={28} 
+                        <li style={{ position: 'relative' }}>
+                            <FaUserCircle
+                                size={28}
                                 style={{ cursor: 'pointer' }}
-                                onClick={() => setShowMenu(!showMenu)} 
+                                onClick={() => setShowMenu(!showMenu)}
                             />
                             {showMenu && (
-                                <UserPopUp 
+                                <UserPopUp
                                     user={user}
                                     onLogout={handleLogout}
                                     onClose={() => setShowMenu(false)}
@@ -83,6 +77,6 @@ const Navbar = () => {
             </div>
         </nav>
     );
-}
+};
 
 export default Navbar;

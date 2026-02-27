@@ -10,8 +10,7 @@ import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
 import { saveTestResults, saveUserProgress } from './Servicing';
 import { analyzeMistakePatterns } from '../PerformanceEngine/^PerformanceAnalysis';
-
-const token = localStorage.getItem('token');
+import { getUserIdFromToken } from '../../utils/tokenUtils';
 
 const mathJaxConfig = {
   loader: { load: ["input/tex", "output/chtml"] },
@@ -55,6 +54,8 @@ const AdaptiveTest = () => {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isCorrect, setIsCorrect] = useState(null);
 
+  // Get authentication token
+  const token = localStorage.getItem('token');
 
   // Initialize test
   useEffect(() => {
@@ -392,18 +393,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       setIsTimerRunning(false);
       setIsTestComplete(true);
 
-      // Get user ID from token
-      const getUserIdFromToken = (token) => {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          return payload.userId || payload.sub || payload.id; 
-        } catch (error) {
-          console.error('Error parsing token:', error);
-          return null;
-        }
-      };
-
-      const userId = getUserIdFromToken(token);
+      const userId = getUserIdFromToken();
 
       const apiPayload = testAnswers
         .filter(answer => answer !== null)

@@ -59,26 +59,37 @@ const SetUp = () => {
             LastName: answers.lastName,
             PasswordHash: answers.password,
             Role: answers.role,
-            Birthdate: answers.birthday
+            Birthdate: answers.DOB
         };
+        console.log("All answers:", answers);
+        console.log("Payload being sent:", payload);
+        
         try{
             //console.log(payload);
             const response = await register(payload);
-            console.log(response);
-            if(response.success || response.id){
+            console.log("this is the payload: ", payload);
+            console.log("Registration response: ", response);
+            if(response.success || response.id || response.user || response.token){
+                console.log("Attempting login with:", answers.username, answers.password);
                 const data = await login(answers.username, answers.password);
+                console.log("Login response: ", data);
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                     navigate('/studentdashboard');
                 } else {
-                    alert(data.message || 'Login failed');
+                    console.log("Login failed - no token received");
+                    alert(data.message || 'Login failed - please try logging in manually');
                 }
             }
             else{
+                console.log("Registration failed - payload: ", payload);
+                console.log("Registration response: ", response);
                 alert(response.message || 'Registration failed');
             }
         }
         catch (error){
+            console.log("Error occurred - payload: ", payload);
+            console.log("Error details: ", error);
             alert('Error connecting to server');
         }
         // navigate('/studentdashboard', {state: answers});
@@ -120,7 +131,7 @@ const SetUp = () => {
                     Answer each question to get started, and feel free to explore our dashboard once you’re done!
                 </p>
                 <ul>
-                    <li>Practice real CXC questions</li>
+                    <li>Practice real exam questions</li>
                     <li>Track your progress</li>
                     <li>Get personalized recommendations</li>
                 </ul>

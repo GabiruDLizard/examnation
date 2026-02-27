@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl, BiTrendingUp, BiBullseye } from "react-icons/bi";
 import "../MyClasses.css";
 import { getStudentClassesWithDetails, getAssignmentsForClass } from './StudentDashboardService.js';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 
 export default function StudentMyClasses({ studentInfo, onClassClick }) {
   const [classesData, setClassesData] = useState([]);
@@ -17,14 +18,11 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
   const fetchStudentClasses = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
+      const studentId = getUserIdFromToken();
+
+      if (!studentId) {
         throw new Error('No authentication token found');
       }
-
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const studentId = payload.sub;
 
       console.log('Fetching student classes with details for studentId:', studentId);
 

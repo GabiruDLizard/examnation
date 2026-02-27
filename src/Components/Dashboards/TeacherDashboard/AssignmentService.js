@@ -1,34 +1,37 @@
-import { 
-    createAssignmentForClass, 
-    uploadQuestionImage, 
-    createQuestion, 
-    createAssignmentQuestion 
+import {
+    createAssignmentForClass,
+    uploadQuestionImage,
+    createQuestion,
+    createAssignmentQuestion
 } from './TeacherDashboardService';
-
-const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
-const API_BASE_URL_TEST = 'http://localhost:5204/api';
+import { authFetch } from '../../../utils/api';
 
 // Create a complete assignment with questions
 export const createCompleteAssignment = async (assignmentData, questionsArray) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
         console.log('📝 Creating complete assignment with questions...');
-        
-        // Step 1: Create the assignment first
-        console.log('Step 1: Creating assignment...');
-        const createdAssignment = await createAssignmentForClass(assignmentData);
-        console.log('✅ Assignment created:', createdAssignment);
+        console.log('🔍 Assignment data received:', assignmentData);
+        console.log('🔍 Assignment ID in data:', assignmentData?.assignmentId);
 
-        // Step 2: Create questions and get their IDs
+        let assignmentId = assignmentData?.assignmentId;
+        let createdAssignment;
+
+        if (assignmentId) {
+            console.log('✅ Using existing assignment ID:', assignmentId);
+            console.log('🚫 SKIPPING assignment creation - using existing assignment');
+            createdAssignment = { id: assignmentId, ...assignmentData };
+        } else {
+            console.log('⚠️ No assignment ID found - creating new assignment');
+            console.log('Step 1: Creating assignment...');
+            createdAssignment = await createAssignmentForClass(assignmentData);
+            console.log('✅ Assignment created:', createdAssignment);
+            assignmentId = createdAssignment.id;
+        }
+
         console.log('Step 2: Creating questions...');
         const createdQuestions = [];
-        
+
         for (const questionData of questionsArray) {
-            // Upload image if provided
             let figureBlobUrl = null;
             if (questionData.imageAssociated) {
                 console.log('📷 Uploading question image...');
@@ -36,7 +39,6 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
                 console.log('✅ Image uploaded:', figureBlobUrl);
             }
 
-            // Format question data to match API expectations
             const formattedQuestionData = {
                 questionText: questionData.questionText,
                 subject: questionData.subject || 'General',
@@ -56,23 +58,21 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
         }
         console.log('✅ Questions created:', createdQuestions);
 
-        // Step 3: Link questions to assignment
         console.log('Step 3: Linking questions to assignment...');
-        console.log('🔍 Assignment ID to link:', createdAssignment.id);
-        
-        // Validate assignment ID before proceeding
-        if (!createdAssignment.id) {
+        console.log('🔍 Assignment ID to link:', assignmentId);
+
+        if (!assignmentId) {
             console.error('❌ No valid assignment ID found:', createdAssignment);
             throw new Error('Assignment was created but returned no valid ID');
         }
-        
+
         const assignmentQuestions = [];
-        
+
         for (let i = 0; i < createdQuestions.length; i++) {
             const question = createdQuestions[i];
-            console.log(`🔗 Linking question ${question.id} to assignment ${createdAssignment.id}`);
+            console.log(`🔗 Linking question ${question.id} to assignment ${assignmentId}`);
             const assignmentQuestion = await createAssignmentQuestion({
-                assignmentId: createdAssignment.id,
+                assignmentId: assignmentId,
                 questionId: question.id,
                 points: questionsArray[i].points || 1.0
             });
@@ -80,7 +80,7 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
         }
 
         console.log('✅ Assignment questions linked:', assignmentQuestions);
-        
+
         return {
             assignment: createdAssignment,
             questions: createdQuestions,
@@ -108,19 +108,8 @@ const mapDifficultyLevel = (level) => {
 
 // Get assignment with all questions
 export const getAssignmentWithQuestions = async (assignmentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL_TEST}/assignment/${assignmentId}/questions`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/assignment/${assignmentId}/questions`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

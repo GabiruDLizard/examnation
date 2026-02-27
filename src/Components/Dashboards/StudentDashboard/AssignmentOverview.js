@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BiUser, BiCalendar, BiBook, BiTime, BiCheckCircle, BiPlay, BiFlag, BiLeftArrow } from 'react-icons/bi';
-import { getAssignmentsForClass } from './StudentDashboardService';
+import { getAssignmentsForClass, getSubmissionByAssignmentAndStudent } from './StudentDashboardService';
 import '../ClassOverview.css';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 
 export default function AssignmentOverview({ selectedClass, onBack, onNavigate }) {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userSubmissions, setUserSubmissions] = useState({});
+
+    const currentUserId = useMemo(() => {
+        const id = getUserIdFromToken();
+        if (id) return id;
+        try {
+            const userData = localStorage.getItem('userData');
+            if (userData) return JSON.parse(userData)?.id;
+        } catch { /* ignore */ }
+        return 1;
+    }, []);
 
     useEffect(() => {
         fetchAssignments();
-    }, [selectedClass]);
+    }, [selectedClass, currentUserId]);
 
     const fetchAssignments = async () => {
         try {
@@ -18,6 +30,22 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
             const assignmentData = await getAssignmentsForClass(selectedClass.classId);
             console.log('Fetched assignments:', assignmentData);
             setAssignments(assignmentData);
+            
+            // Fetch submission data for each assignment
+            const submissionsData = {};
+            for (const assignment of assignmentData) {
+                try {
+                    const submission = await getSubmissionByAssignmentAndStudent(assignment.id, currentUserId);
+                    if (submission) {
+                        submissionsData[assignment.id] = submission;
+                    }
+                } catch (error) {
+                    console.warn(`No submission found for assignment ${assignment.id}:`, error);
+                }
+            }
+            setUserSubmissions(submissionsData);
+            console.log('User submissions:', submissionsData);
+            
         } catch (error) {
             console.error('Error fetching assignments:', error);
             setError('Failed to load assignments');
@@ -28,13 +56,26 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
     };
 
     const getAssignmentStatus = (assignment) => {
-        // Mock status logic - replace with real data
+        const submission = userSubmissions[assignment.id];
         const dueDate = new Date(assignment.dueDate);
         const now = new Date();
         
-        if (assignment.submitted) return 'completed';
-        if (dueDate < now) return 'overdue';
-        if (assignment.started) return 'in-progress';
+        // If submitted, it's completed
+        if (submission && submission.status === 'submitted') {
+            return 'completed';
+        }
+        
+        // If past due date and not submitted, it's overdue
+        if (dueDate < now && (!submission || submission.status !== 'submitted')) {
+            return 'overdue';
+        }
+        
+        // If has submission but not submitted, it's in progress
+        if (submission && submission.status === 'in_progress') {
+            return 'in-progress';
+        }
+        
+        // Otherwise it's pending
         return 'pending';
     };
 
@@ -147,6 +188,10 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                     <div className="assignments-grid">
                         {assignments.map((assignment) => {
                             const status = getAssignmentStatus(assignment);
+                            const submission = userSubmissions[assignment.id];
+                            const progress = status === 'completed' ? 100 : 
+                                           status === 'in-progress' ? 50 : 0;
+                            
                             return (
                                 <div 
                                     key={assignment.id} 
@@ -172,12 +217,21 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                                         </div>
                                         <div className="assignment-detail">
                                             <BiBook />
-                                            <span>{assignment.questionCount || 10} Questions</span>
+                                            <span>{assignment.questions?.length || assignment.questionCount || 0} Questions</span>
                                         </div>
                                         <div className="assignment-detail">
                                             <BiTime />
-                                            <span>Est. {assignment.estimatedTime || '30'} min</span>
+                                            <span>Est. {assignment.estimatedTime || assignment.timeLimit || '30'} min</span>
                                         </div>
+                                        {submission && (
+                                            <div className="assignment-detail">
+                                                <BiFlag />
+                                                <span>
+                                                    {status === 'completed' ? 'Submitted' : 
+                                                     status === 'in-progress' ? 'In Progress' : 'Not Started'}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="assignment-progress">
@@ -185,12 +239,17 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                                             <div 
                                                 className="progress-fill" 
                                                 style={{ 
-                                                    width: `${assignment.progress || 0}%`,
-                                                    backgroundColor: status === 'completed' ? '#10b981' : '#3b82f6'
+                                                    width: `${progress}%`,
+                                                    backgroundColor: status === 'completed' ? '#10b981' : 
+                                                                   status === 'in-progress' ? '#f59e0b' : '#64748b'
                                                 }}
                                             />
                                         </div>
-                                        <span className="progress-text">{assignment.progress || 0}% Complete</span>
+                                        <span className="progress-text">
+                                            {status === 'completed' ? 'Submitted' : 
+                                             status === 'in-progress' ? 'In Progress' : 
+                                             status === 'overdue' ? 'Overdue' : 'Not Started'}
+                                        </span>
                                     </div>
 
                                     <div className="assignment-actions">
@@ -198,8 +257,9 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                                             className={`assignment-action-btn ${status}`}
                                             onClick={(e) => { e.stopPropagation(); handleAssignmentClick(assignment); }}
                                         >
-                                            {status === 'completed' ? 'View Results' :
+                                            {status === 'completed' ? 'View Submission' :
                                              status === 'in-progress' ? 'Continue' :
+                                             status === 'overdue' ? 'View Assignment' :
                                              'Start Assignment'}
                                         </button>
                                     </div>

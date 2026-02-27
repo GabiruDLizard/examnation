@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
 import '../Assignments.css';
 import { getTeacherClasses, getAllEnrolledStudentInfo, createAssignmentForClass } from './TeacherDashboardService';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
 
 const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
@@ -48,14 +49,12 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
 
     const fetchClassData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if(!token){
+            const teacherId = getUserIdFromToken();
+            if (!teacherId) {
                 throw new Error('No authentication token found');
             }
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const teacherId = payload.sub;
 
-            const classes = await getTeacherClasses(teacherId);
+            const classes = await getTeacherClasses();
             setClassesData(classes);
         }
         catch (error) {
@@ -192,10 +191,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         setIsSubmitting(true);
 
         try {
-            // Get teacher ID from token
-            const token = localStorage.getItem('token');
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const teacherId = payload.sub;
+            const teacherId = getUserIdFromToken();
 
             // Prepare assignment data for API
             const assignmentData = {

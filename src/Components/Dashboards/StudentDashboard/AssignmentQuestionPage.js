@@ -1,11 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
 import { BiLeftArrow, BiRightArrow, BiFlag, BiTime, BiCheckCircle, BiSave, BiSend } from 'react-icons/bi';
 import '../../PracticeArea/PracticeArea.css';
 import './AssignmentQuestionPage.css';
-import { getQuestionsByAssignmentId } from '../StudentDashboard/StudentDashboardService';
+import { getQuestionsByAssignmentId, getSubmissionByAssignmentAndStudent, createSubmission, updateSubmission, saveAnswerToBackend, submitAssignmentToBackend, checkAndGradeAnswers } from '../StudentDashboard/StudentDashboardService';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { recordStudentReadiness } from '../TeacherDashboard/TeacherDashboardService';
 
 const mathJaxConfig = {
   loader: { load: ["input/tex", "output/chtml"] },
@@ -16,6 +18,20 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const { questionIndex } = useParams();
     const navigate = useNavigate();
     const stepReference = useRef([]);
+    
+    // Get current user ID from token - always initialize this first
+    const currentUserId = useMemo(() => {
+        const id = getUserIdFromToken();
+        if (id) return id;
+
+        // Fallback to userData
+        try {
+            const userData = localStorage.getItem('userData');
+            if (userData) return JSON.parse(userData)?.id;
+        } catch { /* ignore */ }
+
+        return 1; // Default fallback
+    }, []);
     
     // Use preloaded questions if available, otherwise fetch them
     const [questions, setQuestions] = useState(preloadedQuestions || []);
@@ -52,6 +68,59 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         loadQuestions();
     }, [assignment?.id, preloadedQuestions]);
     
+    // Initialize submission
+    useEffect(() => {
+        if (!assignment?.id) {
+            return;
+        }
+
+        const initializeSubmission = async () => {
+            try {
+                let existingSubmission = await getSubmissionByAssignmentAndStudent(assignment.id, currentUserId);
+                
+                if (!existingSubmission) {
+                    // Create new submission with 'in_progress' status
+                    existingSubmission = await createSubmission({
+                        assignmentId: assignment.id,
+                        studentId: currentUserId,
+                        status: 'in_progress',
+                        submittedAt: null,
+                        grade: null
+                    });
+                    console.log('✅ Created new submission:', existingSubmission);
+                }
+                
+                setSubmission(existingSubmission);
+                setIsSubmitted(existingSubmission.status === 'submitted');
+                console.log('📋 Loaded submission:', existingSubmission);
+            } catch (error) {
+                console.error('Error initializing submission:', error);
+            }
+        };
+        
+        initializeSubmission();
+    }, [assignment?.id, currentUserId]);
+    
+    // Check deadline status
+    useEffect(() => {
+        const checkDeadline = () => {
+            if (assignment?.dueDate) {
+                const now = new Date();
+                const deadline = new Date(assignment.dueDate);
+                setIsPastDeadline(now > deadline);
+            } else {
+                setIsPastDeadline(false);
+            }
+        };
+        
+        checkDeadline();
+        
+        // Check deadline every minute
+        const interval = setInterval(checkDeadline, 60000);
+        
+        return () => clearInterval(interval);
+    }, [assignment?.dueDate]);
+    
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
         questionIndex ? parseInt(questionIndex) - 1 : 0
     );
@@ -68,15 +137,21 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const [timeSpent, setTimeSpent] = useState(0);
     const [startTime, setStartTime] = useState(Date.now());
     const [isAutoSaving, setIsAutoSaving] = useState(false);
+    const [submission, setSubmission] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isPastDeadline, setIsPastDeadline] = useState(false);
 
     const currentQuestion = questions[currentQuestionIndex];
     const isFirstQuestion = currentQuestionIndex === 0;
     const isLastQuestion = currentQuestionIndex === questions.length - 1;
+    const isEditingDisabled = isSubmitted || isPastDeadline;
 
     // Define autoSaveAnswer using useCallback to prevent initialization issues
     const autoSaveAnswer = useCallback(async () => {
-        if (currentQuestion && steps.some(step => step.trim())) {
+        if (currentQuestion && steps.some(step => step.trim()) && submission && !isEditingDisabled) {
             setIsAutoSaving(true);
+            
+            const answerText = steps.filter(step => step.trim()).join('\n');
             
             const answerData = {
                 questionId: currentQuestion.id,
@@ -86,21 +161,29 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 savedAt: new Date().toISOString()
             };
 
-            // Update local state
+            // Update local state and localStorage
             const assignmentId = assignment?.id || 'temp-assignment';
             const currentSavedAnswers = { ...savedAnswers, [currentQuestion.id]: answerData };
             setSavedAnswers(currentSavedAnswers);
-
-            // Save to localStorage for persistence
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
             console.log('💾 Auto-saved answer to localStorage:', answerData);
 
-            // TODO: Save to backend
-            console.log('📡 Sending to backend:', answerData);
+            // Save to backend
+            try {
+                await saveAnswerToBackend({
+                    submissionId: submission.id,
+                    questionId: currentQuestion.id,
+                    answer: answerText
+                });
+                console.log('📡 Saved to backend successfully');
+            } catch (error) {
+                console.error('Error saving to backend:', error);
+                // Continue with local save even if backend fails
+            }
             
             setTimeout(() => setIsAutoSaving(false), 1000);
         }
-    }, [currentQuestion, steps, isFlagged, startTime, assignment?.id]); // Removed savedAnswers from dependencies
+    }, [currentQuestion, steps, isFlagged, startTime, assignment?.id, submission, isEditingDisabled]);
 
     useEffect(() => {
         setStartTime(Date.now());
@@ -181,10 +264,12 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         }
     };
 
-    const saveAnswer = () => {
-        // Manual save - only save if there's actual content or if flagged
-        if (currentQuestion && (steps.some(step => step.trim()) || isFlagged)) {
+    const saveAnswer = async () => {
+        // Manual save - only save if there's actual content or if flagged and not past deadline
+        if (currentQuestion && (steps.some(step => step.trim()) || isFlagged) && submission && !isEditingDisabled) {
             setIsAutoSaving(true);
+            
+            const answerText = steps.filter(step => step.trim()).join('\n');
             
             const answerData = {
                 questionId: currentQuestion.id,
@@ -194,14 +279,25 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 savedAt: new Date().toISOString()
             };
 
-            // Update local state
+            // Update local state and localStorage
             const assignmentId = assignment?.id || 'temp-assignment';
             const currentSavedAnswers = { ...savedAnswers, [currentQuestion.id]: answerData };
             setSavedAnswers(currentSavedAnswers);
-
-            // Save to localStorage for persistence
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
             console.log('💾 Manually saved answer:', answerData);
+
+            // Save to backend
+            try {
+                await saveAnswerToBackend({
+                    submissionId: submission.id,
+                    questionId: currentQuestion.id,
+                    answer: answerText
+                });
+                console.log('📡 Manually saved to backend successfully');
+            } catch (error) {
+                console.error('Error saving to backend:', error);
+                // Continue with local save even if backend fails
+            }
 
             setTimeout(() => setIsAutoSaving(false), 1000);
         }
@@ -209,40 +305,85 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
     const goToPrevious = () => {
         if (!isFirstQuestion) {
-            saveAnswer(); // Force save before navigation
+            if (!isEditingDisabled) {
+                saveAnswer(); // Force save before navigation
+            }
             setCurrentQuestionIndex(prev => prev - 1);
         }
     };
 
     const goToNext = () => {
         if (!isLastQuestion) {
-            saveAnswer(); // Force save before navigation
+            if (!isEditingDisabled) {
+                saveAnswer(); // Force save before navigation
+            }
             setCurrentQuestionIndex(prev => prev + 1);
         }
     };
 
     const toggleFlag = () => {
-        setIsFlagged(!isFlagged);
+        if (!isEditingDisabled) {
+            setIsFlagged(!isFlagged);
+        }
     };
 
     const submitAssignment = async () => {
-        // Final save
-        autoSaveAnswer();
+        console.log('🎯 SUBMIT ASSIGNMENT TRIGGERED');
+        console.log('📋 Assignment ID:', assignment.id);
+        console.log('👤 Current User ID:', currentUserId);
         
-        // TODO: Submit to backend
-        const submissionData = {
-            assignmentId: assignment?.id,
-            answers: savedAnswers,
-            submittedAt: new Date().toISOString(),
-            totalTimeSpent: timeSpent
-        };
+        // Check if past deadline
+        if (isPastDeadline) {
+            alert('Cannot submit assignment: deadline has passed.');
+            return;
+        }
         
-        console.log('Submitting assignment:', submissionData);
+        // Final save of current answer
+        await saveAnswer();
+        console.log('💾 Final answer saved');
         
-        if (onComplete) {
-            onComplete();
-        } else {
-            navigate('/student-dashboard');
+        try {
+            console.log('🚀 Starting submission process...');
+            
+            // Submit assignment to backend
+            const submittedSubmission = await submitAssignmentToBackend(assignment.id, currentUserId);
+            
+            console.log('✅ Submission process completed:', submittedSubmission);
+            
+            setSubmission(submittedSubmission);
+            setIsSubmitted(true);
+
+            // Save readiness based on assignment grade
+            try {
+                const gradingResult = await checkAndGradeAnswers(assignment.id, submittedSubmission.id);
+                const pct = Math.min(100, Math.max(0, gradingResult.percentage));
+                const classId = selectedClass?.classId || selectedClass?.id;
+                if (classId) {
+                    await recordStudentReadiness(currentUserId, classId, {
+                        readinessPercentage: pct,
+                        questionsAnswered: gradingResult.gradedAnswers,
+                        correctAnswers: Math.round((pct / 100) * gradingResult.gradedAnswers),
+                        studyTimeMinutes: 0,
+                        abilityEstimate: 0
+                    });
+                }
+            } catch { /* non-fatal — submit must succeed even if readiness save fails */ }
+
+            // Clear localStorage since assignment is submitted
+            const assignmentId = assignment?.id || 'temp-assignment';
+            localStorage.removeItem(`assignment-answers-${assignmentId}`);
+            
+            console.log('✅ Assignment submitted successfully:', submittedSubmission);
+            
+            // Navigate back or call completion handler
+            if (onComplete) {
+                onComplete();
+            } else {
+                navigate('/student-dashboard');
+            }
+        } catch (error) {
+            console.error('❌ Error submitting assignment:', error);
+            alert('Failed to submit assignment. Please try again.');
         }
     };
 
@@ -259,7 +400,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             const now = new Date();
             const diff = due - now;
             
-            if (diff <= 0) return 'Overdue';
+            if (diff <= 0) return 'Deadline Passed';
             
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -299,24 +440,43 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         <div className="assignment-meta">
                             <span className="class-name">{selectedClass?.name}</span>
                             <span className="due-date">Due: {getDueDate()}</span>
-                            <span className={`time-remaining ${getTimeRemaining().includes('Overdue') ? 'overdue' : ''}`}>
+                            <span className={`time-remaining ${(getTimeRemaining().includes('Deadline Passed') || getTimeRemaining().includes('Overdue')) ? 'overdue' : ''}`}>
                                 <BiTime /> {getTimeRemaining()}
                             </span>
+                            {isPastDeadline && (
+                                <span className="deadline-warning" style={{color: '#EF4444', fontWeight: 'bold'}}>
+                                    ⚠️ Deadline has passed - editing disabled
+                                </span>
+                            )}
                         </div>
                     </div>
                     <div className="assignment-actions">
+                        {isSubmitted && (
+                            <span className="submitted-indicator">
+                                <BiCheckCircle style={{ color: '#22C55E' }} /> Submitted
+                            </span>
+                        )}
+                        {isPastDeadline && !isSubmitted && (
+                            <span className="deadline-passed-indicator">
+                                <BiTime style={{ color: '#EF4444' }} /> Deadline Passed
+                            </span>
+                        )}
                         {isAutoSaving && (
                             <span className="auto-save-indicator">
                                 <BiSave /> Saving...
                             </span>
                         )}
-                        <button onClick={saveAnswer} className="save-btn">
-                            <BiSave /> Save
-                        </button>
-                        {isLastQuestion && (
-                            <button onClick={submitAssignment} className="submit-btn">
-                                <BiSend /> Submit Assignment
-                            </button>
+                        {!isEditingDisabled && (
+                            <>
+                                <button onClick={saveAnswer} className="save-btn" disabled={isAutoSaving}>
+                                    <BiSave /> Save
+                                </button>
+                                {isLastQuestion && (
+                                    <button onClick={submitAssignment} className="submit-btn">
+                                        <BiSend /> Submit Assignment
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -349,12 +509,14 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         {questions.map((_, index) => (
                             <button
                                 key={index}
-                                className={`question-indicator ${index === currentQuestionIndex ? 'current' : ''} ${savedAnswers[questions[index]?.id] ? 'answered' : ''}`}
+                                className={`question-indicator ${index === currentQuestionIndex ? 'current' : ''} ${savedAnswers[questions[index]?.id] ? 'answered' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
                                 onClick={() => {
-                                    saveAnswer(); // Force save before navigation
+                                    if (!isEditingDisabled) {
+                                        saveAnswer(); // Force save before navigation
+                                    }
                                     setCurrentQuestionIndex(index);
                                 }}
-                                title={`Question ${index + 1}${savedAnswers[questions[index]?.id] ? ' (Answered)' : ''}`}
+                                title={`Question ${index + 1}${savedAnswers[questions[index]?.id] ? ' (Answered)' : ''}${isSubmitted ? ' (Submitted)' : ''}${isPastDeadline ? ' (Deadline Passed)' : ''}`}
                             >
                                 {savedAnswers[questions[index]?.id] ? <BiCheckCircle /> : index + 1}
                             </button>
@@ -376,13 +538,20 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         <div className="question-header">
                             <div className="question-title">
                                 <h2>Question {currentQuestionIndex + 1}</h2>
-                                <button 
-                                    onClick={toggleFlag}
-                                    className={`flag-btn ${isFlagged ? 'flagged' : ''}`}
-                                    title={isFlagged ? 'Remove flag' : 'Flag for review'}
-                                >
-                                    <BiFlag />
-                                </button>
+                                {!isEditingDisabled && (
+                                    <button 
+                                        onClick={toggleFlag}
+                                        className={`flag-btn ${isFlagged ? 'flagged' : ''}`}
+                                        title={isFlagged ? 'Remove flag' : 'Flag for review'}
+                                    >
+                                        <BiFlag />
+                                    </button>
+                                )}
+                                {isEditingDisabled && isFlagged && (
+                                    <span className="flag-indicator">
+                                        <BiFlag style={{ color: '#F59E0B' }} />
+                                    </span>
+                                )}
                             </div>
                             <span className={`question-difficulty ${currentQuestion?.difficultyLevel?.toLowerCase()}`}>
                                 {currentQuestion?.difficultyLevel || currentQuestion?.difficulty}
@@ -411,23 +580,28 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     </div>
 
                     <div className="answer-section">
-                        <h3>Your Answer</h3>
+                        <h3>
+                            Your Answer 
+                            {isSubmitted && <span style={{color: '#22C55E'}}>(Submitted)</span>}
+                            {isPastDeadline && !isSubmitted && <span style={{color: '#EF4444'}}>(Deadline Passed)</span>}
+                        </h3>
                         <div className="answer-input">
                             {steps.map((step, idx) => (
                                 <div key={idx} className="answer-step">
                                     <span className="step-number">{idx + 1}.</span>
                                     <EditableMathField
                                         latex={step}
-                                        onChange={mf => handleStepChange(idx, mf.latex())}
-                                        onKeyDown={e => handleKeyDown(e, idx)}
+                                        onChange={mf => !isEditingDisabled && handleStepChange(idx, mf.latex())}
+                                        onKeyDown={e => !isEditingDisabled && handleKeyDown(e, idx)}
                                         mathquillDidMount={mf => {
                                             stepReference.current[idx] = mf;
                                         }}
                                         config={{
-                                            spaceBehavesLikeTab: true,
+                                            spaceBehavesLikeTab: !isEditingDisabled,
                                             leftRightIntoCmdGoes: 'up',
                                             restrictMismatchedBrackets: true,
-                                            sumStartsWithNEquals: true
+                                            sumStartsWithNEquals: true,
+                                            readOnly: isEditingDisabled
                                         }}
                                     />
                                 </div>

@@ -4,7 +4,9 @@ import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiH
 import "../TeacherDashboard.css";
 
 // Import services
-import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
+import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo, getTeacherReadinessChartData } from "./TeacherDashboardService";
+import { useAuth } from '../../../contexts/AuthContext';
+import { useDashboardNav } from '../../../hooks/useDashboardNav';
 
 // Import chart components
 import TeacherReadinessChart from "../Charts/TeacherReadinessChart";
@@ -33,42 +35,31 @@ function heatColor(v) {
 }
 
 export default function TeacherDashboard() {
-  const [activePage, setActivePage] = useState('overview');
+  const { userId, authLoading, logout } = useAuth();
+  const {
+    activePage, setActivePage,
+    currentView, setCurrentView,
+    selectedClass, setSelectedClass,
+    mobileMenuOpen,
+    handleNavClick,
+    handleClassClick,
+    handleBackToClasses,
+    handleBackToOverview,
+    toggleMobileMenu,
+  } = useDashboardNav();
+
   const [teacherInfo, setTeacherInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedClass, setSelectedClass] = useState(null); 
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'class-overview', 'students', 'analytics', 'assignments'
   const [totalStudentsCount, setTotalStudentsCount] = useState(0);
   const [loadingStudentCount, setLoadingStudentCount] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [readinessChartData, setReadinessChartData] = useState([]);
   const [classColors, setClassColors] = useState({});
   const [teacherStats, setTeacherStats] = useState({});
-
-  // Add this new state variable for storing actual student data
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
 
   const navigate = useNavigate();
-
-  // Mobile navigation handlers
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const handlePageChangeWithMobile = (page) => {
-    setActivePage(page);
-    setCurrentView('main');
-    setSelectedClass(null);
-    setMobileMenuOpen(false); // Close mobile menu
-  };
-
-  // Navigation handlers
-  const handleClassClick = (classItem) => {
-    setSelectedClass(classItem);
-    setCurrentView('class-overview'); // Set to class overview
-  };
 
   const handleNavigateFromOverview = (section) => {
     // Special case: if navigating to assignments, switch to main assignments page
@@ -87,15 +78,6 @@ export default function TeacherDashboard() {
     }
   };
 
-  const handleBackToClasses = () => {
-    setSelectedClass(null);
-    setCurrentView('main'); // Go back to main dashboard
-  };
-
-  const handleBackToOverview = () => {
-    setCurrentView('class-overview'); // Go back to class overview
-  };
-
   // Clean up page navigation
   const handlePageChange = (page) => {
     setActivePage(page);
@@ -104,10 +86,9 @@ export default function TeacherDashboard() {
   };
    
   useEffect(() => {
-    const token = localStorage.getItem('token'); // Get token fresh each time
-    
-    if (!token) {
-      console.log('No token found, redirecting to login');
+    if (authLoading) return;
+
+    if (!userId) {
       navigate('/login');
       return;
     }
@@ -133,7 +114,7 @@ export default function TeacherDashboard() {
     };
 
     fetchTeacherData();
-  }, [navigate]); // Removed token from dependencies since we get it fresh each time
+  }, [navigate, userId, authLoading]);
 
   // Function to calculate total students
   const calculateTotalStudents = async () => {
@@ -141,17 +122,12 @@ export default function TeacherDashboard() {
       setLoadingStudentCount(true);
       setLoadingStudentsData(true);
       
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!userId) {
         throw new Error('No authentication token found');
       }
 
-      // Get teacher ID from token
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const teacherId = payload.sub;
-
       // Get all classes for this teacher
-      const classes = await getTeacherClasses(teacherId);
+      const classes = await getTeacherClasses();
 
 
       // Use a Set to track unique student IDs and Map to store student data
@@ -181,7 +157,7 @@ export default function TeacherDashboard() {
                 name: `${studentInfo.firstName} ${studentInfo.lastName}`,
                 email: studentInfo.email,
                 className: classItem.name,
-                readiness: studentProgress?.readinessLevel || Math.floor(Math.random() * 40 + 60),
+                readiness: studentProgress?.readinessLevel || studentProgress?.score || 0,
                 averageScore: studentProgress?.averageScore || Math.floor(Math.random() * 30 + 70),
                 improvement: studentProgress?.improvement || Math.floor(Math.random() * 15 + 1),
                 attempts: studentProgress?.totalAttempts || studentProgress?.assignmentsCompleted || Math.floor(Math.random() * 50 + 10),
@@ -218,8 +194,8 @@ export default function TeacherDashboard() {
       setTotalStudentsCount(uniqueStudentCount);
       setActualStudentsData(studentsArray);
       
-      // Generate chart data after setting students data (now async)
-      await generateReadinessChartData(classes, studentsArray);
+      // Generate chart data from real API
+      await generateReadinessChartData(classes);
       
     } catch (error) {
       console.error('❌ Error calculating unique students:', error);
@@ -231,18 +207,16 @@ export default function TeacherDashboard() {
     }
   };
 
-  // Function to generate readiness chart data using the new logic
-  const generateReadinessChartData = (classes, studentsData) => {
+  // Function to generate readiness chart data from real API data
+  const generateReadinessChartData = async (classes) => {
     try {
-      // Use the new chart logic
-      const chartData = generateClassReadinessData(classes, studentsData, 8);
+      const chartData = await getTeacherReadinessChartData(userId, 8);
       const colors = generateClassColors(classes);
       const stats = calculateTeacherStats(chartData);
-      
+
       setReadinessChartData(chartData);
       setClassColors(colors);
       setTeacherStats(stats);
-      
     } catch (error) {
       console.error('Error generating chart data:', error);
       setReadinessChartData([]);
@@ -555,49 +529,49 @@ export default function TeacherDashboard() {
         <nav className="td-nav">
           <button 
             className={`td-nav-item ${activePage === 'overview' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('overview')}
+            onClick={() => handleNavClick('overview')}
           >
             <BiHome style={{ marginRight: '8px', fontSize: '18px'}} />
             Overview
           </button>
           <button 
             className={`td-nav-item ${activePage === 'classes' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('classes')}
+            onClick={() => handleNavClick('classes')}
           >
             <BiGroup style={{ marginRight: '8px', fontSize: '18px'}} />
             My Classes
           </button>
           <button 
             className={`td-nav-item ${activePage === 'insights' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('insights')}
+            onClick={() => handleNavClick('insights')}
           >
             <BiBarChart style={{ marginRight: '8px', fontSize: '18px'}} />
             Insights
           </button>
           <button 
             className={`td-nav-item ${activePage === 'assignments' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('assignments')}
+            onClick={() => handleNavClick('assignments')}
           >
             <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
             Assignments
           </button>
           <button 
             className={`td-nav-item ${activePage === 'ta' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('ta')}
+            onClick={() => handleNavClick('ta')}
           >
             <BiBrain style={{ marginRight: '8px', fontSize: '18px'}}/>
             MY TA
           </button>
           <button 
             className={`td-nav-item ${activePage === 'reports' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('reports')}
+            onClick={() => handleNavClick('reports')}
           >
             <BiFile style={{ marginRight: '8px', fontSize: '18px'}} />
             Reports
           </button>
           <button 
             className={`td-nav-item ${activePage === 'settings' ? 'active' : ''}`}
-            onClick={() => handlePageChangeWithMobile('settings')}
+            onClick={() => handleNavClick('settings')}
           >
             <BiCog style={{ marginRight: '8px', fontSize: '18px'}} />
             Settings
@@ -608,13 +582,7 @@ export default function TeacherDashboard() {
         <div className="td-sidebar-bottom">
           <button
             className="td-nav-item logout-btn"
-            onClick={async () => {
-              await new Promise(resolve => {
-                localStorage.removeItem('token');
-                resolve();
-              });
-              navigate('/login');
-            }}
+            onClick={() => logout(navigate)}
           >
             <BiLogOut style={{ marginRight: '8px', fontSize: '18px'}} />
             Logout

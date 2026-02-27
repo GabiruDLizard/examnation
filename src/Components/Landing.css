@@ -1,5 +1,5 @@
 .landing-page {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-primary);
   color: #1F1F1F;
   background-color: #FAFAFF;
 }
@@ -47,9 +47,7 @@
 }
 
 .hero-image img {
-  transform: scale(2);
-  transform-origin: center center;
-  max-width: none;
+  max-width: 100%;
   height: auto;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(108, 99, 255, 0.2);
@@ -60,7 +58,7 @@
   margin-top: 2rem;
 }
 
-button {
+.landing-page button {
   padding: 0.8rem 1.8rem;
   border-radius: 8px;
   border: none;
@@ -68,13 +66,13 @@ button {
   font-weight: 600;
 }
 
-button.primary {
+.landing-page button.primary {
   background-color: #6C63FF;
   color: #fff;
   margin-right: 1rem;
 }
 
-button.secondary {
+.landing-page button.secondary {
   background-color: #ECEAFF;
   color: #1F1F1F;
 }
@@ -622,11 +620,7 @@ button.secondary {
         max-width: 300px;
         margin: 0 auto;
     }
-    
-    .hero-image img {
-        transform: scale(1.2);
-    }
-    
+
     .cta-buttons {
         display: flex;
         flex-direction: column;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
 import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 
 export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -61,16 +62,12 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   const fetchClasses = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
+      const teacherId = getUserIdFromToken();
+      if (!teacherId) {
         throw new Error('No authentication token found');
       }
 
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const teacherId = payload.sub;
-
-      const classes = await getTeacherClasses(teacherId);
+      const classes = await getTeacherClasses();
       
       // Transform the API response to match your component's expected format
       const transformedClasses = await Promise.all(classes.map(async (classItem) => {

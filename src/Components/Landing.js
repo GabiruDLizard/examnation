@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getToken } from '../utils/tokenUtils';
 import './Landing.css';
 import { useNavigate } from 'react-router-dom';
 import mainPreview from '../Resources/undraw_online-test_cqv0.svg';
@@ -41,7 +42,7 @@ export default function ExamNationLanding() {
 
     const handleGetStarted = () => {
         // Check if user is logged in, if not redirect to login
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (token) {
             // User is logged in, redirect to dashboard
             navigate('/studentdashboard');
@@ -53,7 +54,7 @@ export default function ExamNationLanding() {
 
     const handleExploreInsights = () => {
         // Same logic for explore insights
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (token) {
             navigate('/studentdashboard');
         } else {

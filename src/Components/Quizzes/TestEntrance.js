@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TestEntrance.css'; // Add styling if you want
+import { getToken } from '../../utils/tokenUtils';
 
 const TestEntrance = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = getToken();
   const [selectedQuestionCount, setSelectedQuestionCount] = useState(10); // Default to 10 questions
 
   const ToExam = () => {

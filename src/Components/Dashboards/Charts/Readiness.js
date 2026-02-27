@@ -24,16 +24,34 @@ ChartJS.register(
   Filler
 );
 
-const ReadinessChart = ({ readinessScores = [] }) => {
-  // If no data, show empty state
-  if (!readinessScores || readinessScores.length === 0) {
+const CLASS_COLORS = [
+  "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#0ea5e9"
+];
+
+const formatWeek = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'both' }) => {
+  const hasPracticeData = readinessScores && readinessScores.length > 0;
+  const hasClassData = classHistory && classHistory.length > 0;
+
+  // If no data at all, show empty state
+  if (!hasPracticeData && !hasClassData) {
+    const emptyStateMessage = viewType === 'progress' 
+      ? "Complete some practice questions to see your progress over time"
+      : viewType === 'class'
+      ? "Join a class to see weekly readiness comparisons"
+      : "Complete some questions to see your readiness progress";
+      
     return (
-      <div style={{ 
-        width: "100%", 
-        height: "260px", 
-        display: "flex", 
-        flexDirection: "column", 
-        justifyContent: "center", 
+      <div style={{
+        width: "100%",
+        height: "260px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
         alignItems: "center",
         color: "#6b7280",
         backgroundColor: "#f9fafb",
@@ -44,7 +62,7 @@ const ReadinessChart = ({ readinessScores = [] }) => {
           <path d="M18.7 8l-5.1 4.3-3.1-3.4L7 12" />
         </svg>
         <h3 style={{ margin: "12px 0 4px 0", fontSize: "16px", fontWeight: "500" }}>No Data Available</h3>
-        <p style={{ margin: 0, fontSize: "14px", textAlign: "center" }}>Complete some questions to see your readiness progress</p>
+        <p style={{ margin: 0, fontSize: "14px", textAlign: "center" }}>{emptyStateMessage}</p>
       </div>
     );
   }
@@ -197,6 +215,147 @@ const ReadinessChart = ({ readinessScores = [] }) => {
     },
   };
 
+  // Build per-class weekly chart data
+  let classChartSection = null;
+  if (hasClassData) {
+    const weeks = [...new Set(classHistory.map(r => r.weekDate))].sort();
+    const classNames = [...new Set(classHistory.map(r => r.className))];
+
+    const classDatasets = classNames.map((cn, i) => ({
+      label: cn,
+      data: weeks.map(w => {
+        const match = classHistory.find(r => r.weekDate === w && r.className === cn);
+        return match ? Math.round(match.readinessPercentage) : null;
+      }),
+      borderColor: CLASS_COLORS[i % CLASS_COLORS.length],
+      backgroundColor: "transparent",
+      tension: 0.3,
+      fill: false,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      spanGaps: true,
+    }));
+
+    classDatasets.push({
+      label: "Ready (85%)",
+      data: Array(weeks.length).fill(85),
+      borderColor: "#10b981",
+      borderDash: [8, 4],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false,
+    });
+
+    const classChartData = {
+      labels: weeks.map(formatWeek),
+      datasets: classDatasets,
+    };
+
+    const classChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      animation: { duration: 1000 },
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: { font: { size: 12 }, color: "#6b7280", boxWidth: 20, padding: 12 },
+        },
+        tooltip: {
+          backgroundColor: "rgba(0,0,0,0.8)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          cornerRadius: 8,
+          padding: 10,
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`,
+          },
+        },
+      },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          grid: { color: "#f3f4f6" },
+          border: { display: false },
+          ticks: { stepSize: 20, color: "#6b7280", callback: (v) => v + "%" },
+        },
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: "#6b7280", font: { size: 12 } },
+        },
+      },
+    };
+
+    classChartSection = (
+      <div style={{ marginTop: hasPracticeData ? "28px" : "0" }}>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>
+          Readiness by Class (Weekly)
+        </div>
+        <div style={{ width: "100%", height: "200px" }}>
+          <Line data={classChartData} options={classChartOptions} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPracticeData && viewType === 'progress') {
+    return (
+      <div style={{
+        width: "100%",
+        height: "260px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        color: "#6b7280",
+        backgroundColor: "#f9fafb",
+        borderRadius: "8px"
+      }}>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 3v18h18" />
+          <path d="M18.7 8l-5.1 4.3-3.1-3.4L7 12" />
+        </svg>
+        <h3 style={{ margin: "12px 0 4px 0", fontSize: "16px", fontWeight: "500" }}>No Practice Data</h3>
+        <p style={{ margin: 0, fontSize: "14px", textAlign: "center" }}>Complete some practice questions to see your progress</p>
+      </div>
+    );
+  }
+
+  if (!hasClassData && viewType === 'class') {
+    return (
+      <div style={{
+        width: "100%",
+        height: "260px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        color: "#6b7280",
+        backgroundColor: "#f9fafb",
+        borderRadius: "8px"
+      }}>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 3v18h18" />
+          <path d="M18.7 8l-5.1 4.3-3.1-3.4L7 12" />
+        </svg>
+        <h3 style={{ margin: "12px 0 4px 0", fontSize: "16px", fontWeight: "500" }}>No Class Data</h3>
+        <p style={{ margin: 0, fontSize: "14px", textAlign: "center" }}>Join a class to see weekly readiness comparisons</p>
+      </div>
+    );
+  }
+
+  if (!hasPracticeData) {
+    return (
+      <div style={{ width: "100%", height: "100%", position: "relative" }}>
+        {classChartSection}
+      </div>
+    );
+  }
+
   // Calculate stats for continuous progress
   const latestReadiness = readinessData[readinessData.length - 1] || 0;
   const firstReadiness = readinessData[0] || 0;
@@ -205,45 +364,38 @@ const ReadinessChart = ({ readinessScores = [] }) => {
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      {/* Chart container */}
-      <div style={{ width: "100%", height: "200px" }}>
-        <Line data={data} options={options} />
-      </div>
-      
-      {/* Updated stats for continuous progress */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center",
-        marginTop: "12px",
-        padding: "0 8px",
-        fontSize: "12px",
-        color: "#6b7280"
-      }}>
-        <div>
-          <span style={{ fontWeight: "500", color: "#374151" }}>
-            {readinessScores.length} Questions
-          </span>
-        </div>
-        <div>
-          <span style={{ fontWeight: "500", color: "#374151" }}>
-            Latest: {latestReadiness}%
-          </span>
-        </div>
-        <div>
-          <span style={{ 
-            fontWeight: "500", 
-            color: progressChange >= 0 ? "#10b981" : "#ef4444" 
+      {/* Conditional chart rendering based on viewType */}
+      {viewType === 'progress' || viewType === 'both' ? (
+        <>
+          {/* Practice progress chart */}
+          <div style={{ width: "100%", height: "200px" }}>
+            <Line data={data} options={options} />
+          </div>
+
+          {/* Stats row */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: "12px",
+            padding: "0 8px",
+            fontSize: "12px",
+            color: "#6b7280"
           }}>
-            {progressChange >= 0 ? '+' : ''}{progressChange.toFixed(1)}% Progress
-          </span>
-        </div>
-        <div>
-          <span style={{ fontWeight: "500", color: "#374151" }}>
-            {totalSessions} Session{totalSessions !== 1 ? 's' : ''}
-          </span>
-        </div>
-      </div>
+            <div><span style={{ fontWeight: "500", color: "#374151" }}>{readinessScores.length} Questions</span></div>
+            <div><span style={{ fontWeight: "500", color: "#374151" }}>Latest: {latestReadiness}%</span></div>
+            <div>
+              <span style={{ fontWeight: "500", color: progressChange >= 0 ? "#10b981" : "#ef4444" }}>
+                {progressChange >= 0 ? "+" : ""}{progressChange.toFixed(1)}% Progress
+              </span>
+            </div>
+            <div><span style={{ fontWeight: "500", color: "#374151" }}>{totalSessions} Session{totalSessions !== 1 ? "s" : ""}</span></div>
+          </div>
+        </>
+      ) : null}
+
+      {/* Per-class weekly chart */}
+      {(viewType === 'class' || viewType === 'both') && classChartSection}
     </div>
   );
 };

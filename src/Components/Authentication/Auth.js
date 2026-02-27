@@ -4,61 +4,83 @@ import logo from '../../Resources/PHold-logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from './AuthService';
 import { FaUserCircle } from 'react-icons/fa';
+import { getToken, setToken, removeToken, getUserIdFromToken, getRoleFromToken } from '../../utils/tokenUtils';
+import { authFetch } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Auth = () => {
+    const { refreshAuth } = useAuth();
     const location = useLocation();
     const [isLogin, setIsLogin] = useState(location.state?.isLogin ?? true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');	
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordForgot, setForgotPassword] = useState(false);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const token = getToken();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // --- Form validation ---
+        setErrorMessage('');
+
+        if (!isLogin) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                setErrorMessage('Please enter a valid email address.');
+                return;
+            }
+            if (password.length < 6) {
+                setErrorMessage('Password must be at least 6 characters.');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setErrorMessage('Passwords do not match.');
+                return;
+            }
+        } else {
+            if (!username.trim()) {
+                setErrorMessage('Username or email is required.');
+                return;
+            }
+            if (!password) {
+                setErrorMessage('Password is required.');
+                return;
+            }
+        }
+        // --- End validation ---
+
         setIsLoading(true);
-        
+
         if (isLogin) {
             try {
                 const data = await login(username, password);
-                console.log('Login response:', data); // Debug log
-                
+
                 if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    
-                    // Decode the JWT token to get the role
-                    try {
-                        const payload = JSON.parse(atob(data.token.split('.')[1]));
-                        console.log('Token payload:', payload); // Debug log
-                        
-                        // Check the role from token payload
-                        const userRole = payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-                        console.log('User role from token:', userRole);
-                        
-                        if (userRole === 'Educator' || userRole === 'educator' || userRole === 'Teacher' || userRole === 'teacher') {
-                            console.log('Navigating to teacher dashboard');
-                            navigate('/teacherdashboard');
-                        } else {
-                            console.log('Navigating to student dashboard');
-                            navigate('/studentdashboard');
-                        }
-                    } catch (tokenError) {
-                        console.error('Error decoding token:', tokenError);
-                        // Default to student dashboard if token decode fails
+                    setToken(data.token);
+                    refreshAuth();
+
+                    const userRole = getRoleFromToken();
+                    const normalizedRole = userRole?.toLowerCase();
+
+                    if (normalizedRole === 'educator' || normalizedRole === 'teacher') {
+                        navigate('/teacherdashboard');
+                    } else {
                         navigate('/studentdashboard');
                     }
                 } else {
-                    alert(data.message || 'Login failed');
+                    setErrorMessage(data.message || 'Login failed');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Error connecting to server');
+                setErrorMessage('Error connecting to server. Please try again.');
             } finally {
                 setIsLoading(false);
             }
@@ -71,19 +93,12 @@ const Auth = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const userId = payload.sub;
-                const response = await fetch(`https://examnationwebapi.azurewebsites.net/api/user/${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const userId = getUserIdFromToken();
+                const response = await authFetch(`/user/${userId}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch user data');
                 }
                 const data = await response.json();
-                console.log('User data:', data); // Debug log
                 setUser(data);
             } catch (error) {
                 console.error(error);
@@ -94,7 +109,7 @@ const Auth = () => {
         }
     }, [token]);
 
-    if(!token) {
+    if (!token) {
         return (
             <>
                 {/* Floating Background */}
@@ -115,115 +130,123 @@ const Auth = () => {
                         <div className="logo">
                             <img src={logo} alt="Logo" onClick={() => navigate('/')} />
                         </div>
-                <form onSubmit={handleSubmit}>
-                {!isLogin ? (
-                        <>
-                            <input
-                                type="text"
-                                placeholder="FirstName"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder="LastName"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                required
-                            />
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder="Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <input
-                                type="text"
-                                placeholder="Username / Email"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                            />
-                        </>
-                    )}
+                        <form onSubmit={handleSubmit}>
+                            {!isLogin ? (
+                                <>
+                                    <input
+                                        type="text"
+                                        placeholder="FirstName"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="LastName"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required
+                                    />
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        required
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <input
+                                        type="text"
+                                        placeholder="Username / Email"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        required
+                                    />
+                                </>
+                            )}
 
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    {!isLogin && (
-                        <input
-                            type="password"
-                            placeholder="Confirm Password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                        />
-                    )}
-                    
-                    {/* Submit Button with Spinner */}
-                    <button type="submit" disabled={isLoading} className="submit-btn">
-                        {isLoading ? (
-                            <>
-                                <div className="spinner"></div>
-                                {isLogin ? 'Signing In...' : 'Creating Account...'}
-                            </>
-                        ) : (
-                            isLogin ? 'Login' : 'Register'
-                        )}
-                    </button>
-                    
-                    <div className="bottomloginnav">
-                        {isLogin ? (
-                            <>
-                                <p onClick={() => navigate('/passwordreset')}>Forgot Password?</p>
-                                <p onClick={() => {
-                                    setIsLogin(false)
-                                    setUsername('');
-                                    setPassword('');
-                                    setFirstName('');
-                                    setLastName('');
-                                    setEmail('');
-                                    setConfirmPassword('');
-                                }}>Sign Up</p>
-                            </>
-                        ) : (
-                            <>
-                                <p onClick={() => {
-                                    setIsLogin(true)
-                                    setUsername('');
-                                    setPassword('');
-                                    setFirstName('');
-                                    setLastName('');
-                                    setEmail('');
-                                    setConfirmPassword('');
-                                    }}>Already have an account?</p>
-                                <p onClick={() => navigate('/')}>Cancel</p>
-                            </>
-                        )}
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            {!isLogin && (
+                                <input
+                                    type="password"
+                                    placeholder="Confirm Password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                />
+                            )}
+
+                            {errorMessage && (
+                                <div className="auth-error-message" role="alert">
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {/* Submit Button with Spinner */}
+                            <button type="submit" disabled={isLoading} className="submit-btn">
+                                {isLoading ? (
+                                    <>
+                                        <div className="spinner"></div>
+                                        {isLogin ? 'Signing In...' : 'Creating Account...'}
+                                    </>
+                                ) : (
+                                    isLogin ? 'Login' : 'Register'
+                                )}
+                            </button>
+
+                            <div className="bottomloginnav">
+                                {isLogin ? (
+                                    <>
+                                        <p onClick={() => navigate('/passwordreset')}>Forgot Password?</p>
+                                        <p onClick={() => {
+                                            setIsLogin(false);
+                                            setUsername('');
+                                            setPassword('');
+                                            setFirstName('');
+                                            setLastName('');
+                                            setEmail('');
+                                            setConfirmPassword('');
+                                            setErrorMessage('');
+                                        }}>Sign Up</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p onClick={() => {
+                                            setIsLogin(true);
+                                            setUsername('');
+                                            setPassword('');
+                                            setFirstName('');
+                                            setLastName('');
+                                            setEmail('');
+                                            setConfirmPassword('');
+                                            setErrorMessage('');
+                                        }}>Already have an account?</p>
+                                        <p onClick={() => navigate('/')}>Cancel</p>
+                                    </>
+                                )}
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
-        </div>
-    </>
-    );
+                </div>
+            </>
+        );
     } else {
-        return(
+        return (
             <>
                 {/* Floating Background */}
                 <div className="auth-page-wrapper">
@@ -241,43 +264,33 @@ const Auth = () => {
                 <div className="auth-content-area">
                     <div className="auth-container">
                         <div className="logo">
-                            <img src={logo} alt="Logo"/>
+                            <img src={logo} alt="Logo" />
                         </div>
-                <div className="already-logged-in">
-                    <h2>You are already logged in as the user below</h2>
-                    <FaUserCircle size={20}/> {user ? user.username : 'User'}
-                    <button onClick={() => {localStorage.clear(); window.location.href = '/login';}}>Logout</button>
-                    <button onClick={() => {
-                        console.log('User role from stored data:', user?.role); // Debug log
-                        
-                        // Also check token for role if user data doesn't have it
-                        let userRole = user?.role;
-                        if (!userRole) {
-                            try {
-                                const payload = JSON.parse(atob(token.split('.')[1]));
-                                userRole = payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-                            } catch (e) {
-                                console.error('Error decoding token for role:', e);
-                            }
-                        }
-                        
-                        console.log('Final user role:', userRole);
-                        
-                        if(userRole === 'Student' || userRole === 'student'){
-                            window.location.href = '/studentdashboard';
-                        } else if(userRole === 'Educator' || userRole === 'educator' || userRole === 'Teacher' || userRole === 'teacher'){
-                            window.location.href = '/teacherdashboard';
-                        } else {
-                            console.log('Unknown role, defaulting to student dashboard');
-                            window.location.href = '/studentdashboard';
-                        }
-                    }}>Go to Dashboard</button>
+                        <div className="already-logged-in">
+                            <h2>You are already logged in as the user below</h2>
+                            <FaUserCircle size={20} /> {user ? user.username : 'User'}
+                            <button onClick={() => { removeToken(); window.location.href = '/login'; }}>Logout</button>
+                            <button onClick={() => {
+                                let userRole = user?.role;
+                                if (!userRole) {
+                                    userRole = getRoleFromToken();
+                                }
+
+                                const normalizedRole = userRole?.toLowerCase();
+                                if (normalizedRole === 'student') {
+                                    window.location.href = '/studentdashboard';
+                                } else if (normalizedRole === 'educator' || normalizedRole === 'teacher') {
+                                    window.location.href = '/teacherdashboard';
+                                } else {
+                                    window.location.href = '/studentdashboard';
+                                }
+                            }}>Go to Dashboard</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </>
+            </>
         );
     }
-}
+};
 
 export default Auth;

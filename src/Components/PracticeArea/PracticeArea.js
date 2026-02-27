@@ -23,6 +23,7 @@ const PracticeArea = () => {
   const [hint, setHint] = useState('');
   const [hintload, setHintload] = useState(false);
   const [steps, setSteps] = useState(['']);
+  const [finalAnswer, setFinalAnswer] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [startTime, setStartTime] = useState(null);
@@ -83,20 +84,20 @@ const PracticeArea = () => {
     }
   };
   const handleHint = async () => {
-    const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-    const latexString = `Question: ${question["Question Text"]}\n\nUser Solution:\n${submission}`;
+    const workingSteps = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
+    const hintString = `Question: ${question["Question Text"]}\n\nStudent Working:\n${workingSteps}\n\nCurrent Final Answer: ${finalAnswer}`;
     setHintload(true);
     try{
-        const response = await needAHint(latexString);
+        const response = await needAHint(hintString);
         setHint(response);
         setHintload(false);
     } catch (error) {
         console.error('Error fetching GPT response:', error);
         setHintload(false);
     }
-    console.log(latexString);
+    console.log(hintString);
     
-    //const feedback = await askGPT(latexString);
+    //const feedback = await askGPT(hintString);
     console.log(feedback);
   };
   const handleGraphStateChange = (graphState) => {
@@ -106,20 +107,21 @@ const PracticeArea = () => {
     setIsTimerRunning(false);
     const finalTime = elapsedTime;
     console.log(`Time taken: ${formatTime(finalTime)}`);
-    const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-    const latexString = `Question: ${question["Question Text"]}\n\nUser Solution:\n${submission}`;
+    const workingSteps = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
+    const submissionString = `Question: ${question["Question Text"]}\n\nStudent Working:\n${workingSteps}\n\nFinal Answer: ${finalAnswer}`;
     setLoading(true);
+    setHint(''); // Clear hint when submitting
     try{
-        const response = await askGPT(latexString);
+        const response = await askGPT(submissionString);
         setFeedback(response);
         setLoading(false);
     } catch (error) {
         console.error('Error fetching GPT response:', error);
         setLoading(false);
     }
-    console.log(latexString);
+    console.log(submissionString);
     
-    //const feedback = await askGPT(latexString);
+    //const feedback = await askGPT(submissionString);
     console.log(feedback);
   };
   if (!question) {
@@ -130,6 +132,7 @@ const PracticeArea = () => {
 
   const clearField = () => {
     setSteps(['']);
+    setFinalAnswer('');
     setFeedback('');
     setHint('');
     setGraphState(null);
@@ -174,153 +177,127 @@ const PracticeArea = () => {
             ←
           </button>
         </div>
-        <div className="practiceareagrid">
-          <div className= "questionCard">
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-              <h2 className="practice-title">{question?.UniqueName || "Practice Area"}</h2>
-              <span className={`question-difficulty ${question.Difficulty.toLowerCase()}`}>{question.Difficulty}</span>
+        <div className="practiceareagrid"> 
+          {/* Question Panel - LeetCode Style */}
+          <div className="questionCard">
+            <div className="question-header">
+              <div className="question-title">
+                {question?.UniqueName || "Practice Problem"}
+                <span className={`difficulty-badge ${question.Difficulty.toLowerCase()}`}>
+                  {question.Difficulty}
+                </span>
+              </div>
             </div>
-            <div className="questionBlock">
-              <strong>Question:</strong>
-              <div className="questionText">
-                {question["Question Text"]}
+            <div className="question-content">
+              <div className="problem-statement">
+                <h4>Problem</h4>
+                <div className="questionText">
+                  {question["Question Text"]}
+                </div>
               </div>
             </div>
           </div>
+          {/* Solution Panel - LeetCode Style */}
           <div className="answerBlock">
-            {question?.Topic ==="Graphs" ? (
-                <div className="graph-submission">
-                  <div className="graph-instructions">
-                    <strong>Interactive Graph:</strong>
-                    <p>Use the graphing calculator below to plot your answer.</p>
-                  </div>
-                  <DesmosGraph
-                    expressions={[]}
-                    options={{
-                      keypad: true,
-                      expressions: false,
-                      settingsMenu: true,
-                      zoomButtons: true,
-                      expressionsTopbar: true
-                    }}
-                    onStateChange={handleGraphStateChange}
-                    onInputChange={setPointsInput}
-                  />
-                </div>
-              ) : (
-            <div className="answerText">
-              {steps.map((step, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-                  <span style={{ minWidth: 24, fontWeight: 500, color: '#888', marginRight: 8 }}>
-                    {idx + 1}.
-                  </span>
-                  <EditableMathField
-                    latex={step}
-                    onChange={mf => handleStepChange(idx, mf.latex())}
-                    style={{
-                      minHeight: 28,
-                      width: '100%',
-                      maxWidth: '100%',
-                      padding: 2,
-                      borderRadius: 4,
-                      boxSizing: 'border-box',
-                      outline: 'none'
-                    }}
-                    onKeyDown={e => handleKeyDown(e, idx)}
-                    mathquillDidMount={field => (stepReference.current[idx] = field)}
-                  />
-                </div>
-              ))}
-            </div>
-              )}
-            <div className="submissionField">
-              {feedback && (
-                <div className="practice-feedback">
-                  <strong>Feedback:</strong>
-                  <div>
-                      {renderFeedback(feedback)}
-                  </div>
-                </div>
-              )}
-              <div className="submissionButtons">
-                <button className="ClearField" onClick={clearField}>clear field</button>
-                {hint && (
-                  <div className="practice-hint">
-                    <strong>Hint:</strong>
-                    <div>
-                        {renderFeedback(hint)}
-                    </div>
-                  </div>
-                )}
+            <div className="solution-tabs">
+              <div className="tab active">Solution</div>
+              <div className="tab-actions">
+                <button className="clear-btn" onClick={clearField}>Clear</button>
                 {!hint && (
-                  <button className="practice-add-step" onClick={handleHint} disabled={loading}>
-                    {hintload ? 'Loading...' : 'Need a Hint?'}
+                  <button className="hint-btn" onClick={handleHint} disabled={loading}>
+                    {hintload ? 'Loading...' : 'Get Hint'}
                   </button>
                 )}
                 {!feedback && (
-                  <button className="practice-add-step" onClick={handleSubmit} disabled={loading}>
-                    {loading ? 'Analyzing...' : 'Submit for Feedback'}
+                  <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+                    {loading ? 'Analyzing...' : 'Submit'}
                   </button>
                 )}
               </div>
+            </div>
+            
+            <div className="solution-content">
+              {question?.Topic === "Graphs" ? (
+                <div className="workingBlock">
+                  <div className="graph-submission">
+                    <div className="graph-instructions">
+                      <strong>Interactive Graph:</strong>
+                      <p>Use the graphing calculator below to plot your answer.</p>
+                    </div>
+                    <DesmosGraph
+                      expressions={[]}
+                      options={{
+                        keypad: true,
+                        expressions: false,
+                        settingsMenu: true,
+                        zoomButtons: true,
+                        expressionsTopbar: true
+                      }}
+                      onStateChange={handleGraphStateChange}
+                      onInputChange={setPointsInput}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="workingBlock">
+                  <div className="work-area">
+                    <div className="work-header">
+                      <span className="work-label">Show Your Work</span>
+                    </div>
+                    <div className="answerText">
+                      {steps.map((step, idx) => (
+                        <div key={idx} className="step-row">
+                          <span className="step-number">{idx + 1}.</span>
+                          <EditableMathField
+                            latex={step}
+                            onChange={mf => handleStepChange(idx, mf.latex())}
+                            className="step-input"
+                            onKeyDown={e => handleKeyDown(e, idx)}
+                            mathquillDidMount={field => (stepReference.current[idx] = field)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="final-answer-container">
+                    <div className="final-answer-header">
+                      <span className="final-answer-label">Final Answer</span>
+                    </div>
+                    <EditableMathField
+                      latex={finalAnswer}
+                      onChange={mf => setFinalAnswer(mf.latex())}
+                      className="final-answer-input"
+                      placeholder="Enter your final answer here..."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Console/Action Area */}
+            <div className="console-area">
+              {feedback && (
+                <div className="console-output feedback-output">
+                  <div className="console-header">Feedback</div>
+                  <div className="console-content">
+                    {renderFeedback(feedback)}
+                  </div>
+                </div>
+              )}
+              
+              {hint && (
+                <div className="console-output hint-output">
+                  <div className="console-header">Hint</div>
+                  <div className="console-content">
+                    {renderFeedback(hint)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-      {/* <div className="practice-area-bg">
-        <div className="practice-area-card">
-          <h2 className="practice-title">{question?.UniqueName || "Practice Area"}</h2>
-          <div className="practice-question-block">
-            <strong>Question:</strong>
-            <div className="practice-question-text">
-              {question["Question Text"]}
-            </div>
-          </div>
-          <div className="practice-answer-block">
-            <strong>Show Your Working:</strong>
-            {steps.map((step, idx) => (
-              <EditableMathField
-                key={idx}
-                latex={step}
-                onChange={mf => handleStepChange(idx, mf.latex())}
-                style={{
-                  minHeight: 40,
-                  width: '100%',
-                  maxWidth: 600,
-                  border: '1px solid #ccc',
-                  padding: 8,
-                  borderRadius: 4,
-                  marginBottom: 8,
-                  boxSizing: 'border-box',
-                  background: '#fafafa'
-                }}
-                onKeyDown={e => handleKeyDown(e, idx)}
-                mathquillDidMount={(field) => (stepReference.current[idx] = field)}
-              />
-            ))}
-            <button className="practice-add-step" onClick={addStep}>Add Step</button>
-            <button className="practice-add-step" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Analyzing...' : 'Submit for Feedback'}
-            </button>
-          </div>
-          <div className="practice-latex-output">
-            <strong>LaTeX Output:</strong>
-            <ol>
-              {steps.map((step, idx) => (
-                <li key={idx}>{step}</li>
-              ))}
-            </ol>
-          </div>
-            {feedback && (
-              <div className="practice-feedback">
-                <strong>Feedback:</strong>
-                <div>
-                    {renderFeedback(feedback)}
-                </div>
-              </div>
-            )}
-        </div>
-      </div> */}
     </MathJaxContext>
   );
 };

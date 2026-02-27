@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight } from 'react-icons/bi';
-import { getTeacherClasses, getAllEnrolledStudentInfo, getAssignmentsForClass } from "./TeacherDashboardService";
+import { getTeacherClasses, getAllEnrolledStudentInfo, getAssignmentsForClass, getSubmissionStatsForTeacher, getSubmissionsByAssignmentId } from "./TeacherDashboardService";
 import "../ClassOverview.css";
 
 export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNavigate }) {
@@ -8,7 +8,9 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
         totalStudents: 0,
         activeAssignments: 0,
         averageReadiness: 0,
-        recentActivity: 0
+        recentActivity: 0,
+        totalSubmissions: 0,
+        submissionRate: 0
     });
     const [loading, setLoading] = useState(true);
     const [assignments, setAssignments] = useState([]);
@@ -50,11 +52,31 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                     sum + (Number(progress?.readinessLevel) || 70), 0) / totalStudents)
                 : 0;
 
+            // Calculate submission statistics
+            let totalSubmissions = 0;
+            let submissionRate = 0;
+            
+            if (assignments.length > 0) {
+                for (const assignment of assignments) {
+                    try {
+                        const submissions = await getSubmissionsByAssignmentId(assignment.id);
+                        totalSubmissions += submissions.length;
+                    } catch (error) {
+                        console.error(`Error fetching submissions for assignment ${assignment.id}:`, error);
+                    }
+                }
+                
+                const possibleSubmissions = assignments.length * totalStudents;
+                submissionRate = possibleSubmissions > 0 ? Math.round((totalSubmissions / possibleSubmissions) * 100) : 0;
+            }
+
             setClassStats({
                 totalStudents,
                 activeAssignments: assignments.length, 
                 averageReadiness,
-                recentActivity: Math.floor(Math.random() * totalStudents * 0.8) // Mock recent activity
+                recentActivity: Math.floor(Math.random() * totalStudents * 0.8), // Mock recent activity
+                totalSubmissions,
+                submissionRate
             });
             
         } catch (error) {
@@ -99,8 +121,8 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
             color: '#f59e0b',
             stats: [
                 { label: 'Active Assignments', value: classStats.activeAssignments },
-                { label: 'Pending Reviews', value: 0 },
-                { label: 'Avg. Score', value: '84%' }
+                { label: 'Total Submissions', value: classStats.totalSubmissions },
+                { label: 'Submission Rate', value: `${classStats.submissionRate}%` }
             ],
             action: 'Manage Assignments'
         }

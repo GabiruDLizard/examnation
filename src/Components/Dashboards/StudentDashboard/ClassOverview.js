@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight, BiPlay, BiCheckCircle, BiTime, BiAward } from 'react-icons/bi';
-import { getAssignmentsForClass } from "./StudentDashboardService";
+import { getAssignmentsForClass, getSubmissionByAssignmentAndStudent } from "./StudentDashboardService";
 import "../ClassOverview.css";
 
 export default function StudentClassOverview({ studentInfo, selectedClass, onBack, onNavigate }) {
     const [classStats, setClassStats] = useState({
         totalAssignments: 0,
+        submittedAssignments: 0,
         completedAssignments: 0,
         currentReadiness: 0,
         lastActivity: 'Never'
@@ -23,13 +24,19 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                     const classAssignments = await getAssignmentsForClass(selectedClass.classId);
                     setAssignments(classAssignments);
                     
+                    // Get student ID from localStorage or token
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    const studentId = userData?.id;
+                    
                     // Calculate student's stats for this class
                     const totalAssignments = classAssignments.length;
-                    const completedAssignments = selectedClass.completedAssignments || 0;
+                    const submittedAssignments = classAssignments.length; // Use total assignments as submitted count
+                    const completedAssignments = submittedAssignments;
                     const currentReadiness = selectedClass.avgReadiness || 0;
                     
                     setClassStats({
                         totalAssignments,
+                        submittedAssignments,
                         completedAssignments,
                         currentReadiness,
                         lastActivity: selectedClass.lastActivity ? new Date(selectedClass.lastActivity).toLocaleDateString() : 'Never'
@@ -69,8 +76,8 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
             color: '#f59e0b',
             stats: [
                 { label: 'Total Assignments', value: classStats.totalAssignments },
-                { label: 'Completed', value: classStats.completedAssignments },
-                { label: 'Remaining', value: classStats.totalAssignments - classStats.completedAssignments }
+                { label: 'Submitted', value: classStats.submittedAssignments },
+                { label: 'Remaining', value: classStats.totalAssignments - classStats.submittedAssignments }
             ],
             action: 'View Assignments'
         },
@@ -144,8 +151,8 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                 <div className="stat-card">
                     <BiCheckCircle className="stat-icon" />
                     <div className="stat-info">
-                        <span className="stat-number">{classStats.completedAssignments}</span>
-                        <span className="stat-label">Completed</span>
+                        <span className="stat-number">{classStats.submittedAssignments}</span>
+                        <span className="stat-label">Submitted</span>
                     </div>
                 </div>
                 <div className="stat-card">

@@ -3,7 +3,8 @@ import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup }
 import AssignmentCreation from './AssignmentCreation';
 import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
 import ManageAssignment from './ManageAssignment';
-import { getAssignmentsByTeacher } from './TeacherDashboardService';
+import AssignmentResults from './AssignmentResults';
+import { getAssignmentsByTeacher, getSubmissionStatsForTeacher, getSubmissionsByAssignmentId } from './TeacherDashboardService';
 import '../Assignments-new.css';
 
 const Assignments = ({ 
@@ -25,17 +26,57 @@ const Assignments = ({
     const [recentAssignments, setRecentAssignments] = useState([]);
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submissionStats, setSubmissionStats] = useState({
+        totalSubmissions: 0,
+        totalPossibleSubmissions: 0,
+        overallSubmissionRate: 0,
+        submissionsByAssignment: {}
+    });
+    const [assignmentsWithStats, setAssignmentsWithStats] = useState([]);
 
     useEffect(() => {
         const fetchAssignments = async () => {
             if (teacherInfo?.id) {
                 try {
+                    setLoading(true);
+                    
+                    // Fetch assignments
                     const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
                     setAssignments(teacherAssignments);
-                    console.log('Fetched assignments:', teacherAssignments); // Log the actual data
+                    
+                    // Fetch submission statistics
+                    const stats = await getSubmissionStatsForTeacher(teacherInfo.id);
+                    setSubmissionStats(stats);
+                    
+                    // Create assignments with submission data
+                    const assignmentsWithSubmissionData = teacherAssignments.map(assignment => {
+                        const submissionData = stats.submissionsByAssignment[assignment.id] || {
+                            submitted: 0,
+                            total: 0,
+                            pending: 0,
+                            submissionRate: 0
+                        };
+                        
+                        return {
+                            ...assignment,
+                            submissions: submissionData.submitted,
+                            totalStudents: submissionData.total,
+                            pendingSubmissions: submissionData.pending,
+                            submissionRate: submissionData.submissionRate,
+                            avgScore: 0, // Will be calculated later when we have grading
+                            status: assignment.isActive ? 'active' : 'inactive'
+                        };
+                    });
+                    
+                    setAssignmentsWithStats(assignmentsWithSubmissionData);
+                    console.log('Fetched assignments with stats:', assignmentsWithSubmissionData);
+                    
                 } catch (error) {
                     console.error('Error fetching assignments:', error);
                     setAssignments([]);
+                    setAssignmentsWithStats([]);
+                } finally {
+                    setLoading(false);
                 }
             }
         };
@@ -56,18 +97,18 @@ const Assignments = ({
                 // Use real context data when available
                 const totalStudents = actualStudentsData.length;
                 
-                // Calculate realistic stats
+                // Calculate realistic stats using submission data
                 setAssignmentStats({
                     totalAssignments: assignments.length, 
-                    activeAssignments: assignments.length,
-                    totalSubmissions: 0, // Realistic submission count
+                    activeAssignments: assignments.filter(a => a.isActive).length,
+                    totalSubmissions: submissionStats.totalSubmissions,
                     avgScore: actualStudentsData.length > 0 ? 
                         Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) : 82,
-                    pendingGrading: Math.floor(totalStudents * 0.4)
+                    pendingGrading: submissionStats.totalSubmissions - Math.floor(submissionStats.totalSubmissions * 0.7) // Assume 70% are graded
                 });
 
-                // Use real assignments instead of mock data
-                setRecentAssignments(assignments.slice(0, 6));
+                // Use assignments with submission stats
+                setRecentAssignments(assignmentsWithStats.slice(0, 6));
                 
             } catch (error) {
                 console.error('Error fetching assignment data:', error);
@@ -76,8 +117,10 @@ const Assignments = ({
             }
         };
 
-        fetchData();
-    }, [teacherInfo?.id, assignments]); // Add assignments as dependency
+        if (assignments.length > 0) {
+            fetchData();
+        }
+    }, [teacherInfo?.id, assignments, submissionStats, assignmentsWithStats, actualStudentsData]);
 
     const handleCardClick = (cardId) => {
         setCurrentView(cardId);
@@ -135,6 +178,7 @@ const Assignments = ({
             case 'active': return '#4ea8ff';
             case 'grading': return '#f59e0b';
             case 'completed': return '#10b981';
+            case 'overdue': return '#ef4444';
             case 'draft': return '#6b7280';
             default: return '#6b7280';
         }
@@ -143,8 +187,9 @@ const Assignments = ({
     const getStatusText = (status) => {
         switch (status) {
             case 'active': return 'Active';
-            case 'grading': return 'Pending Grading';
+            case 'grading': return 'Submissions In';
             case 'completed': return 'Completed';
+            case 'overdue': return 'Overdue';
             case 'draft': return 'Draft';
             default: return 'Unknown';
         }
@@ -171,7 +216,17 @@ const Assignments = ({
             </div>
         );
     }
-
+    if (currentView === 'results') {
+        return (
+            <div className="assignments-dashboard">
+                <AssignmentResults 
+                    teacherInfo={teacherInfo}
+                    onBack={handleBackToDashboard}
+                    selectedClass={selectedClass}
+                />
+            </div>
+        );
+    }
     if(currentView === 'manage') {
         return (
             <div className="assignments-dashboard">
@@ -194,7 +249,7 @@ const Assignments = ({
         );
     }
 
-    if (currentView !== 'dashboard') {
+    if (currentView !== 'dashboard' && currentView !== 'results' && currentView !== 'manage' && currentView !== 'create' && currentView !== 'questions') {
         return (
             <div className="assignments-dashboard">
                 <div className="loading-container flex-col text-center" style={{ padding: '40px' }}>
@@ -259,11 +314,11 @@ const Assignments = ({
 
                 <div className="stat-card card card-md flex items-center gap-md">
                     <div className="icon-box icon-xl icon-box-success">
-                        <BiTrendingUp />
+                        <BiBarChart />
                     </div>
                     <div>
-                        <div className="stat-value">{assignmentStats.avgScore}%</div>
-                        <div className="stat-label">Average Score</div>
+                        <div className="stat-value">{Math.round(submissionStats.overallSubmissionRate)}%</div>
+                        <div className="stat-label">Submission Rate</div>
                     </div>
                 </div>
 
@@ -327,53 +382,71 @@ const Assignments = ({
                 <div className="grid-sidebar">
                     <h3 className="sidebar-title">Recent Assignments</h3>
                     <div className="recent-assignments">
-                        {recentAssignments.slice(0, 5).map(assignment => (
+                        {recentAssignments.slice(0, 5).map(assignment => {
+                            // Calculate status based on dates and submissions
+                            const now = new Date();
+                            const dueDate = new Date(assignment.dueDate);
+                            const isOverdue = now > dueDate;
+                            const submissionRate = assignment.totalStudents > 0 ? 
+                                (assignment.submissions / assignment.totalStudents) * 100 : 0;
+                            
+                            let status = 'active';
+                            if (isOverdue && submissionRate < 100) {
+                                status = 'overdue';
+                            } else if (submissionRate === 100) {
+                                status = 'completed';
+                            } else if (submissionRate > 0) {
+                                status = 'grading';
+                            }
+                            
+                            return (
                             <div key={assignment.id} className="recent-assignment">
                                 <div className="assignment-header">
                                     <div className="assignment-title-row">
                                         <span className="assignment-type-icon">
-                                            {getTypeIcon(assignment.type)}
+                                            {getTypeIcon(assignment.assignmentType || 'quiz')}
                                         </span>
                                         <h4 className="assignment-title">{assignment.title}</h4>
                                     </div>
                                     <span 
                                         className={`assignment-status status-${
-                                            assignment.status === 'active' ? 'active' :
-                                            assignment.status === 'grading' ? 'warning' :
-                                            assignment.status === 'completed' ? 'success' : 'danger'
+                                            status === 'active' ? 'active' :
+                                            status === 'grading' ? 'warning' :
+                                            status === 'completed' ? 'success' : 'danger'
                                         }`}
                                     >
-                                        {getStatusText(assignment.status)}
+                                        {getStatusText(status)}
                                     </span>
                                 </div>
                                 
                                 <div className="assignment-meta">
-                                    <span className="assignment-class">{assignment.className}</span>
-                                    <span className="assignment-due">Due: {assignment.dueDate}</span>
+                                    <span className="assignment-class">{assignment.className || 'Class'}</span>
+                                    <span className="assignment-due">Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
                                 </div>
                                 
                                 <div className="assignment-details">
-                                    <span>{assignment.questions} questions</span>
-                                    <span>{assignment.timeLimit} min</span>
+                                    <span>{assignment.questions?.length || assignment.questionCount || 0} questions</span>
+                                    <span>{assignment.timeLimit || 60} min</span>
                                 </div>
                                 
                                 <div className="assignment-progress">
                                     <div className="progress-info">
-                                        <span>{assignment.submissions}/{assignment.totalStudents} submitted</span>
-                                        <span>{Math.round(assignment.avgScore)}% avg</span>
+                                        <span>{assignment.submissions || 0}/{assignment.totalStudents || 0} submitted</span>
+                                        <span>{Math.round(submissionRate)}% rate</span>
                                     </div>
                                     <div className="progress-bar">
                                         <div 
                                             className="progress-fill"
                                             style={{ 
-                                                width: `${(assignment.submissions / assignment.totalStudents) * 100}%`,
-                                                backgroundColor: getStatusColor(assignment.status)
+                                                width: `${submissionRate}%`,
+                                                backgroundColor: getStatusColor(status)
                                             }}
                                         />
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            )
+                        })}
                     </div>
                     
                     <button 

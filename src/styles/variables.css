@@ -1,5 +1,8 @@
 /* CSS Variables for consistent theming */
 :root {
+  /* Typography */
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+
   /* Colors */
   --primary: #4f46e5;
   --primary-hover: #4338ca;

@@ -1,25 +1,16 @@
-const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
-const API_BASE_URL_TEST = 'http://localhost:5204/api';
-const API_BASE_URL_BLOB = 'http://localhost:5290/api/file';
+import { authFetch } from '../../../utils/api';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
+
+const API_BASE_URL_BLOB = process.env.REACT_APP_BLOB_URL;
 
 // ================================================================
 // READINESS TRACKING API FUNCTIONS
 // ================================================================
 
 export const recordStudentReadiness = async (studentId, classId, readinessData) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/Readiness/record`, {
+        const response = await authFetch(`/Readiness/record`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 studentId,
                 classId,
@@ -43,20 +34,8 @@ export const recordStudentReadiness = async (studentId, classId, readinessData) 
 };
 
 export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/Readiness/student/${studentId}/history?weeksBack=${weeksBack}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/Readiness/student/${studentId}/history?weeksBack=${weeksBack}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,20 +49,8 @@ export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
 };
 
 export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/Readiness/class/${classId}/history?weeksBack=${weeksBack}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/Readiness/class/${classId}/history?weeksBack=${weeksBack}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -97,20 +64,8 @@ export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
 };
 
 export const getTeacherReadinessChartData = async (teacherId, weeksBack = 8) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/Readiness/teacher/${teacherId}/chart-data?weeksBack=${weeksBack}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/Readiness/teacher/${teacherId}/chart-data?weeksBack=${weeksBack}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -124,24 +79,9 @@ export const getTeacherReadinessChartData = async (teacherId, weeksBack = 8) => 
 };
 
 export const getTeacherInfo = async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        // Decode token to get user ID
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userId = payload.sub;
-
-        const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const userId = getUserIdFromToken();
+        const response = await authFetch(`/user/${userId}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -155,24 +95,11 @@ export const getTeacherInfo = async () => {
     }
 };
 
-export const getTeacherClasses = async (teacherId) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
+export const getTeacherClasses = async () => {
     try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const teacherId = payload.sub;
+        const teacherId = getUserIdFromToken();
 
-        const response = await fetch(`${API_BASE_URL}/class/teacher/${teacherId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/class/teacher/${teacherId}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -187,24 +114,15 @@ export const getTeacherClasses = async (teacherId) => {
 };
 
 export const createTeacherClass = async (classData) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        // Get teacher ID from token
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const teacherId = payload.sub;
+        const teacherId = getUserIdFromToken();
 
-        // Create the payload that matches your API model
         const classPayload = {
-            name: classData.name, // Required
-            subject: classData.subject, // Required
-            gradeLevel: classData.gradeLevel, // Required
-            teacherId: parseInt(teacherId), // Required - convert to int
-            schedule: classData.schedule, // Required
+            name: classData.name,
+            subject: classData.subject,
+            gradeLevel: classData.gradeLevel,
+            teacherId: parseInt(teacherId),
+            schedule: classData.schedule,
             courseCode: classData.courseCode || null,
             description: classData.description || null,
             roomNumber: classData.roomNumber || null,
@@ -213,7 +131,7 @@ export const createTeacherClass = async (classData) => {
             color: classData.color || "#3b82f6",
             classImageUrl: classData.classImageUrl || null,
             maxStudents: classData.maxStudents || 30,
-            currentEnrollment: 0, // Always start at 0
+            currentEnrollment: 0,
             enrollmentStatus: "open",
             gradingScale: classData.gradingScale || "A-F",
             prerequisites: classData.prerequisites || null,
@@ -221,17 +139,13 @@ export const createTeacherClass = async (classData) => {
             readinessTarget: classData.readinessTarget || 75,
             practiceFrequency: classData.practiceFrequency || "daily",
             aiAssistanceLevel: classData.aiAssistanceLevel || "medium",
-            avgReadiness: 0.00, // Always start at 0
-            activeAssignments: 0, // Always start at 0
+            avgReadiness: 0.00,
+            activeAssignments: 0,
             status: "active"
         };
 
-        const response = await fetch(`${API_BASE_URL}/class`, {
+        const response = await authFetch(`/class`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(classPayload)
         });
 
@@ -249,19 +163,9 @@ export const createTeacherClass = async (classData) => {
 };
 
 export const updateTeacherClass = async (classId, classData) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
+        const response = await authFetch(`/class/${classId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(classData)
         });
 
@@ -279,19 +183,9 @@ export const updateTeacherClass = async (classId, classData) => {
 };
 
 export const deleteTeacherClass = async (classId) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        const response = await authFetch(`/class/${classId}`, {
+            method: 'DELETE'
         });
 
         if (!response.ok) {
@@ -307,20 +201,8 @@ export const deleteTeacherClass = async (classId) => {
 };
 
 export const getClassEnrollments = async (classId) => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/classenrollment/class/${classId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/classenrollment/class/${classId}`);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -336,21 +218,13 @@ export const getClassEnrollments = async (classId) => {
 };
 
 export const enrollStudentInClass = async (classId, studentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
         const enrollmentPayload = {
             classId: classId,
             studentId: studentId
         };
-        const response = await fetch(`${API_BASE_URL}/classenrollment/enroll`, {
+        const response = await authFetch(`/classenrollment/enroll`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(enrollmentPayload)
         });
 
@@ -367,84 +241,46 @@ export const enrollStudentInClass = async (classId, studentId) => {
     }
 };
 
-// Fix the enrollStudentByIdentifier function:
 export const enrollStudentByIdentifier = async (classId, userIdentifier) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
         let userData;
-        
-        // Check if userIdentifier is an email (contains @) or a user ID
+
         if (userIdentifier.includes('@')) {
-            // Look up by email
-            const userLookupResponse = await fetch(`${API_BASE_URL}/user/email/${userIdentifier}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const userLookupResponse = await authFetch(`/user/email/${userIdentifier}`);
 
             if (!userLookupResponse.ok) {
                 throw new Error('Student not found. Please check the email address.');
             }
             userData = await userLookupResponse.json();
         } else {
-            // Look up by user ID
-            const userLookupResponse = await fetch(`${API_BASE_URL}/user/${userIdentifier}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const userLookupResponse = await authFetch(`/user/${userIdentifier}`);
 
             if (!userLookupResponse.ok) {
                 throw new Error('Student not found. Please check the user ID.');
             }
             userData = await userLookupResponse.json();
         }
-        
-        // Then enroll them using the existing method
+
         const enrollment = await enrollStudentInClass(classId, userData.id);
-        
+
         return {
             enrollment,
             student: userData
         };
-        
+
     } catch (error) {
         console.error('Error enrolling student by identifier:', error);
         throw error;
     }
 };
 
-// Replace the getAllEnrolledStudentInfo function with this corrected version:
-
 export const getAllEnrolledStudentInfo = async (classId) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        // Get enrolled students using the correct endpoint from your controller
-        const response = await fetch(`${API_BASE_URL}/classenrollment/class/${classId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/classenrollment/class/${classId}`);
 
         if (!response.ok) {
             if (response.status === 404) {
-                return []; // Return empty array if no enrollments
+                return [];
             }
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -452,7 +288,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
         const enrollments = await response.json();
 
-        // Check if enrollments is an array
         if (!Array.isArray(enrollments)) {
             console.warn(`Expected array of enrollments but got:`, enrollments);
             return [];
@@ -461,26 +296,17 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         if (enrollments.length === 0) {
             return [];
         }
-        
-        // Get detailed info for each enrolled student
+
         const studentDetailsPromises = enrollments.map(async (enrollment) => {
             try {
-                // The enrollment object should have a StudentId property
                 const studentId = enrollment.studentId || enrollment.StudentId;
-                
+
                 if (!studentId) {
                     console.warn('No student ID found in enrollment:', enrollment);
                     return null;
                 }
 
-                // Get student info
-                const studentInfoResponse = await fetch(`${API_BASE_URL}/user/${studentId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const studentInfoResponse = await authFetch(`/user/${studentId}`);
 
                 if (!studentInfoResponse.ok) {
                     console.warn(`Could not fetch info for student ${studentId}`);
@@ -489,16 +315,9 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
                 const studentInfo = await studentInfoResponse.json();
 
-                // Try to get student progress (optional)
                 let studentProgress = null;
                 try {
-                    const studentProgressResponse = await fetch(`${API_BASE_URL}/userprogress/user/${studentId}`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
+                    const studentProgressResponse = await authFetch(`/userprogress/user/${studentId}`);
 
                     if (studentProgressResponse.ok) {
                         studentProgress = await studentProgressResponse.json();
@@ -515,30 +334,20 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         });
 
         const studentDetails = await Promise.all(studentDetailsPromises);
-        
-        // Filter out null results
         const validStudentDetails = studentDetails.filter(detail => detail !== null);
-        
+
         return validStudentDetails;
-        
+
     } catch (error) {
         console.error('Error fetching all student details:', error);
-        return []; // Return empty array instead of throwing
+        return [];
     }
 };
-export const createAssignmentForClass = async (assignmentData) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
 
+export const createAssignmentForClass = async (assignmentData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment`, {
+        const response = await authFetch(`/assignment`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(assignmentData)
         });
 
@@ -562,18 +371,8 @@ export const createAssignmentForClass = async (assignmentData) => {
 };
 
 export const getAssignmentsForClass = async (classId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment/class/${classId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/assignment/class/${classId}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -582,22 +381,13 @@ export const getAssignmentsForClass = async (classId) => {
         return assignments;
     } catch (error) {
         console.error('Error fetching assignments for class:', error);
-        return []; // Return empty array instead of throwing
+        return [];
     }
 };
+
 export const getAssignmentsByTeacher = async (teacherId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment/teacher/${teacherId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/assignment/teacher/${teacherId}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -606,22 +396,13 @@ export const getAssignmentsByTeacher = async (teacherId) => {
         return assignments;
     } catch (error) {
         console.error('Error fetching assignments for class:', error);
-        return []; // Return empty array instead of throwing
+        return [];
     }
 };
+
 export const getAssignmentsById = async (assignmentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/assignment/${assignmentId}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -630,21 +411,14 @@ export const getAssignmentsById = async (assignmentId) => {
         return assignment;
     } catch (error) {
         console.error('Error fetching assignment by ID:', error);
-        return null; // Return null instead of throwing
+        return null;
     }
 };
+
 export const updateAssignment = async (assignmentId, assignmentData) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
+        const response = await authFetch(`/assignment/${assignmentId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(assignmentData)
         });
         if (!response.ok) {
@@ -658,18 +432,11 @@ export const updateAssignment = async (assignmentId, assignmentData) => {
         throw error;
     }
 };
+
 export const deleteAssignment = async (assignmentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/assignment/${assignmentId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        const response = await authFetch(`/assignment/${assignmentId}`, {
+            method: 'DELETE'
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -682,18 +449,11 @@ export const deleteAssignment = async (assignmentId) => {
 };
 
 export const uploadQuestionImage = async (imageFile) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
         const formData = new FormData();
         formData.append('file', imageFile);
-        const response = await fetch(`${API_BASE_URL_BLOB}/upload`, {
+        const response = await authFetch(`${API_BASE_URL_BLOB}/upload`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             body: formData
         });
         if (!response.ok) {
@@ -701,21 +461,14 @@ export const uploadQuestionImage = async (imageFile) => {
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         const result = await response.json();
-        return result.blobUrl; // API returns blobUrl, not fileUrl
+        return result.blobUrl;
     } catch (error) {
         console.error('Error uploading question image:', error);
         throw error;
     }
 };
 
-// Create a single question
 export const createQuestion = async (questionData) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
-    // Fix null values that cause PostgreSQL parameter errors
     const sanitizedData = {
         ...questionData,
         answerBreakdown: questionData.answerBreakdown || "",
@@ -726,12 +479,8 @@ export const createQuestion = async (questionData) => {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/question`, {
+        const response = await authFetch(`/question`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(sanitizedData)
         });
 
@@ -743,7 +492,7 @@ export const createQuestion = async (questionData) => {
                 errorBody: errorText,
                 sentData: JSON.stringify(sanitizedData, null, 2)
             });
-            
+
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
@@ -755,13 +504,7 @@ export const createQuestion = async (questionData) => {
     }
 };
 
-// Create assignment-question link
 export const createAssignmentQuestion = async (linkData) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     const requestBody = {
         assignmentId: parseInt(linkData.assignmentId),
         questionId: parseInt(linkData.questionId),
@@ -769,12 +512,8 @@ export const createAssignmentQuestion = async (linkData) => {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/assignmentquestion`, {
+        const response = await authFetch(`/assignmentquestion`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(requestBody)
         });
 
@@ -797,25 +536,13 @@ export const createAssignmentQuestion = async (linkData) => {
     }
 };
 
-// Get questions linked to an assignment
 export const getAssignmentQuestions = async (assignmentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/assignmentquestion/assignment/${assignmentId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authFetch(`/assignmentquestion/assignment/${assignmentId}`);
 
         if (!response.ok) {
             if (response.status === 404) {
-                return []; // Return empty array if no questions found
+                return [];
             }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -824,44 +551,29 @@ export const getAssignmentQuestions = async (assignmentId) => {
         return assignmentQuestions;
     } catch (error) {
         console.error('Error fetching assignment questions:', error);
-        return []; // Return empty array instead of throwing
+        return [];
     }
 };
 
-// Get full assignment details with questions
 export const getAssignmentWithQuestions = async (assignmentId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        // Get the assignment details
         const assignment = await getAssignmentsById(assignmentId);
         if (!assignment) {
             return null;
         }
 
-        // Get the questions linked to this assignment
         const assignmentQuestions = await getAssignmentQuestions(assignmentId);
-        
-        // If there are linked questions, get the full question details
+
         const questionsWithDetails = await Promise.all(
             assignmentQuestions.map(async (aq) => {
                 try {
-                    const questionResponse = await fetch(`${API_BASE_URL}/question/${aq.questionId}`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
+                    const questionResponse = await authFetch(`/question/${aq.questionId}`);
 
                     if (questionResponse.ok) {
                         const questionDetail = await questionResponse.json();
                         return {
                             ...questionDetail,
-                            points: aq.points // Include the points from assignment-question link
+                            points: aq.points
                         };
                     }
                     return null;
@@ -872,7 +584,6 @@ export const getAssignmentWithQuestions = async (assignmentId) => {
             })
         );
 
-        // Filter out failed question fetches
         const validQuestions = questionsWithDetails.filter(q => q !== null);
 
         return {
@@ -885,33 +596,18 @@ export const getAssignmentWithQuestions = async (assignmentId) => {
     }
 };
 
-// Get assignments for class with questions included
 export const getAssignmentsForClassWithQuestions = async (classId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
     try {
-        // Get all assignments for the class
         const assignments = await getAssignmentsForClass(classId);
-        
-        // Get questions for each assignment
+
         const assignmentsWithQuestions = await Promise.all(
             assignments.map(async (assignment) => {
                 const assignmentQuestions = await getAssignmentQuestions(assignment.id);
-                
-                // Get full question details
+
                 const questionsWithDetails = await Promise.all(
                     assignmentQuestions.map(async (aq) => {
                         try {
-                            const questionResponse = await fetch(`${API_BASE_URL}/question/${aq.questionId}`, {
-                                method: 'GET',
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                }
-                            });
+                            const questionResponse = await authFetch(`/question/${aq.questionId}`);
 
                             if (questionResponse.ok) {
                                 const questionDetail = await questionResponse.json();
@@ -947,17 +643,8 @@ export const getAssignmentsForClassWithQuestions = async (classId) => {
 };
 
 export const getStudentReadiness = async (studentId, classId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
     try {
-        const response = await fetch(`${API_BASE_URL}/Readiness/student/${studentId}/class/${classId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await authFetch(`/Readiness/student/${studentId}/class/${classId}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -965,6 +652,338 @@ export const getStudentReadiness = async (studentId, classId) => {
         return readinessData;
     } catch (error) {
         console.error('Error fetching student readiness:', error);
+        throw error;
+    }
+};
+
+export const getUserById = async (userId) => {
+    try {
+        const response = await authFetch(`/user/${userId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        throw error;
+    }
+};
+
+// ================================================================
+// ASSIGNMENT SUBMISSION TRACKING API FUNCTIONS
+// ================================================================
+
+export const getSubmissionsByAssignmentId = async (assignmentId) => {
+    try {
+        const response = await authFetch(`/assignmentsubmission/assignment/${assignmentId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching submissions for assignment:', error);
+        return [];
+    }
+};
+
+export const getSubmissionStatsForTeacher = async (teacherId) => {
+    try {
+        const assignments = await getAssignmentsByTeacher(teacherId);
+
+        let totalSubmissions = 0;
+        let totalPossibleSubmissions = 0;
+        let submissionsByAssignment = {};
+
+        for (const assignment of assignments) {
+            try {
+                const submissions = await getSubmissionsByAssignmentId(assignment.id);
+                const submittedCount = submissions.filter(sub => sub.status === 'submitted').length;
+
+                const enrolledStudents = await getAllEnrolledStudentInfo(assignment.classId);
+                const totalStudents = enrolledStudents.length;
+
+                submissionsByAssignment[assignment.id] = {
+                    submitted: submittedCount,
+                    total: totalStudents,
+                    pending: totalStudents - submittedCount,
+                    submissionRate: totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0
+                };
+
+                totalSubmissions += submittedCount;
+                totalPossibleSubmissions += totalStudents;
+
+            } catch (error) {
+                console.warn(`Error processing assignment ${assignment.id}:`, error);
+                submissionsByAssignment[assignment.id] = {
+                    submitted: 0,
+                    total: 0,
+                    pending: 0,
+                    submissionRate: 0
+                };
+            }
+        }
+
+        return {
+            totalSubmissions,
+            totalPossibleSubmissions,
+            overallSubmissionRate: totalPossibleSubmissions > 0 ? (totalSubmissions / totalPossibleSubmissions) * 100 : 0,
+            submissionsByAssignment
+        };
+
+    } catch (error) {
+        console.error('Error fetching submission stats:', error);
+        return {
+            totalSubmissions: 0,
+            totalPossibleSubmissions: 0,
+            overallSubmissionRate: 0,
+            submissionsByAssignment: {}
+        };
+    }
+};
+
+export const getAssignmentWithSubmissionStats = async (assignmentId) => {
+    try {
+        const assignmentResponse = await authFetch(`/assignment/${assignmentId}`);
+
+        if (!assignmentResponse.ok) {
+            throw new Error(`HTTP error! status: ${assignmentResponse.status}`);
+        }
+
+        const assignment = await assignmentResponse.json();
+
+        const submissions = await getSubmissionsByAssignmentId(assignmentId);
+        const enrolledStudents = await getAllEnrolledStudentInfo(assignment.classId);
+
+        const submittedCount = submissions.filter(sub => sub.status === 'submitted').length;
+        const inProgressCount = submissions.filter(sub => sub.status === 'in_progress').length;
+        const notStartedCount = enrolledStudents.length - submissions.length;
+        const totalStudents = enrolledStudents.length;
+
+        return {
+            ...assignment,
+            submissionStats: {
+                submitted: submittedCount,
+                inProgress: inProgressCount,
+                notStarted: notStartedCount,
+                total: totalStudents,
+                submissionRate: totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0
+            },
+            submissions: submissions
+        };
+
+    } catch (error) {
+        console.error('Error fetching assignment with submission stats:', error);
+        throw error;
+    }
+};
+
+export const getAnswersBySubmissionId = async (submissionId) => {
+    try {
+        const response = await authFetch(`/assignmentanswer/submission/${submissionId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching answers for submission:', error);
+        return [];
+    }
+};
+
+export const getSubmissionDetails = async (submissionId) => {
+    try {
+        const response = await authFetch(`/assignmentsubmission/${submissionId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const submission = await response.json();
+
+        const answersResponse = await authFetch(`/assignmentanswer/submission/${submissionId}`);
+
+        if (answersResponse.ok) {
+            const answers = await answersResponse.json();
+            submission.answers = answers;
+        }
+
+        return submission;
+    } catch (error) {
+        console.error('Error fetching submission details:', error);
+        throw error;
+    }
+};
+
+export const gradeSubmission = async (submissionId, score, feedback = '') => {
+    try {
+        const response = await authFetch(`/assignmentsubmission/${submissionId}/grade`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                score: parseFloat(score),
+                feedback: feedback,
+                gradedAt: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error grading submission:', error);
+        throw error;
+    }
+};
+
+export const exportSubmissionData = async (assignmentId, format = 'csv') => {
+    try {
+        const response = await authFetch(`/assignment/${assignmentId}/export?format=${format}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `assignment-${assignmentId}-results.${format}`;
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        return true;
+    } catch (error) {
+        console.error('Error exporting submission data:', error);
+        throw error;
+    }
+};
+
+// ================================================================
+// ASSIGNMENT QUESTION MANAGEMENT API FUNCTIONS
+// ================================================================
+
+export const getAssignmentQuestionsById = async (assignmentId) => {
+    try {
+        const assignmentQuestionLinks = await getAssignmentQuestions(assignmentId);
+
+        if (!Array.isArray(assignmentQuestionLinks) || assignmentQuestionLinks.length === 0) {
+            return [];
+        }
+
+        const questionsWithDetails = await Promise.all(
+            assignmentQuestionLinks.map(async (link) => {
+                try {
+                    const response = await authFetch(`/question/${link.questionId}`);
+
+                    if (!response.ok) {
+                        console.warn(`Failed to fetch question ${link.questionId}:`, response.status);
+                        return null;
+                    }
+
+                    const questionDetails = await response.json();
+
+                    return {
+                        ...questionDetails,
+                        points: link.points || questionDetails.points || 1.0,
+                        assignmentQuestionId: link.id
+                    };
+                } catch (error) {
+                    console.warn(`Error fetching question ${link.questionId}:`, error);
+                    return null;
+                }
+            })
+        );
+
+        return questionsWithDetails.filter(q => q !== null);
+    } catch (error) {
+        console.error('Error fetching assignment questions:', error);
+        return [];
+    }
+};
+
+export const saveQuestionToAssignment = async (assignmentId, questionData) => {
+    try {
+        const createdQuestion = await createQuestion({
+            questionText: questionData.questionText,
+            answerType: questionData.answerType,
+            difficultyLevel: questionData.difficultyLevel,
+            points: questionData.points,
+            multipleChoiceOptions: questionData.multipleChoiceOptions || [],
+            correctAnswer: questionData.correctAnswer,
+            answerBreakdown: questionData.answerBreakdown,
+            imageAssociated: questionData.imageAssociated,
+            imageDescription: questionData.imageDescription
+        });
+
+        await createAssignmentQuestion({
+            assignmentId: assignmentId,
+            questionId: createdQuestion.id,
+            points: questionData.points
+        });
+
+        return createdQuestion;
+    } catch (error) {
+        console.error('Error saving question to assignment:', error);
+        throw error;
+    }
+};
+
+export const updateQuestionInAssignment = async (assignmentId, questionId, questionData) => {
+    try {
+        const response = await authFetch(`/question/${questionId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: questionId,
+                questionText: questionData.questionText,
+                answerType: questionData.answerType,
+                difficultyLevel: questionData.difficultyLevel,
+                points: questionData.points,
+                multipleChoiceOptions: questionData.multipleChoiceOptions || [],
+                correctAnswer: questionData.correctAnswer,
+                answerBreakdown: questionData.answerBreakdown,
+                imageAssociated: questionData.imageAssociated,
+                imageDescription: questionData.imageDescription
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating question in assignment:', error);
+        throw error;
+    }
+};
+
+export const deleteQuestionFromAssignment = async (assignmentId, questionId) => {
+    try {
+        const assignmentQuestionLinks = await getAssignmentQuestions(assignmentId);
+        const linkToDelete = assignmentQuestionLinks.find(link => link.questionId === parseInt(questionId));
+
+        if (!linkToDelete) {
+            throw new Error('Assignment-question link not found');
+        }
+
+        const response1 = await authFetch(`/assignmentquestion/${linkToDelete.id}`, {
+            method: 'DELETE'
+        });
+
+        return response1.ok;
+    } catch (error) {
+        console.error('Error deleting question from assignment:', error);
         throw error;
     }
 };

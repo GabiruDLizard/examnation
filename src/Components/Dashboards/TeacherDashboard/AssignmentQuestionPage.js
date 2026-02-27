@@ -17,14 +17,19 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
     // Load assignment data from localStorage immediately during initialization
     const [assignmentData, setAssignmentData] = useState(() => {
         const savedAssignmentData = localStorage.getItem('currentAssignmentData');
+        console.log('📦 Loading assignment data from localStorage:', savedAssignmentData);
         if (savedAssignmentData) {
             try {
-                return JSON.parse(savedAssignmentData);
+                const parsed = JSON.parse(savedAssignmentData);
+                console.log('✅ Parsed assignment data:', parsed);
+                console.log('🔍 Assignment ID found:', parsed?.assignmentId);
+                return parsed;
             } catch (error) {
                 console.error('❌ Error parsing assignment data from localStorage:', error);
                 return null;
             }
         }
+        console.log('⚠️ No assignment data found in localStorage');
         return null;
     });
     
