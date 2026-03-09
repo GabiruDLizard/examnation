@@ -19,29 +19,16 @@
     padding-left: 3px;
 } */
 
-.navbar-left .logo img {
-    max-height: 60px;  /* consistent size across devices */
-    height: auto;      /* preserve aspect ratio */
-    width: auto;       /* prevent unwanted stretching */
-    display: block;
-    object-fit: contain;
-}
 
-.navbar-logo-img {
-    height: 45px;
-    width: auto;
-    transition: transform 0.3s ease;
-}
-
-.navbar-logo-img:hover {
-    transform: scale(1.05);
-}
-
-.logo{
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    text-decoration: none; 
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    text-decoration: none;
+    background: linear-gradient(135deg, #00796b, #26c6da);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.3px;
 }
 
 .navbar-Right .nav-links {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import './Navbar.css';
-import logo from '../Resources/ExamNationLogo.svg';
 import { FaUserCircle } from 'react-icons/fa';
 import UserPopUp from './UserPopUp';
 import { getToken, removeToken, getUserIdFromToken } from '../utils/tokenUtils';
@@ -40,7 +39,7 @@ const Navbar = () => {
         <nav className="navbar">
             <div className="navbar-left">
                 <a className="logo" href="/">
-                    <img src={logo} alt="ExamNation" className="navbar-logo-img" />
+                    Examnation
                 </a>
             </div>
             <div className="navbar-center">
@@ -51,8 +50,6 @@ const Navbar = () => {
             <div className="navbar-Right">
                 <ul className="nav-links">
                     <li><a href="/">Home</a></li>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/contact">Contact</a></li>
                     {isLoggedIn ? (
                         <li style={{ position: 'relative' }}>
                             <FaUserCircle

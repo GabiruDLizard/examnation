@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
@@ -30,7 +31,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             if (userData) return JSON.parse(userData)?.id;
         } catch { /* ignore */ }
 
-        return 1; // Default fallback
+        return null;
     }, []);
     
     // Use preloaded questions if available, otherwise fetch them
@@ -70,7 +71,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     
     // Initialize submission
     useEffect(() => {
-        if (!assignment?.id) {
+        if (!assignment?.id || !currentUserId) {
             return;
         }
 
@@ -334,7 +335,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         
         // Check if past deadline
         if (isPastDeadline) {
-            alert('Cannot submit assignment: deadline has passed.');
+            toast.error('Cannot submit assignment: deadline has passed.');
             return;
         }
         
@@ -383,7 +384,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             }
         } catch (error) {
             console.error('❌ Error submitting assignment:', error);
-            alert('Failed to submit assignment. Please try again.');
+            toast.error('Failed to submit assignment. Please try again.');
         }
     };
 

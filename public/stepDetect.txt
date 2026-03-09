@@ -16,6 +16,7 @@ Rules:
 - Evaluate steps sequentially.
 - Respond ONLY with valid JSON.
 - Do NOT include any extra text.
+- Classify the error into exactly one of these mistake types: Sign Error, Arithmetic Error, Wrong Formula, Distribution Error, Wrong Operation, Conceptual Error, Incomplete Solution, Other
 
 Input JSON:
 {{questions_json}}
@@ -25,6 +26,7 @@ Output JSON format (exactly):
   {
     "question_index": number,
     "first_error_step": number | null,
-    "reason": "one short sentence"
+    "error_reason": "one short sentence",
+    "mistake_type": "Sign Error" | "Arithmetic Error" | "Wrong Formula" | "Distribution Error" | "Wrong Operation" | "Conceptual Error" | "Incomplete Solution" | "Other"
   }
 ]

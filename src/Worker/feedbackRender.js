@@ -1,5 +1,17 @@
 import { MathJax } from 'better-react-mathjax';
 
+// Converts raw math notation (3^2, x^n) to LaTeX \( \) inline math
+const convertRawMath = (text) =>
+  text.replace(/(\w+)\^(\w+)/g, (_, base, exp) => `\\(${base}^{${exp}}\\)`);
+
+// Use this for question text from the JSON bank which may use ^ instead of LaTeX delimiters
+export const renderQuestionText = (text) => {
+  const processed = text.includes('\\(') || text.includes('\\[')
+    ? text
+    : convertRawMath(text);
+  return renderFeedback(processed);
+};
+
 export const renderFeedback = (feedback) => {
   // Split by LaTeX block delimiters (\[ ... \] and \( ... \))
   const regex = /(\\\[([\s\S]*?)\\\])|(\\\(([\s\S]*?)\\\))/g;
@@ -15,7 +27,7 @@ export const renderFeedback = (feedback) => {
     // Add LaTeX block
     const latex = match[2] || match[4];
     if (latex) {
-      parts.push(<MathJax key={match.index}>{`\\(${latex}\\)`}</MathJax>);
+      parts.push(<MathJax inline key={match.index}>{`\\(${latex}\\)`}</MathJax>);
     }
     lastIndex = regex.lastIndex;
   }

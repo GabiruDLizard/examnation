@@ -77,44 +77,44 @@
 
 /* Dashboard Cards */
 .dashboard-cards h2 {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     color: #1e293b;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 25px;
-    margin-bottom: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
 }
 
 .dashboard-card {
     background: white;
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: 1px solid #f1f5f9;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .dashboard-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
 }
 
 .card-header {
     display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    margin-bottom: 20px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .card-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -123,23 +123,23 @@
 }
 
 .card-title-section h3 {
-    margin: 0 0 5px;
-    font-size: 18px;
+    margin: 0 0 2px;
+    font-size: 15px;
     color: #1e293b;
 }
 
 .card-title-section p {
     margin: 0;
     color: #64748b;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.3;
 }
 
 .card-stats {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 15px 0;
+    margin-bottom: 12px;
+    padding: 10px 0;
     border-top: 1px solid #f1f5f9;
 }
 
@@ -147,16 +147,17 @@
     text-align: center;
 }
 
-.card-stat .stat-value {
+.card-stat-value {
     display: block;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: bold;
     color: #1e293b;
     margin-bottom: 2px;
 }
 
-.card-stat .stat-label {
-    font-size: 12px;
+.card-stat-label {
+    display: block;
+    font-size: 11px;
     color: #64748b;
 }
 
@@ -169,7 +170,7 @@
 }
 
 .card-action {
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* Recent Activity */
@@ -228,107 +229,129 @@
 
 /* Recent Assignments Section */
 .recent-assignments {
-    margin-bottom: 40px;
+    margin-bottom: 32px;
 }
 
 .recent-assignments h2 {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     color: #1e293b;
-    font-size: 20px;
+    font-size: 18px;
 }
 
-.assignments-list {
+.recent-assignments .assignments-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.assignment-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
-    min-height: 48px;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
 }
 
-.assignment-icon {
-    width: 32px;
-    height: 32px;
-    background: #3b82f6;
-    border-radius: 8px;
+.recent-assignments .assignment-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    min-height: unset !important;
+}
+
+.recent-assignments .assignment-item:last-child {
+    border-bottom: none;
+}
+
+.recent-assignments .assignment-icon {
+    width: 28px;
+    height: 28px;
+    background: #eff6ff;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: #3b82f6;
     font-size: 14px;
+    flex-shrink: 0;
 }
 
-.assignment-content {
-    flex: 1;
+.recent-assignments .assignment-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px;
     overflow: hidden;
+    min-width: 0;
+    min-height: unset !important;
+    grid-template-columns: unset !important;
 }
 
-.assignment-content h4 {
-    margin: 0 0 2px;
+.recent-assignments .assignment-content h4 {
+    margin: 0;
     color: #1e293b;
     font-size: 13px;
-    line-height: 1.2;
-}
-
-.assignment-content p {
-    margin: 0 0 4px;
-    color: #64748b;
-    font-size: 11px;
-    line-height: 1.1;
-}
-
-.assignment-status {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
     font-weight: 500;
-    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
 }
 
-.assignment-status.pending {
+.recent-assignments .assignment-content p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.recent-assignments .assignment-status {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.recent-assignments .assignment-status.pending {
     background: #fef3c7;
     color: #d97706;
 }
 
-.assignment-status.completed {
+.recent-assignments .assignment-status.completed {
     background: #d1fae5;
     color: #065f46;
 }
 
-.assignment-btn {
-    padding: 8px 16px;
+.recent-assignments .assignment-btn {
+    padding: 4px 12px;
     background: #3b82f6;
     color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 12px;
+    border-radius: 5px;
+    font-size: 11px;
     cursor: pointer;
     transition: background 0.2s;
+    flex-shrink: 0;
 }
 
-.assignment-btn:hover {
+.recent-assignments .assignment-btn:hover {
     background: #2563eb;
 }
 
 .view-all-assignments {
     width: 100%;
-    padding: 12px;
+    padding: 9px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     color: #3b82f6;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -424,7 +447,7 @@
     gap: 10px;
   }
   
-  .assignment-item {
+  .recent-assignments .assignment-item {
     flex-direction: column;
     text-align: center;
   }

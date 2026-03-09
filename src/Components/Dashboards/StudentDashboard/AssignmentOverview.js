@@ -17,7 +17,7 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
             const userData = localStorage.getItem('userData');
             if (userData) return JSON.parse(userData)?.id;
         } catch { /* ignore */ }
-        return 1;
+        return null;
     }, []);
 
     useEffect(() => {
@@ -25,9 +25,14 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
     }, [selectedClass, currentUserId]);
 
     const fetchAssignments = async () => {
+        if (!currentUserId) {
+            setError('Unable to identify current user. Please log in again.');
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
-            const assignmentData = await getAssignmentsForClass(selectedClass.classId);
+            const assignmentData = await getAssignmentsForClass(selectedClass.classId, currentUserId);
             console.log('Fetched assignments:', assignmentData);
             setAssignments(assignmentData);
             

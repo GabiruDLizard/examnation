@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
 import '../Assignments.css';
-import { getTeacherClasses, getAllEnrolledStudentInfo, createAssignmentForClass } from './TeacherDashboardService';
+import { getTeacherClasses, getAllEnrolledStudentInfo, createAssignmentForClass, getClassReadinessHistory } from './TeacherDashboardService';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import AssignmentQuestionCreationPage from './AssignmentQuestionPage';
 
@@ -9,8 +10,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        subject: '',
-        grade: '',
         dueDate: '',
         dueTime: '',
         assignedClass: '',
@@ -43,7 +42,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
 
     // Load student readiness data on component mount
     useEffect(() => {
-        // loadStudentReadinessData(); // Temporarily disabled - userprogress endpoint is dead
+        loadStudentReadinessData();
         fetchClassData();
     }, []);
 
@@ -67,61 +66,43 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         try {
             const classes = await getTeacherClasses();
             const allStudentsData = [];
-            
-            // Collect readiness data from all classes
+
             for (const classItem of classes) {
-                const studentsInClass = await getAllEnrolledStudentInfo(classItem.id);
-                studentsInClass.forEach(([studentInfo, studentProgress]) => {
-                    const readiness = studentProgress?.readinessLevel || 0;
-                    allStudentsData.push({
-                        id: studentInfo.id,
-                        name: `${studentInfo.firstName} ${studentInfo.lastName}`,
-                        className: classItem.name,
-                        readiness: readiness
+                try {
+                    const history = await getClassReadinessHistory(classItem.id, 4);
+                    // Latest record per student
+                    const latestByStudent = {};
+                    history.forEach(record => {
+                        if (!latestByStudent[record.studentId] ||
+                            new Date(record.weekDate) > new Date(latestByStudent[record.studentId].weekDate)) {
+                            latestByStudent[record.studentId] = record;
+                        }
                     });
-                });
+                    Object.values(latestByStudent).forEach(record => {
+                        allStudentsData.push({
+                            id: record.studentId,
+                            className: classItem.name,
+                            readiness: Math.round(record.readinessPercentage)
+                        });
+                    });
+                } catch { /* non-fatal per class */ }
             }
 
-            // Calculate readiness statistics
             const totalStudents = allStudentsData.length;
-            const averageReadiness = totalStudents > 0 
+            const averageReadiness = totalStudents > 0
                 ? Math.round(allStudentsData.reduce((sum, s) => sum + s.readiness, 0) / totalStudents)
                 : 0;
             const lowReadinessCount = allStudentsData.filter(s => s.readiness < 70).length;
             const highReadinessCount = allStudentsData.filter(s => s.readiness >= 85).length;
 
             setStudentsData(allStudentsData);
-            setReadinessStats({
-                averageReadiness,
-                lowReadinessCount,
-                highReadinessCount
-            });
-
+            setReadinessStats({ averageReadiness, lowReadinessCount, highReadinessCount });
         } catch (error) {
             console.error('Error loading student readiness data:', error);
         } finally {
             setLoadingStudents(false);
         }
     };
-
-    const subjects = [
-        'Mathematics',
-        'Science',
-        'English Language',
-        'Social Studies',
-        'Computer Science',
-        'Biology',
-        'Chemistry',
-        'Physics',
-        'History',
-        'Geography'
-    ];
-
-    const grades = [
-        'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
-        'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10',
-        'Grade 11', 'Grade 12'
-    ];
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -144,14 +125,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
 
         if (!formData.title.trim()) {
             newErrors.title = 'Assignment title is required';
-        }
-
-        if (!formData.subject) {
-            newErrors.subject = 'Subject is required';
-        }
-
-        if (!formData.grade) {
-            newErrors.grade = 'Grade level is required';
         }
 
         if (!formData.dueDate) {
@@ -205,8 +178,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                 teacherId: parseInt(teacherId),
                 // Additional metadata for future use
                 metadata: {
-                    subject: formData.subject,
-                    grade: formData.grade,
                     duration: formData.duration,
                     instructions: formData.instructions,
                     allowLateSubmission: formData.allowLateSubmission,
@@ -246,7 +217,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             
         } catch (error) {
             console.error('❌ Error creating assignment:', error);
-            alert('Error creating assignment: ' + (error.message || 'Please try again.'));
+            toast.error('Error creating assignment: ' + (error.message || 'Please try again.'));
         } finally {
             setIsSubmitting(false);
         }
@@ -256,8 +227,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         setFormData({
             title: '',
             description: '',
-            subject: '',
-            grade: '',
             dueDate: '',
             dueTime: '',
             totalMarks: '',
@@ -320,41 +289,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                             />
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label htmlFor="subject">Subject *</label>
-                                <select
-                                    id="subject"
-                                    name="subject"
-                                    value={formData.subject}
-                                    onChange={handleInputChange}
-                                    className={errors.subject ? 'error' : ''}
-                                >
-                                    <option value="">Select subject</option>
-                                    {subjects.map(subject => (
-                                        <option key={subject} value={subject}>{subject}</option>
-                                    ))}
-                                </select>
-                                {errors.subject && <span className="error-message">{errors.subject}</span>}
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="grade">Grade Level *</label>
-                                <select
-                                    id="grade"
-                                    name="grade"
-                                    value={formData.grade}
-                                    onChange={handleInputChange}
-                                    className={errors.grade ? 'error' : ''}
-                                >
-                                    <option value="">Select grade</option>
-                                    {grades.map(grade => (
-                                        <option key={grade} value={grade}>{grade}</option>
-                                    ))}
-                                </select>
-                                {errors.grade && <span className="error-message">{errors.grade}</span>}
-                            </div>
-                        </div>
                     </div>
 
                     {/* Timing Section */}
@@ -542,28 +476,39 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                     </div>
 
                     {/* Student Readiness Section */}
-                    <div className="form-section" style={{opacity: 0.5, pointerEvents: 'none'}}>
-                        <h3><BiBrain /> Student Readiness Insights <span style={{color: '#888', fontSize: '0.8em'}}>(Coming Soon)</span></h3>
-                        
+                    <div className="form-section">
+                        <h3><BiBrain /> Student Readiness Insights</h3>
+
                         <div className="readiness-overview">
                             <div className="readiness-stats">
                                 <div className="stat-card">
-                                    <div className="stat-value">--</div>
+                                    <div className="stat-value">
+                                        {loadingStudents ? '...' : studentsData.length > 0 ? `${readinessStats.averageReadiness}%` : '--'}
+                                    </div>
                                     <div className="stat-label">Average Readiness</div>
                                 </div>
                                 <div className="stat-card">
-                                    <div className="stat-value">--</div>
+                                    <div className="stat-value">
+                                        {loadingStudents ? '...' : studentsData.length > 0 ? readinessStats.highReadinessCount : '--'}
+                                    </div>
                                     <div className="stat-label">High Performers (≥85%)</div>
                                 </div>
                                 <div className="stat-card low-readiness">
-                                    <div className="stat-value">--</div>
+                                    <div className="stat-value">
+                                        {loadingStudents ? '...' : studentsData.length > 0 ? readinessStats.lowReadinessCount : '--'}
+                                    </div>
                                     <div className="stat-label">Need Support (&lt;70%)</div>
                                 </div>
                             </div>
 
-                            <div className="readiness-recommendation" style={{color: '#888'}}>
-                                <BiBullseye /> 
-                                <strong>Recommendation:</strong> Student readiness analysis will be available soon.
+                            <div className="readiness-recommendation">
+                                <BiBullseye />
+                                <strong>Recommendation:</strong>{' '}
+                                {loadingStudents ? 'Loading readiness data...' :
+                                 studentsData.length === 0 ? 'No readiness data yet — students need to complete assignments first.' :
+                                 readinessStats.averageReadiness >= 85 ? `Class is ready! Average readiness is ${readinessStats.averageReadiness}%.` :
+                                 readinessStats.lowReadinessCount > 0 ? `${readinessStats.lowReadinessCount} student(s) may need additional support before this assignment.` :
+                                 `Average class readiness is ${readinessStats.averageReadiness}%.`}
                             </div>
 
                             <div className="form-group">

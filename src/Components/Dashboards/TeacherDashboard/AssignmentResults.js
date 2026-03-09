@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BiArrowBack, BiBarChart, BiUser, BiCalendar, BiTime, BiCheckCircle, BiTimer, BiX, BiShow, BiDownload, BiStats, BiTrendingUp, BiTargetLock, BiFilter, BiSearch, BiRefresh, BiSave } from 'react-icons/bi';
-import { 
-    getAssignmentsByTeacher, 
-    getAssignmentWithSubmissionStats, 
+import {
+    getAssignmentsByTeacher,
+    getAssignmentWithSubmissionStats,
     getUserById,
     getSubmissionDetails,
     getAnswersBySubmissionId,
-    gradeSubmission,
-    exportSubmissionData
+    gradeSubmission
 } from './TeacherDashboardService';
 import { authFetch } from '../../../utils/api';
 import '../Assignments.css';
@@ -287,14 +286,61 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
         }
     };
 
-    const handleExportData = async () => {
-        try {
-            setError('');
-            await exportSubmissionData(selectedAssignment.id, 'csv');
-        } catch (error) {
-            console.error('Error exporting data:', error);
-            setError('Failed to export data');
-        }
+    const downloadCSV = (csvString, filename) => {
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    };
+
+    const buildSubmissionsCSV = (submissionsList) => {
+        const header = ['Student', 'Status', 'Score', 'Submitted At', 'Time Spent'];
+        const rows = submissionsList.map(sub => {
+            const student = students.find(s => s.id === sub.studentId);
+            const name = student ? `${student.firstName} ${student.lastName}` : `Student ${sub.studentId}`;
+            return [
+                name,
+                getSubmissionStatus(sub),
+                sub.score !== null ? `${sub.score}%` : 'Not graded',
+                formatDateTime(sub.submittedAt),
+                sub.timeSpent || 'N/A'
+            ];
+        });
+        return [header, ...rows]
+            .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+    };
+
+    const buildSubmissionDetailCSV = (submission) => {
+        const student = students.find(s => s.id === submission.studentId);
+        const studentName = student ? `${student.firstName} ${student.lastName}` : `Student ${submission.studentId}`;
+        const details = submissionDetails || submission;
+
+        const header = ['Question', 'Student Answer', 'Correct Answer', 'Result', 'Points Earned'];
+        const rows = (details.answers || []).map((answer, i) => [
+            answer.questionDetails?.questionText || `Question ${i + 1}`,
+            answer.answer || answer.answerText || answer.selectedOption || '',
+            answer.questionDetails?.correctAnswer || '',
+            answer.isCorrect ? 'Correct' : 'Incorrect',
+            answer.pointsEarned ?? ''
+        ]);
+        const csvContent = [header, ...rows]
+            .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        return `Student: ${studentName}\nStatus: ${getSubmissionStatus(details)}\nScore: ${details.score !== null ? `${details.score}%` : 'Not graded'}\n\n${csvContent}`;
+    };
+
+    const handleExportData = () => {
+        const csv = buildSubmissionsCSV(filteredSubmissions);
+        const filename = selectedAssignment
+            ? `${selectedAssignment.title.replace(/[^a-z0-9]/gi, '_')}-results.csv`
+            : 'assignment-results.csv';
+        downloadCSV(csv, filename);
     };
 
     const calculateStats = () => {
@@ -395,7 +441,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                         <h4>Student Answers ({details.answers.length} answers found)</h4>
                                         <div className="answers-list">
                                             {details.answers.map((answer, index) => {
-                                                console.log('🔍 Rendering answer:', answer);
                                                 return (
                                                     <div key={answer.id || index} className="answer-item">
                                                         <div className="question-header">
@@ -412,6 +457,20 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                         {answer.questionDetails && (
                                                             <div className="question-text">
                                                                 <strong>Question:</strong> {answer.questionDetails.questionText || answer.questionDetails.text}
+                                                                {answer.questionDetails.figureBlobUrl && (
+                                                                    <div className="question-figure" style={{ margin: '8px 0' }}>
+                                                                        <img
+                                                                            src={answer.questionDetails.figureBlobUrl}
+                                                                            alt={answer.questionDetails.figureDescription || 'Question figure'}
+                                                                            style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '6px', display: 'block' }}
+                                                                        />
+                                                                        {answer.questionDetails.figureDescription && (
+                                                                            <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0' }}>
+                                                                                {answer.questionDetails.figureDescription}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                                 {answer.questionDetails.correctAnswer && (
                                                                     <div className="correct-answer">
                                                                         <strong>Correct Answer:</strong> {answer.questionDetails.correctAnswer}
@@ -444,17 +503,16 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                     <div className="no-answers">
                                         <h4>No Answers Found</h4>
                                         <p>This submission doesn't have any recorded answers.</p>
-                                        <div className="debug-info">
-                                            <strong>Debug Info:</strong>
-                                            <pre>{JSON.stringify(details, null, 2)}</pre>
-                                        </div>
                                     </div>
                                 )}
                             </div>
                             
                             <div className="submission-detail-actions">
-                                <button 
-                                    onClick={handleExportData}
+                                <button
+                                    onClick={() => {
+                                        const csv = buildSubmissionDetailCSV(details);
+                                        downloadCSV(csv, `submission-${details.id}-detail.csv`);
+                                    }}
                                     className="btn-secondary"
                                 >
                                     <BiDownload /> Export Data
@@ -786,6 +844,10 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                     <BiShow />
                                                 </button>
                                                 <button
+                                                    onClick={() => {
+                                                        const csv = buildSubmissionsCSV([submission]);
+                                                        downloadCSV(csv, `submission-${submission.id}.csv`);
+                                                    }}
                                                     className="action-btn download-btn"
                                                     title="Download Submission"
                                                 >

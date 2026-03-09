@@ -7,22 +7,6 @@ const questions = [
         options: ["Student", "Educator"],
         roles: ["student", "educator"],
         required: true
-    },
-    {
-        id: 2,
-        key: "DOB",
-        text: "Date of Birth",
-        type: "date",
-        roles: ["student", "educator"],
-        required: true
-    },
-    {
-        id: 3,
-        key: "school",
-        text: "School/Institution Name",
-        type: "text",
-        roles: ["student", "educator"],
-        required: true
     }
 ];
 

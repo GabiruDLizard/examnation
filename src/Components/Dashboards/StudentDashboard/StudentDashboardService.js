@@ -1,5 +1,6 @@
 import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { analyzeMistakePatterns } from '../../PerformanceEngine/^PerformanceAnalysis';
 
 // ================================================================
 // ASSIGNMENT QUESTION API FUNCTIONS
@@ -229,6 +230,15 @@ export const getStudentClassesWithDetails = async (userId) => {
         const classDetailsPromises = enrollments.map(async (enrollment) => {
             const classDetails = await getClassDetails(enrollment.classId);
 
+            let avgReadiness = 0;
+            try {
+                const rdResponse = await authFetch(`/Readiness/student/${userId}/class/${enrollment.classId}`);
+                if (rdResponse.ok) {
+                    const rdData = await rdResponse.json();
+                    avgReadiness = Math.round(rdData?.readinessPercentage ?? 0);
+                }
+            } catch { /* no readiness recorded yet */ }
+
             return {
                 enrollmentId: enrollment.id,
                 classId: enrollment.classId,
@@ -250,7 +260,7 @@ export const getStudentClassesWithDetails = async (userId) => {
                 maxStudents: classDetails?.maxStudents || classDetails?.capacity || 30,
                 term: classDetails?.term || classDetails?.semester || 'Current',
                 students: classDetails?.currentEnrollment || 1,
-                avgReadiness: Math.round(classDetails?.averageReadiness || enrollment.readiness || 0),
+                avgReadiness,
                 activeAssignments: classDetails?.activeAssignments || enrollment.pendingAssignments || 0,
                 lastActivity: enrollment.lastActivity || new Date().toISOString()
             };
@@ -285,9 +295,10 @@ export const createAssignmentForClass = async (assignmentData) => {
     }
 };
 
-export const getAssignmentsForClass = async (classId) => {
+export const getAssignmentsForClass = async (classId, studentId) => {
     try {
-        const response = await authFetch(`/assignment/class/${classId}`);
+        const studentParam = studentId ? `?studentId=${studentId}` : '';
+        const response = await authFetch(`/assignment/class/${classId}${studentParam}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -545,6 +556,7 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
         let totalScore = 0;
         let totalPoints = 0;
         let gradedAnswers = 0;
+        const wrongAnswersForTA = [];
 
         for (const submittedAnswer of submittedAnswers) {
             try {
@@ -564,7 +576,7 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                 // Get the correct answer from either structure
                 const correctAnswer = question.questionDetails?.correctAnswer || question.correctAnswer;
                 const questionPoints = question.points || 1;
-                
+
                 console.log('🔍 Grading question:', {
                     questionId: submittedAnswer.questionId,
                     correctAnswer: correctAnswer,
@@ -579,12 +591,12 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
 
                 const studentAnswer = submittedAnswer.answer;
                 const studentFinalAnswer = extractFinalAnswer(studentAnswer);
-                
+
                 console.log('📝 Answer extraction:', {
                     originalAnswer: studentAnswer,
                     extractedFinal: studentFinalAnswer
                 });
-                
+
                 const isCorrect = compareAnswers(studentFinalAnswer, correctAnswer);
                 const pointsEarned = isCorrect ? questionPoints : 0;
 
@@ -597,6 +609,18 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
 
                 await updateAnswerGrading(submittedAnswer.id, isCorrect, pointsEarned);
 
+                if (!isCorrect) {
+                    wrongAnswersForTA.push({
+                        questionId: question.questionDetails?.id || question.id,
+                        questionText: question.questionDetails?.questionText || question.questionText || '',
+                        workingSteps: studentAnswer,
+                        studentAnswer: studentFinalAnswer,
+                        correctAnswer,
+                        topic: question.questionDetails?.subject || question.subject || 'General',
+                        difficulty: question.questionDetails?.difficultyLevel || question.difficultyLevel || null,
+                    });
+                }
+
                 totalScore += pointsEarned;
                 totalPoints += questionPoints;
                 gradedAnswers++;
@@ -604,6 +628,24 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
             } catch (error) {
                 console.error('❌ Error checking answer:', submittedAnswer.id, error);
             }
+        }
+
+        // Fire-and-forget TA analysis for wrong answers
+        if (wrongAnswersForTA.length > 0) {
+            const studentId = getUserIdFromToken();
+            analyzeMistakePatterns(
+                wrongAnswersForTA.map(a => a.workingSteps),
+                wrongAnswersForTA.map(a => a.questionText),
+                {
+                    studentId,
+                    questionIds: wrongAnswersForTA.map(a => a.questionId),
+                    topics: wrongAnswersForTA.map(a => a.topic),
+                    difficulties: wrongAnswersForTA.map(a => a.difficulty),
+                    correctAnswers: wrongAnswersForTA.map(a => a.correctAnswer),
+                    studentAnswers: wrongAnswersForTA.map(a => a.studentAnswer),
+                    source: 'assignment'
+                }
+            ).catch(() => { /* non-fatal */ });
         }
 
         const finalResults = {

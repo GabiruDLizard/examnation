@@ -62,10 +62,7 @@ function calculateTimeProgression(periodIndex, totalPeriods, baseReadiness) {
   // Motivation cycles (every 3-4 weeks there might be a dip)
   const motivationCycle = Math.cos(periodIndex / 3) * 2; // ±2% motivation effect
   
-  // Random noise for realism
-  const randomNoise = (Math.random() - 0.5) * 2; // ±1% random
-  
-  return baseReadiness + learningGrowth + weeklyVariation + motivationCycle + randomNoise;
+  return baseReadiness + learningGrowth + weeklyVariation + motivationCycle;
 }
 
 // Generate color scheme for classes
@@ -134,23 +131,3 @@ export function calculateTeacherStats(classReadinessData) {
   };
 }
 
-// Export for potential future use - simulate real-time readiness updates
-export function simulateRealtimeUpdate(currentData, classNames) {
-  if (!currentData || currentData.length === 0) return currentData;
-  
-  // Add small random variation to latest data point to simulate live updates
-  const updatedData = [...currentData];
-  const latestIndex = updatedData.length - 1;
-  const latestWeek = { ...updatedData[latestIndex] };
-  
-  classNames.forEach(className => {
-    if (latestWeek[className] > 0) {
-      // Add ±2% random variation
-      const variation = (Math.random() - 0.5) * 4;
-      latestWeek[className] = Math.max(0, Math.min(100, Math.round(latestWeek[className] + variation)));
-    }
-  });
-  
-  updatedData[latestIndex] = latestWeek;
-  return updatedData;
-}

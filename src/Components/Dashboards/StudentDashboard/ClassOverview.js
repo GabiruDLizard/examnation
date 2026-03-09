@@ -21,12 +21,12 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                     setLoading(true);
                     
                     // Fetch assignments for this class
-                    const classAssignments = await getAssignmentsForClass(selectedClass.classId);
-                    setAssignments(classAssignments);
-                    
                     // Get student ID from localStorage or token
                     const userData = JSON.parse(localStorage.getItem('userData'));
                     const studentId = userData?.id;
+
+                    const classAssignments = await getAssignmentsForClass(selectedClass.classId, studentId);
+                    setAssignments(classAssignments);
                     
                     // Calculate student's stats for this class
                     const totalAssignments = classAssignments.length;
@@ -59,7 +59,7 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
             id: 'practice',
             title: 'Practice Questions',
             description: 'Practice questions related to this class subject and improve your understanding',
-            icon: <BiPlay size={32} />,
+            icon: <BiPlay size={22} />,
             color: '#3b82f6',
             stats: [
                 { label: 'Subject Focus', value: selectedClass.subject },
@@ -72,7 +72,7 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
             id: 'assignments',
             title: 'Class Assignments',
             description: 'View and complete assignments given by your teacher for this class',
-            icon: <BiBookOpen size={32} />,
+            icon: <BiBookOpen size={22} />,
             color: '#f59e0b',
             stats: [
                 { label: 'Total Assignments', value: classStats.totalAssignments },
@@ -85,7 +85,7 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
             id: 'progress',
             title: 'My Progress',
             description: 'Track your readiness level and performance in this class over time',
-            icon: <BiBarChart size={32} />,
+            icon: <BiBarChart size={22} />,
             color: '#10b981',
             stats: [
                 { label: 'Current Readiness', value: `${classStats.currentReadiness}%` },
@@ -229,14 +229,12 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                                         {assignment.status || 'Pending'}
                                     </span>
                                 </div>
-                                <div className="assignment-action">
-                                    <button 
-                                        className="assignment-btn"
-                                        onClick={() => console.log('View assignment:', assignment.id)}
-                                    >
-                                        View
-                                    </button>
-                                </div>
+                                <button
+                                    className="assignment-btn"
+                                    onClick={() => handleCardClick('assignments')}
+                                >
+                                    View
+                                </button>
                             </div>
                         ))}
                     </div>

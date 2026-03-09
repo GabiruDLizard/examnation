@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
 import { createCompleteAssignment } from './AssignmentService';
 import '../Assignments.css';
@@ -77,7 +78,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             }
 
             if (finalQuestionsArray.length === 0) {
-                alert('Please add at least one question to the assignment.');
+                toast.warn('Please add at least one question to the assignment.');
                 setIsSubmitting(false);
                 return;
             }
@@ -99,7 +100,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             // Clear localStorage
             localStorage.removeItem('currentAssignmentData');
             
-            alert(`Assignment "${assignmentData?.title}" created successfully with ${finalQuestionsArray.length} questions!`);
+            toast.success(`Assignment "${assignmentData?.title}" created successfully with ${finalQuestionsArray.length} questions!`);
             
             // Go back using callback
             if (onBack) {
@@ -108,7 +109,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             
         } catch (error) {
             console.error('Error creating complete assignment:', error);
-            alert('Error creating assignment. Please try again.');
+            toast.error('Error creating assignment. Please try again.');
         } finally {
             setIsSubmitting(false);
         }

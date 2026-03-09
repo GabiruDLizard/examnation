@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BiSearch, BiFilter, BiPlus, BiUser, BiEnvelope, BiPhone, BiCalendar, BiTrendingUp, BiGridAlt, BiListUl } from 'react-icons/bi';
-import { getTeacherClasses, enrollStudentByIdentifier, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
+import { getTeacherClasses, enrollStudentInClass, searchStudents, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import "../StudentView.css";
 
@@ -13,6 +13,13 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
     const [filterClass, setFilterClass] = useState('all');
     const [showEnrollForm, setShowEnrollForm] = useState(false);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "column"
+    const [enrollSearch, setEnrollSearch] = useState('');
+    const [enrollResults, setEnrollResults] = useState([]);
+    const [enrollSearching, setEnrollSearching] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [enrolling, setEnrolling] = useState(false);
+    const [enrollError, setEnrollError] = useState('');
+    const searchDebounceRef = useRef(null);
 
     useEffect(() => {
         fetchStudentsData();
@@ -42,15 +49,16 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                         className: selectedClass.name,
                         classId: selectedClass.id,
                         grade: selectedClass.gradeLevel || 'N/A',
-                        averageScore: studentProgress?.averageScore || Math.floor(Math.random() * 30 + 70),
-                        readinessLevel: studentProgress?.readinessLevel || Math.floor(Math.random() * 40 + 60),
-                        assignmentsCompleted: studentProgress?.assignmentsCompleted || Math.floor(Math.random() * 8 + 5),
-                        totalAssignments: studentProgress?.totalAssignments || 15,
-                        attendanceRate: studentProgress?.attendanceRate || Math.floor(Math.random() * 20 + 80),
-                        lastActivity: studentProgress?.lastActivity || new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        status: (studentProgress?.readinessLevel || 70) >= 85 ? 'active' : 
-                               (studentProgress?.readinessLevel || 70) >= 70 ? 'active' : 
-                               (studentProgress?.readinessLevel || 70) >= 50 ? 'needs_attention' : 'at_risk',
+                        averageScore: studentProgress?.averageScore ?? 0,
+                        readinessLevel: studentProgress?.readinessLevel ?? 0,
+                        assignmentsCompleted: studentProgress?.assignmentsCompleted ?? 0,
+                        totalAssignments: studentProgress?.totalAssignments ?? 0,
+                        attendanceRate: studentProgress?.attendanceRate ?? null,
+                        lastActivity: studentProgress?.lastActivity ?? null,
+                        status: !studentProgress ? 'no_data' :
+                               studentProgress.readinessLevel >= 85 ? 'active' :
+                               studentProgress.readinessLevel >= 70 ? 'active' :
+                               studentProgress.readinessLevel >= 50 ? 'needs_attention' : 'at_risk',
                         profileImage: studentInfo.profileImageUrl || null
                     }));
                 } catch (classError) {
@@ -70,15 +78,16 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                             className: classItem.name,
                             classId: classItem.id,
                             grade: classItem.gradeLevel || 'N/A',
-                            averageScore: studentProgress?.averageScore || Math.floor(Math.random() * 30 + 70),
-                            readinessLevel: studentProgress?.readinessLevel || Math.floor(Math.random() * 40 + 60),
-                            assignmentsCompleted: studentProgress?.assignmentsCompleted || 0,
-                            totalAssignments: studentProgress?.totalAssignments || 0,
-                            attendanceRate: studentProgress?.attendanceRate || Math.floor(Math.random() * 20 + 80),
-                            lastActivity: studentProgress?.lastActivity || new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                            status: (studentProgress?.readinessLevel || 70) >= 85 ? 'active' : 
-                                   (studentProgress?.readinessLevel || 70) >= 70 ? 'active' : 
-                                   (studentProgress?.readinessLevel || 70) >= 50 ? 'needs_attention' : 'at_risk',
+                            averageScore: studentProgress?.averageScore ?? 0,
+                            readinessLevel: studentProgress?.readinessLevel ?? 0,
+                            assignmentsCompleted: studentProgress?.assignmentsCompleted ?? 0,
+                            totalAssignments: studentProgress?.totalAssignments ?? 0,
+                            attendanceRate: studentProgress?.attendanceRate ?? null,
+                            lastActivity: studentProgress?.lastActivity ?? null,
+                            status: !studentProgress ? 'no_data' :
+                                   studentProgress.readinessLevel >= 85 ? 'active' :
+                                   studentProgress.readinessLevel >= 70 ? 'active' :
+                                   studentProgress.readinessLevel >= 50 ? 'needs_attention' : 'at_risk',
                             profileImage: studentInfo.profileImageUrl || null
                         }));
                     } catch (error) {
@@ -122,6 +131,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
             case 'active': return '#10b981';
             case 'needs_attention': return '#f59e0b';
             case 'at_risk': return '#ef4444';
+            case 'no_data': return '#9ca3af';
             default: return '#6b7280';
         }
     };
@@ -131,6 +141,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
             case 'active': return 'Active';
             case 'needs_attention': return 'Needs Attention';
             case 'at_risk': return 'At Risk';
+            case 'no_data': return 'No Data';
             default: return 'Unknown';
         }
     };
@@ -375,7 +386,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                                             </div>
                                             <div className="metric">
                                                 <span className="metric-label">Attendance</span>
-                                                <span className="metric-value">{student.attendanceRate}%</span>
+                                                <span className="metric-value">{student.attendanceRate !== null ? `${student.attendanceRate}%` : 'N/A'}</span>
                                             </div>
                                         </div>
 
@@ -398,7 +409,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                                         <div className="student-footer-expanded">
                                             <div className="last-activity">
                                                 <BiCalendar size={12} />
-                                                <span>Last active: {new Date(student.lastActivity).toLocaleDateString()}</span>
+                                                <span>Last active: {student.lastActivity ? new Date(student.lastActivity).toLocaleDateString() : 'Never'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -411,58 +422,112 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
 
             {/* Enroll Student Modal */}
             {showEnrollForm && (
-                <div className="modal-overlay" onClick={() => setShowEnrollForm(false)}>
+                <div className="modal-overlay" onClick={() => { setShowEnrollForm(false); setEnrollSearch(''); setEnrollResults([]); setSelectedStudent(null); setEnrollError(''); }}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Enroll A Student</h2>
-                            <button 
+                            <button
                                 className="close-btn"
-                                onClick={() => setShowEnrollForm(false)}
+                                onClick={() => { setShowEnrollForm(false); setEnrollSearch(''); setEnrollResults([]); setSelectedStudent(null); setEnrollError(''); }}
                             >
                                 ×
                             </button>
                         </div>
-                        
+
                         <form onSubmit={async (e) => {
                             e.preventDefault();
-                            const formData = new FormData(e.target);
-                            const userInput = formData.get('userIdentifier');
-                            const selectedClassId = formData.get('classId');
-                            
-                            if (!userInput || !selectedClassId) {
-                                alert('Please fill in all required fields');
+                            if (!selectedStudent) {
+                                setEnrollError('Please select a student from the search results.');
                                 return;
                             }
-                            
+                            const formData = new FormData(e.target);
+                            const selectedClassId = formData.get('classId');
+                            if (!selectedClassId) {
+                                setEnrollError('Please select a class.');
+                                return;
+                            }
+                            setEnrolling(true);
+                            setEnrollError('');
                             try {
-                                const result = await enrollStudentByIdentifier(selectedClassId, userInput);
-                                
-                                alert(`Student ${result.student.firstName} ${result.student.lastName} enrolled successfully!`);
+                                await enrollStudentInClass(selectedClassId, selectedStudent.id);
                                 setShowEnrollForm(false);
-                                fetchStudentsData(); // Refresh the students list
-                                
+                                setEnrollSearch('');
+                                setEnrollResults([]);
+                                setSelectedStudent(null);
+                                fetchStudentsData();
                             } catch (error) {
                                 console.error('Error enrolling student:', error);
-                                alert(`Failed to enroll student: ${error.message}`);
+                                setEnrollError(`Failed to enroll: ${error.message}`);
+                            } finally {
+                                setEnrolling(false);
                             }
                         }}>
-                            <div className="form-group">
-                                <label htmlFor="userIdentifier">Student Email or User ID *</label>
-                                <input 
-                                    type="text" 
-                                    id="userIdentifier"
-                                    name="userIdentifier" 
-                                    required 
-                                    placeholder="Enter student email or user ID"
-                                />
-                                <small style={{ color: '#6b7280', fontSize: '12px' }}>
-                                    Enter either the student's email address or their user ID
-                                </small>
+                            <div className="form-group" style={{ position: 'relative' }}>
+                                <label>Search Student by Name or Email *</label>
+                                {selectedStudent ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f0fdf4', border: '1px solid #10b981', borderRadius: '8px' }}>
+                                        <BiUser style={{ color: '#10b981', flexShrink: 0 }} />
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 600, color: '#1e293b' }}>{selectedStudent.firstName} {selectedStudent.lastName}</div>
+                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{selectedStudent.email}</div>
+                                        </div>
+                                        <button type="button" onClick={() => { setSelectedStudent(null); setEnrollSearch(''); setEnrollResults([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '18px', lineHeight: 1 }}>×</button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div style={{ position: 'relative' }}>
+                                            <BiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                            <input
+                                                type="text"
+                                                value={enrollSearch}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setEnrollSearch(val);
+                                                    setEnrollError('');
+                                                    clearTimeout(searchDebounceRef.current);
+                                                    if (val.trim().length < 2) { setEnrollResults([]); return; }
+                                                    setEnrollSearching(true);
+                                                    searchDebounceRef.current = setTimeout(async () => {
+                                                        const results = await searchStudents(val);
+                                                        setEnrollResults(results);
+                                                        setEnrollSearching(false);
+                                                    }, 300);
+                                                }}
+                                                placeholder="Type a name or email..."
+                                                style={{ paddingLeft: '36px', width: '100%' }}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        {enrollSearching && <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Searching...</div>}
+                                        {!enrollSearching && enrollResults.length > 0 && (
+                                            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '4px', maxHeight: '200px', overflowY: 'auto', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                                {enrollResults.map(s => (
+                                                    <div
+                                                        key={s.id}
+                                                        onClick={() => { setSelectedStudent(s); setEnrollResults([]); setEnrollSearch(''); }}
+                                                        style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #f1f5f9' }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                                                    >
+                                                        <BiUser style={{ color: '#94a3b8', flexShrink: 0 }} />
+                                                        <div>
+                                                            <div style={{ fontWeight: 500, color: '#1e293b', fontSize: '14px' }}>{s.firstName} {s.lastName}</div>
+                                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{s.email}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {!enrollSearching && enrollSearch.trim().length >= 2 && enrollResults.length === 0 && (
+                                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>No students found.</div>
+                                        )}
+                                    </>
+                                )}
                             </div>
 
                             <div className="form-group">
                                 <label htmlFor="classId">Assign to Class *</label>
-                                <select name="classId" id="classId" required>
+                                <select name="classId" id="classId" required defaultValue={selectedClass?.id ?? ''}>
                                     <option value="">Select a class</option>
                                     {classesData.map(cls => (
                                         <option key={cls.id} value={cls.id}>
@@ -472,20 +537,25 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                                 </select>
                             </div>
 
+                            {enrollError && (
+                                <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{enrollError}</div>
+                            )}
+
                             <div className="form-actions">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="cancel-btn"
-                                    onClick={() => setShowEnrollForm(false)}
+                                    onClick={() => { setShowEnrollForm(false); setEnrollSearch(''); setEnrollResults([]); setSelectedStudent(null); setEnrollError(''); }}
                                 >
                                     Cancel
                                 </button>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className="submit-btn"
+                                    disabled={enrolling || !selectedStudent}
                                 >
                                     <BiPlus style={{ marginRight: '8px' }} />
-                                    Enroll Student
+                                    {enrolling ? 'Enrolling...' : 'Enroll Student'}
                                 </button>
                             </div>
                         </form>

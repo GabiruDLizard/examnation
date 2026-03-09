@@ -241,6 +241,18 @@ export const enrollStudentInClass = async (classId, studentId) => {
     }
 };
 
+export const searchStudents = async (query) => {
+    if (!query || query.trim().length < 2) return [];
+    try {
+        const response = await authFetch(`/user/search?query=${encodeURIComponent(query.trim())}`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (error) {
+        console.error('Error searching students:', error);
+        return [];
+    }
+};
+
 export const enrollStudentByIdentifier = async (classId, userIdentifier) => {
     try {
         let userData;
@@ -297,6 +309,15 @@ export const getAllEnrolledStudentInfo = async (classId) => {
             return [];
         }
 
+        // Fetch class assignments once, then all submissions in parallel
+        const classAssignments = await getAssignmentsForClass(classId).catch(() => []);
+        const totalAssignments = classAssignments.length;
+
+        const allSubmissionsArrays = await Promise.all(
+            classAssignments.map(a => getSubmissionsByAssignmentId(a.id).catch(() => []))
+        );
+        const allSubmissions = allSubmissionsArrays.flat();
+
         const studentDetailsPromises = enrollments.map(async (enrollment) => {
             try {
                 const studentId = enrollment.studentId || enrollment.StudentId;
@@ -315,15 +336,36 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
                 const studentInfo = await studentInfoResponse.json();
 
-                let studentProgress = null;
-                try {
-                    const studentProgressResponse = await authFetch(`/userprogress/user/${studentId}`);
+                // Compute progress from real submission + readiness data
+                const studentSubmissions = allSubmissions.filter(
+                    s => (s.studentId ?? s.StudentId) === studentId
+                );
+                const completed = studentSubmissions.filter(
+                    s => s.status === 'submitted' || s.status === 'graded'
+                );
+                const scored = completed.filter(s => s.score != null);
+                const averageScore = scored.length > 0
+                    ? Math.round(scored.reduce((sum, s) => sum + s.score, 0) / scored.length)
+                    : 0;
+                const lastSubmission = completed
+                    .sort((a, b) => new Date(b.submittedAt ?? 0) - new Date(a.submittedAt ?? 0))[0];
 
-                    if (studentProgressResponse.ok) {
-                        studentProgress = await studentProgressResponse.json();
-                    }
-                } catch (progressError) {
-                    console.warn(`Could not fetch progress for student ${studentId}:`, progressError);
+                let readinessLevel = 0;
+                try {
+                    const rd = await getStudentReadiness(studentId, classId);
+                    readinessLevel = Math.round(rd?.readinessPercentage ?? 0);
+                } catch { /* no readiness recorded yet */ }
+
+                let studentProgress = null;
+                if (completed.length > 0 || readinessLevel > 0) {
+                    studentProgress = {
+                        averageScore,
+                        readinessLevel,
+                        assignmentsCompleted: completed.length,
+                        totalAssignments,
+                        attendanceRate: null,
+                        lastActivity: lastSubmission?.submittedAt ?? null,
+                    };
                 }
 
                 return [studentInfo, studentProgress];
@@ -334,9 +376,7 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         });
 
         const studentDetails = await Promise.all(studentDetailsPromises);
-        const validStudentDetails = studentDetails.filter(detail => detail !== null);
-
-        return validStudentDetails;
+        return studentDetails.filter(detail => detail !== null);
 
     } catch (error) {
         console.error('Error fetching all student details:', error);

@@ -4,6 +4,7 @@ import questions from './SetupQuestions';
 import { useNavigate } from 'react-router-dom';
 import { register } from './SetUpService';
 import { login } from '../Authentication/AuthService';
+import { toast } from 'react-toastify';
 import './SetUp.css' // Assuming you have a questions.js file with your questions
 
 const SetUp = () => {
@@ -22,15 +23,6 @@ const SetUp = () => {
 
     const question = filteredQuestions[current];
 
-    if (!question) {
-        return (
-            <div>
-                <h2>SetUp complete</h2>
-                <p>Answers: {JSON.stringify(answers)}</p>
-            </div>
-        );
-    }
-
     const handleBack = (e) => {
         e.preventDefault();
         if (current > 0) {
@@ -39,60 +31,52 @@ const SetUp = () => {
     };
 
     const handleChange = (key, value) => {
-        setAnswers(prevAnswers => ({
-            ...prevAnswers,
-            [key]: value
-        }));
-
+        setAnswers(prevAnswers => ({ ...prevAnswers, [key]: value }));
         if (key === questions[0].key) {
             setRole(value);
-            setCurrent(1);
         }
     };
 
-    const handleSubmit = async(e) => {
-        e.preventDefault();
+    const submitRegistration = async (ans) => {
         const payload = {
-            Username: answers.username,
-            Email: answers.email,
-            FirstName: answers.firstName,
-            LastName: answers.lastName,
-            PasswordHash: answers.password,
-            Role: answers.role,
-            Birthdate: answers.DOB
+            Username: ans.username,
+            Email: ans.email,
+            FirstName: ans.firstName,
+            LastName: ans.lastName,
+            PasswordHash: ans.password,
+            Role: ans.role,
+            Birthdate: ans.DOB
         };
-        console.log("All answers:", answers);
-        console.log("Payload being sent:", payload);
-        
-        try{
-            //console.log(payload);
+        try {
             const response = await register(payload);
-            console.log("this is the payload: ", payload);
-            console.log("Registration response: ", response);
-            if(response.success || response.id || response.user || response.token){
-                console.log("Attempting login with:", answers.username, answers.password);
-                const data = await login(answers.username, answers.password);
-                console.log("Login response: ", data);
+            if (response.success || response.id || response.user || response.token) {
+                const data = await login(ans.username, ans.password);
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                     navigate('/studentdashboard');
                 } else {
-                    console.log("Login failed - no token received");
-                    alert(data.message || 'Login failed - please try logging in manually');
+                    toast.error(data.message || 'Login failed — please try logging in manually');
                 }
+            } else {
+                toast.error(response.message || 'Registration failed');
             }
-            else{
-                console.log("Registration failed - payload: ", payload);
-                console.log("Registration response: ", response);
-                alert(response.message || 'Registration failed');
-            }
+        } catch (error) {
+            let message = error.message || 'Error connecting to server';
+            try {
+                const parsed = JSON.parse(message);
+                if (parsed.error?.includes('duplicate key') || parsed.error?.includes('23505')) {
+                    message = 'An account with that email or username already exists. Please log in instead.';
+                } else {
+                    message = parsed.message || message;
+                }
+            } catch {}
+            toast.error(message);
         }
-        catch (error){
-            console.log("Error occurred - payload: ", payload);
-            console.log("Error details: ", error);
-            alert('Error connecting to server');
-        }
-        // navigate('/studentdashboard', {state: answers});
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        await submitRegistration(answers);
     };
 
     const handleMultiSelect = (key, option) => {
@@ -239,8 +223,8 @@ const SetUp = () => {
                 {/* <div>
                     {current > 0 && (<button type="button" onClick={handleBack}>Back</button>)}
                 </div> */}
-                <button type="submit">
-                    {filteredQuestions.length === 1 || current < filteredQuestions.length - 1 ? 'Next' : 'Finished'}
+                <button type="submit" disabled={current === 0 && !answers[questions[0].key]}>
+                    {current < filteredQuestions.length - 1 ? 'Next' : 'Finish'}
                 </button>
             </form>
         </div>

@@ -1,5 +1,7 @@
 import React from 'react';
 import './App.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Auth from './Components/Authentication/Auth';
 import { AuthProvider } from './contexts/AuthContext';
 import ResetPassword from './Components/ResetPassword';
@@ -15,6 +17,7 @@ import TApageStudent from './Components/Dashboards/TAPage/TAPageStudent';
 import AssignmentQuestionCreationPage from './Components/Dashboards/TeacherDashboard/AssignmentQuestionPage';
 import AssignmentOverview from './Components/Dashboards/StudentDashboard/AssignmentOverview';
 import AssignmentQuestionPage from './Components/Dashboards/StudentDashboard/AssignmentQuestionPage';
+import Settings from './Components/Settings/Settings';
 import ProtectedRoute from './Components/ProtectedRoute';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -79,9 +82,15 @@ function App() {
                   <AssignmentQuestionPage />
                 </ProtectedRoute>
               } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
             </Routes>
           </div>
         </div>
+        <ToastContainer position="top-right" autoClose={4000} />
       </Router>
     </AuthProvider>
   );

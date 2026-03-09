@@ -1,127 +1,197 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Legend
-} from "recharts";
-import { IoReturnUpBack } from "react-icons/io5";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { getRecentMistakes, getMistakePatterns, getCuratedQuiz } from './TAService';
 import './TAPageStudent.css';
 
-export default function MathInsights() {
+const BADGE_CLASS = {
+    'Sign Error':      'badge-sign',
+    'Arithmetic Error':'badge-arithmetic',
+    'Wrong Formula':   'badge-formula',
+    'Distribution Error': 'badge-distribution',
+    'Wrong Operation': 'badge-operation',
+    'Conceptual Error':'badge-conceptual',
+    'Incomplete Solution': 'badge-incomplete',
+    'Other':           'badge-other',
+};
+
+function MistakeRow({ entry }) {
+    const [open, setOpen] = useState(false);
+    const badgeClass = BADGE_CLASS[entry.mistakeType] ?? 'badge-other';
+    const diffClass = `diff-${entry.difficulty}`;
+
+    return (
+        <div className="mistake-row">
+            <div className="mistake-row-header" onClick={() => setOpen(o => !o)}>
+                <span className="mistake-question-text" title={entry.questionText}>
+                    {entry.questionText}
+                </span>
+                {entry.topic && (
+                    <span className="mistake-topic-badge">{entry.topic}</span>
+                )}
+                {entry.difficulty && (
+                    <span className={`mistake-difficulty-badge ${diffClass}`}>{entry.difficulty}</span>
+                )}
+                {entry.mistakeType && (
+                    <span className={`mistake-badge ${badgeClass}`}>{entry.mistakeType}</span>
+                )}
+                <span className="mistake-expand-icon">{open ? '▲' : '▼'}</span>
+            </div>
+
+            {open && (
+                <div className="mistake-row-detail">
+                    {entry.studentAnswer && (
+                        <div className="detail-block">
+                            <div className="detail-label">Your Answer</div>
+                            <div className="detail-value">{entry.studentAnswer}</div>
+                        </div>
+                    )}
+                    {entry.correctAnswer && (
+                        <div className="detail-block">
+                            <div className="detail-label">Correct Answer</div>
+                            <div className="detail-value">{entry.correctAnswer}</div>
+                        </div>
+                    )}
+                    <div className="step-error-box">
+                        <div className="step-error-label">
+                            {entry.firstErrorStep != null
+                                ? `Step ${entry.firstErrorStep} — where you went wrong`
+                                : 'Final answer was incorrect'}
+                        </div>
+                        <div className="step-error-text">
+                            {entry.errorReason ?? 'No step-level analysis available.'}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PatternCard({ topic, mistakes }) {
+    const total = mistakes.reduce((sum, m) => sum + m.count, 0);
+    return (
+        <div className="pattern-card">
+            <div className="pattern-topic">{topic}</div>
+            <div className="pattern-count">{total} mistake{total !== 1 ? 's' : ''} recorded</div>
+            <div className="pattern-mistake-list">
+                {mistakes.map((m, i) => (
+                    <div className="pattern-mistake-row" key={i}>
+                        <span style={{ flex: '0 0 110px', color: '#475569' }}>{m.mistakeType}</span>
+                        <div className="pattern-bar-bg">
+                            <div
+                                className="pattern-bar-fill"
+                                style={{ width: `${Math.round((m.count / total) * 100)}%` }}
+                            />
+                        </div>
+                        <span className="pattern-mistake-count">{m.count}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export default function MyTA() {
     const navigate = useNavigate();
-  const radarData = [
-    { subject: "Algebra", readiness: 85 },
-    { subject: "Geometry", readiness: 78 },
-    { subject: "Trigonometry", readiness: 65 },
-    { subject: "Hard", readiness: 70 },
-    { subject: "NumberTheory", readiness: 90 },
-    { subject: "Statistics", readiness: 80 },
-  ];
+    const studentId = getUserIdFromToken();
 
-  const difficultyData = [
-    { level: "Easy", accuracy: 95 },
-    { level: "Medium", accuracy: 78 },
-    { level: "Hard", accuracy: 62 },
-  ];
+    const [mistakes, setMistakes] = useState([]);
+    const [patterns, setPatterns] = useState({});
+    const [curated, setCurated] = useState({ questionIds: [], focusTopics: [] });
+    const [loading, setLoading] = useState(true);
 
-  const progressData = [
-    { week: "Week 1", progress: 85 },
-    { week: "Week 2", progress: 78 },
-    { week: "Week 3", progress: 83 },
-    { week: "Week 4", progress: 88 },
-  ];
+    useEffect(() => {
+        if (!studentId) return;
 
-  const completionData = [
-    { name: "Completed", value: 75 },
-    { name: "Remaining", value: 25 },
-  ];
+        Promise.all([
+            getRecentMistakes(studentId),
+            getMistakePatterns(studentId),
+            getCuratedQuiz(studentId)
+        ]).then(([m, p, c]) => {
+            setMistakes(m);
 
-  const COLORS = ["#14b8a6", "#e5e7eb"];
+            // Group patterns by topic
+            const grouped = {};
+            p.forEach(row => {
+                if (!grouped[row.topic]) grouped[row.topic] = [];
+                grouped[row.topic].push({ mistakeType: row.mistakeType, count: row.count });
+            });
+            setPatterns(grouped);
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-10">
-        <div className = 'topPage '>
-            <div className='BackButton' onClick={() => navigate('/studentdashboard')} style={{ cursor: 'pointer', display: 'inline-block' }}>
-                    <IoReturnUpBack size={32} />
+            setCurated(c);
+            setLoading(false);
+        });
+    }, [studentId]);
+
+    const handleStartCurated = () => {
+        localStorage.setItem('curatedQuizIds', JSON.stringify(curated.questionIds));
+        navigate('/exampage');
+    };
+
+    const topicEntries = Object.entries(patterns);
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-10">
+            <div className="topPage">
+                <h1 className="text-3xl font-bold">My TA</h1>
             </div>
-            <h1 className="text-3xl font-bold text-center mb-10">Math Insights</h1>
-        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Radar Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center">
-          <h2 className="text-xl font-semibold mb-4">Readiness</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={radarData}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="subject" />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} />
-              <Radar
-                name="Readiness"
-                dataKey="readiness"
-                stroke="#14b8a6"
-                fill="#14b8a6"
-                fillOpacity={0.6}
-              />
-              <Tooltip />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="breakdownTwo">
-            <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4">Accuracy by Difficulty</h2>
-            <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={difficultyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="level" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="accuracy" radius={[10, 10, 0, 0]}>
-                    <Cell fill="#86efac" />
-                    <Cell fill="#fde68a" />
-                    <Cell fill="#fca5a5" />
-                </Bar>
-                </BarChart>
-            </ResponsiveContainer>
+            {/* ── Section 1: Recent Mistakes ── */}
+            <div className="ta-section">
+                <div className="ta-section-title">Recent Mistakes</div>
+                {loading ? (
+                    <div className="ta-loading">Loading...</div>
+                ) : mistakes.length === 0 ? (
+                    <div className="ta-empty">No mistakes recorded yet. Complete some practice to get feedback here.</div>
+                ) : (
+                    mistakes.map(entry => (
+                        <MistakeRow key={entry.id} entry={entry} />
+                    ))
+                )}
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4">Progress Over Time</h2>
-            <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="week" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="progress" stroke="#14b8a6" strokeWidth={3} />
-                </LineChart>
-            </ResponsiveContainer>
+
+            {/* ── Section 2: Mistake Patterns ── */}
+            <div className="ta-section">
+                <div className="ta-section-title">Mistake Patterns</div>
+                {loading ? (
+                    <div className="ta-loading">Loading...</div>
+                ) : topicEntries.length === 0 ? (
+                    <div className="ta-empty">Patterns will appear here once you have mistakes recorded across sessions.</div>
+                ) : (
+                    <div className="pattern-grid">
+                        {topicEntries.map(([topic, mistakeList]) => (
+                            <PatternCard key={topic} topic={topic} mistakes={mistakeList} />
+                        ))}
+                    </div>
+                )}
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4">Completion</h2>
-            <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                <Pie
-                    data={completionData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={3}
-                >
-                    {completionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                    ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-                </PieChart>
-            </ResponsiveContainer>
+
+            {/* ── Section 3: Curated Quiz ── */}
+            <div className="ta-section">
+                <div className="ta-section-title">Curated Practice</div>
+                {loading ? (
+                    <div className="ta-loading">Loading...</div>
+                ) : curated.questionIds.length === 0 ? (
+                    <div className="curated-empty">
+                        Complete some practice sessions to unlock your personalized quiz focused on your weak areas.
+                    </div>
+                ) : (
+                    <>
+                        <div style={{ marginBottom: 12, fontSize: '0.875rem', color: '#475569' }}>
+                            Focused on your most common mistake areas:
+                        </div>
+                        <div className="curated-topics">
+                            {curated.focusTopics.map(t => (
+                                <span key={t} className="curated-topic-pill">{t}</span>
+                            ))}
+                        </div>
+                        <button className="curated-start-btn" onClick={handleStartCurated}>
+                            Start Curated Practice ({curated.questionIds.length} questions)
+                        </button>
+                    </>
+                )}
             </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

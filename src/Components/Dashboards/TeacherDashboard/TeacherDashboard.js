@@ -10,7 +10,7 @@ import { useDashboardNav } from '../../../hooks/useDashboardNav';
 
 // Import chart components
 import TeacherReadinessChart from "../Charts/TeacherReadinessChart";
-import { generateClassReadinessData, generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
+import { generateClassColors, calculateTeacherStats } from "../Charts/TeacherReadinessLogic";
 
 // Import the components
 import MyClasses from "./MyClasses";
@@ -18,6 +18,8 @@ import MyClasses from "./MyClasses";
 import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
 import Assignments from "./Assignments";
+import MyTA from "../TAPage/TAPageTeacher";
+import Settings from "../../Settings/Settings";
 
 
 const topics = ["Algebra", "Geometry", "Statistics", "Trigonometry", "Number Theory"];
@@ -157,12 +159,12 @@ export default function TeacherDashboard() {
                 name: `${studentInfo.firstName} ${studentInfo.lastName}`,
                 email: studentInfo.email,
                 className: classItem.name,
-                readiness: studentProgress?.readinessLevel || studentProgress?.score || 0,
-                averageScore: studentProgress?.averageScore || Math.floor(Math.random() * 30 + 70),
-                improvement: studentProgress?.improvement || Math.floor(Math.random() * 15 + 1),
-                attempts: studentProgress?.totalAttempts || studentProgress?.assignmentsCompleted || Math.floor(Math.random() * 50 + 10),
-                attendanceRate: studentProgress?.attendanceRate || Math.floor(Math.random() * 20 + 80),
-                lastActivity: studentProgress?.lastActivity || new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+                readiness: studentProgress?.readinessLevel ?? studentProgress?.score ?? 0,
+                averageScore: studentProgress?.averageScore ?? 0,
+                improvement: studentProgress?.improvement ?? null,
+                attempts: studentProgress?.totalAttempts ?? studentProgress?.assignmentsCompleted ?? 0,
+                attendanceRate: studentProgress?.attendanceRate ?? null,
+                lastActivity: studentProgress?.lastActivity ?? null,
                 progress: studentProgress
               });
             }
@@ -243,6 +245,10 @@ export default function TeacherDashboard() {
     }
   };
 
+  const generateQuiz = () => {
+    // Placeholder function for generating a quiz based on AI insights
+    alert('This will generate a new practice quiz based on student performance data.');
+  }
   // Function to render different page content
   const renderPageContent = () => {
     // ===== CLASS-SPECIFIC VIEWS (HIGHEST PRIORITY) =====
@@ -306,11 +312,11 @@ export default function TeacherDashboard() {
       case 'insights':
         return <div className="coming-soon">Insights page coming soon</div>;
       case 'ta':
-        return <div className="coming-soon">MY TA page coming soon...</div>;
+        return <MyTA />;
       case 'reports':
         return <div className="coming-soon">Reports page coming soon...</div>;
       case 'settings':
-        return <div className="coming-soon">Settings page coming soon...</div>;
+        return <Settings />;
       default:
         return renderOverviewContent();
     }
@@ -351,18 +357,24 @@ export default function TeacherDashboard() {
           )}
         </div>
         <div className="kpi-card">
-          <div className="kpi-title">Weakest Topic</div>
+          <div className="kpi-title">Avg. Score</div>
           <div className="kpi-value">
             {loadingStudentsData ? (
               <div className="loading-indicator">...</div>
-            ) : (
-              'Algebra' // You can make this dynamic later based on actual data
-            )}
+            ) : actualStudentsData.length > 0 ? (
+              `${Math.round(actualStudentsData.reduce((s, st) => s + (st.averageScore || 0), 0) / actualStudentsData.length)}%`
+            ) : '—'}
           </div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-title">Avg. Session Time (min)</div>
-          <div className="kpi-value">23</div>
+          <div className="kpi-title">Avg. Readiness</div>
+          <div className="kpi-value">
+            {loadingStudentsData ? (
+              <div className="loading-indicator">...</div>
+            ) : actualStudentsData.length > 0 ? (
+              `${Math.round(actualStudentsData.reduce((s, st) => s + (st.readiness || 0), 0) / actualStudentsData.length)}%`
+            ) : '—'}
+          </div>
         </div>
       </section>
 
@@ -474,7 +486,7 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="panel panel-medium">
-          <div className="panel-title">AI Insights Summary</div>
+          <div className="panel-title">Insights Summary</div>
           <div className="ai-text">
             {loadingStudentsData ? (
               'Analyzing student performance...'
@@ -488,7 +500,7 @@ export default function TeacherDashboard() {
             )}
           </div>
           <div className="ai-actions">
-            <button className="ai-btn">Generate new practice quiz</button>
+            <button className="ai-btn" onClick={generateQuiz}>Generate new practice quiz</button>
             <button className="ai-btn ghost">Send feedback to students</button>
           </div>
         </div>

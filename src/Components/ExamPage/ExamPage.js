@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import './ExamPage.css';
 import { useNavigate } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
-import { BiSearch, BiMenu, BiX, BiBook, BiBrain } from 'react-icons/bi';
-import Navbar from '../Navbar';
+import { BiMenu, BiX, BiArrowBack } from 'react-icons/bi';
+
+const formatName = (name) =>
+    name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
 
 const ExamPage = () => {
     const navigate = useNavigate();
     const [selectedDifficulty, setSelectedDifficulty] = useState(null); 
     const [selectedTopic, setSelectedTopic] = useState('All Topics');
     const [searchTerm, setSearchTerm] = useState('');
-    const [displayCount, setDisplayCount] = useState(70);
+    const [displayCount, setDisplayCount] = useState(15);
     const [selectedSubject, setSelectedSubject] = useState('Math');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Add sidebar state
     const [activeTab, setActiveTab] = useState('Library'); // New state for active tab
@@ -56,14 +58,16 @@ const ExamPage = () => {
 
     return (
         <>
-            <Navbar />
+            <div className="exam-topbar">
+                <button className="exam-filter-btn" onClick={toggleSidebar}>
+                    <BiMenu /> Filters
+                </button>
+                <span className="exam-topbar-brand">Examnation</span>
+                <button className="exam-back-btn" onClick={() => navigate('/studentdashboard')}>
+                    <BiArrowBack /> Back to Dashboard
+                </button>
+            </div>
             <div className="exam-layout">
-                {/* Sidebar Toggle Button */}
-                {!isSidebarOpen && (
-                    <button className="sidebar-toggle" onClick={toggleSidebar}>
-                        <BiMenu />
-                    </button>
-                )}
 
                 {/* Sidebar */}
                 <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -155,9 +159,14 @@ const ExamPage = () => {
                             </p>
                         </div>
 
-                        {/* Mobile Topic Row (hidden when sidebar is open) */}
+
+                        {/* Topic Row — 5 pills centered on the active topic */}
                         <div className={`topic-row ${isSidebarOpen ? 'hidden' : ''}`}>
-                            {topics.slice(0, 5).map(topic => (
+                            {(() => {
+                                const idx = topics.indexOf(selectedTopic);
+                                const start = Math.max(0, Math.min(idx - 2, topics.length - 5));
+                                return topics.slice(start, start + 5);
+                            })().map(topic => (
                                 <button 
                                     key={topic} 
                                     className={'topic-button' + (selectedTopic === topic ? ' active' : '')} 
@@ -171,7 +180,10 @@ const ExamPage = () => {
                         <ol className="question-list">
                             {filteredQuestions.slice(0, displayCount).map((question, index) => (
                                 <li className="question-item" key={index} onClick={() => navigate(`/practice/${question['Question ID']}`)}>
-                                    <span className='question-unique-name'>{question.UniqueName}</span>
+                                    <div className="question-info">
+                                        <span className="question-unique-name">{formatName(question.UniqueName)}</span>
+                                        <span className="question-topic">{question.Topic}</span>
+                                    </div>
                                     <span className={`question-difficulty ${question.Difficulty.toLowerCase()}`}>{question.Difficulty}</span>
                                 </li>
                             ))}

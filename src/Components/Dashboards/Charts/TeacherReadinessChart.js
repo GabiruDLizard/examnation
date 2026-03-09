@@ -187,8 +187,12 @@ const TeacherReadinessChart = ({ classReadinessData = [], classColors = {} }) =>
           display: false,
         },
         ticks: {
+          autoSkip: true,
+          autoSkipPadding: 20,
+          maxRotation: 45,
+          minRotation: 0,
           font: {
-            size: 12,
+            size: 11,
           },
           color: "#cfd8e3",
         },

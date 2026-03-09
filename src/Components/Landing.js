@@ -276,6 +276,15 @@ export default function ExamNationLanding() {
             <footer id="contact" className="cta-footer">
                 <h2>Join the Next Generation of Learners</h2>
                 <button className="primary" onClick={handleRegister}>Sign Up Free</button>
+                <div className="footer-bottom">
+                    <p className="footer-copyright">
+                        &copy; {new Date().getFullYear()} Lofty Goals Software. All rights reserved.
+                        Examnation is a product of Lofty Goals Software.
+                    </p>
+                    <p className="footer-contact">
+                        Contact us: <a href="mailto:contactloftygoals@gmail.com">contactloftygoals@gmail.com</a>
+                    </p>
+                </div>
             </footer>
         </div>
     );

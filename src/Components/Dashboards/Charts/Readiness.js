@@ -205,9 +205,12 @@ const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'b
           display: false,
         },
         ticks: {
-          maxTicksLimit: 10,
+          autoSkip: true,
+          autoSkipPadding: 20,
+          maxRotation: 45,
+          minRotation: 0,
           font: {
-            size: 12,
+            size: 11,
           },
           color: "#6b7280",
         },
@@ -285,7 +288,14 @@ const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'b
         x: {
           grid: { display: false },
           border: { display: false },
-          ticks: { color: "#6b7280", font: { size: 12 } },
+          ticks: {
+            autoSkip: true,
+            autoSkipPadding: 20,
+            maxRotation: 45,
+            minRotation: 0,
+            color: "#6b7280",
+            font: { size: 11 },
+          },
         },
       },
     };
@@ -358,8 +368,8 @@ const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'b
 
   // Calculate stats for continuous progress
   const latestReadiness = readinessData[readinessData.length - 1] || 0;
-  const firstReadiness = readinessData[0] || 0;
-  const progressChange = latestReadiness - firstReadiness;
+  const prevReadiness = readinessData.length >= 2 ? readinessData[readinessData.length - 2] : latestReadiness;
+  const progressChange = latestReadiness - prevReadiness;
   const totalSessions = new Set(readinessScores.map(score => score.date)).size;
 
   return (
@@ -386,7 +396,7 @@ const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'b
             <div><span style={{ fontWeight: "500", color: "#374151" }}>Latest: {latestReadiness}%</span></div>
             <div>
               <span style={{ fontWeight: "500", color: progressChange >= 0 ? "#10b981" : "#ef4444" }}>
-                {progressChange >= 0 ? "+" : ""}{progressChange.toFixed(1)}% Progress
+                {progressChange >= 0 ? "+" : ""}{progressChange.toFixed(5)}% Last Change
               </span>
             </div>
             <div><span style={{ fontWeight: "500", color: "#374151" }}>{totalSessions} Session{totalSessions !== 1 ? "s" : ""}</span></div>

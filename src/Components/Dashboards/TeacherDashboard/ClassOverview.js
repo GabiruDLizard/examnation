@@ -47,9 +47,10 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
             
             // Calculate basic stats
             const totalStudents = classStudents.length;
-            const averageReadiness = totalStudents > 0 
-                ? Math.round(classStudents.reduce((sum, [, progress]) => 
-                    sum + (Number(progress?.readinessLevel) || 70), 0) / totalStudents)
+            const studentsWithReadiness = classStudents.filter(([, progress]) => Number(progress?.readinessLevel) > 0);
+            const averageReadiness = studentsWithReadiness.length > 0
+                ? Math.round(studentsWithReadiness.reduce((sum, [, progress]) =>
+                    sum + Number(progress.readinessLevel), 0) / studentsWithReadiness.length)
                 : 0;
 
             // Calculate submission statistics
@@ -74,7 +75,7 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                 totalStudents,
                 activeAssignments: assignments.length, 
                 averageReadiness,
-                recentActivity: Math.floor(Math.random() * totalStudents * 0.8), // Mock recent activity
+                recentActivity: totalSubmissions,
                 totalSubmissions,
                 submissionRate
             });

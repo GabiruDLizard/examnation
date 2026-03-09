@@ -519,7 +519,22 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                             
                                             <div className="question-content">
                                                 <p className="question-text">{question.questionText}</p>
-                                                
+
+                                                {question.figureBlobUrl && (
+                                                    <div className="question-figure" style={{ margin: '8px 0' }}>
+                                                        <img
+                                                            src={question.figureBlobUrl}
+                                                            alt={question.figureDescription || 'Question figure'}
+                                                            style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '6px', display: 'block' }}
+                                                        />
+                                                        {question.figureDescription && (
+                                                            <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0' }}>
+                                                                {question.figureDescription}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {question.answerType === 'Multiple Choice' && question.multipleChoiceOptions?.length > 0 && (
                                                     <div className="question-options">
                                                         {question.multipleChoiceOptions.map((option, optIndex) => (

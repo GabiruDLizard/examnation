@@ -220,6 +220,27 @@
     margin-top: 8px;
 }
 
+.answer-format-hint {
+    margin-top: 12px;
+    padding: 8px 14px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #92400e;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.answer-format-example {
+    font-weight: 600;
+    background: #fef3c7;
+    padding: 1px 7px;
+    border-radius: 4px;
+}
+
 .submissionField {
     display: flex;
     flex-direction: column;
@@ -472,6 +493,46 @@
     gap: 12px;
     justify-content: flex-end;
     background: #f8fafc;
+}
+
+.nav-btn {
+    padding: 7px 16px;
+    border: 1.5px solid #b2dfdb;
+    border-radius: 20px;
+    background: #fff;
+    color: #00796b;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: #e0f2f1;
+    border-color: #00796b;
+}
+
+.nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.clear-hint-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1.5px solid #d97706;
+    background: #fff;
+    color: #d97706;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.clear-hint-btn:hover {
+    background: #fef3c7;
 }
 
 .clear-btn, .hint-btn, .submit-btn {

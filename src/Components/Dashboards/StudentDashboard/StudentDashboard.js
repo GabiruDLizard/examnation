@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  BiHome, BiUser, BiBookOpen, BiBarChart, BiClipboard, 
+import {
+  BiHome, BiBookOpen, BiBarChart, BiClipboard,
   BiTrendingUp, BiCog, BiLogOut, BiPlay, BiCheckCircle,
-  BiTime, BiAward, BiBullseye, BiMenu, BiX
+  BiTime, BiBullseye, BiMenu, BiX
 } from 'react-icons/bi';
 import '../StudentDashboard.css';
 import { getStudentAnswers, getStudentEnrollments } from './StudentDashboardService.js'; // Keep this for student answers
@@ -17,6 +17,8 @@ import StudentMyClasses from './MyClasses.js';
 import StudentClassOverview from './ClassOverview.js';
 import AssignmentOverview from './AssignmentOverview.js';
 import AssignmentQuestionPage from './AssignmentQuestionPage.js';
+import TAPageStudent from '../TAPage/TAPageStudent.js';
+import Settings from '../../Settings/Settings.js';
 
 // Helper function for grouping answers by date
 const groupAnswersByDate = (answers) => {
@@ -196,59 +198,8 @@ function StudentDashboard() {
                     setStudentProgress({});
                 }
 
-                // 3. Try to fetch answers data (skip if it fails)
-                console.log('Trying to fetch student answers...');
-                let answersResponse = [];
-                try {
-                    // Try multiple possible endpoints for answers
-                    const answerEndpoints = [
-                        `/answer/user/${id}`,
-                        `/studentanswers/${id}`,
-                        `/answers/${id}`
-                    ];
-
-                    for (const endpoint of answerEndpoints) {
-                        try {
-                            console.log('Trying answers endpoint:', endpoint);
-                            const response = await authFetch(endpoint);
-                        
-                        if (response.ok) {
-                            answersResponse = await response.json();
-                            console.log('✅ Answers received from', endpoint, ':', answersResponse.length, 'items');
-                            break;
-                        } else {
-                            console.log('❌ Failed:', endpoint, response.status);
-                        }
-                    } catch (endpointError) {
-                        console.log('❌ Error with', endpoint, ':', endpointError.message);
-                    }
-                }
-
-                if (!answersResponse || answersResponse.length === 0) {
-                    console.warn('⚠️ No answers found, using demo data for testing');
-                    // Create some demo data for testing the UI
-                    answersResponse = [
-                        {
-                            questionId: 'MATH_001',
-                            isCorrect: true,
-                            difficultyLevel: 'Medium',
-                            answeredAt: new Date().toISOString(),
-                            attemptMode: 'practice'
-                        },
-                        {
-                            questionId: 'ENG_001',
-                            isCorrect: false,
-                            difficultyLevel: 'Easy',
-                            answeredAt: new Date().toISOString(),
-                            attemptMode: 'practice'
-                        }
-                    ];
-                }
-                
-            } catch (answersError) {
-                console.warn('⚠️ Answers API error (CORS/500), using empty data:', answersError.message);
-                answersResponse = [];
-            }
+                // 3. Fetch practice answers
+                const answersResponse = await getStudentAnswers(id);
 
             // Process the data we have
             setStudentAnswers(answersResponse);
@@ -259,39 +210,53 @@ function StudentDashboard() {
             
             console.log('📊 Basic statistics calculated - Q:', answersResponse.length, 'Correct:', correctAnswersCount);
 
-            // Process readiness scores if we have answers
-            if (answersResponse.length > 0) {
-                console.log('Processing readiness scores...');
-                try {
-                    const groupedByDate = groupAnswersByDate(answersResponse);
-                    const readinessResults = await processGroupedAnswers(groupedByDate);
-                    setReadinessScores(readinessResults);
-                    console.log('✅ Readiness scores processed:', readinessResults.length);
+            // Split answers by source
+            const practiceTestAnswers = answersResponse.filter(a =>
+                a.attemptMode === 'practice' || a.attemptMode === 'adaptive_test'
+            );
+            const assignmentAnswers = answersResponse.filter(a =>
+                a.attemptMode === 'assignment'
+            );
 
-                    // Save readiness to API for each enrolled class
-                    if (readinessResults.length > 0 && studentEnrollments.length > 0) {
-                        const totalAbility = readinessResults.reduce((s, r) => s + r.abilityEstimate, 0);
-                        const avgAbility = totalAbility / readinessResults.length;
+            // Practice & Test chart — personal readiness from practice + adaptive_test only
+            if (practiceTestAnswers.length > 0) {
+                console.log('Processing practice/test readiness scores...');
+                try {
+                    const grouped = groupAnswersByDate(practiceTestAnswers);
+                    const readinessResults = await processGroupedAnswers(grouped);
+                    setReadinessScores(readinessResults);
+                    console.log('✅ Practice/test readiness processed:', readinessResults.length);
+                } catch (readinessError) {
+                    console.error('Error processing readiness:', readinessError);
+                    setReadinessScores([]);
+                }
+            } else {
+                console.log('No practice/test answers for readiness');
+                setReadinessScores([]);
+            }
+
+            // Class readiness — save to enrolled classes using assignment answers only
+            if (assignmentAnswers.length > 0 && studentEnrollments.length > 0) {
+                try {
+                    const assignmentGrouped = groupAnswersByDate(assignmentAnswers);
+                    const assignmentReadiness = await processGroupedAnswers(assignmentGrouped);
+                    if (assignmentReadiness.length > 0) {
+                        const totalAbility = assignmentReadiness.reduce((s, r) => s + r.abilityEstimate, 0);
+                        const avgAbility = totalAbility / assignmentReadiness.length;
                         const pct = Math.max(0, Math.min(100, ((avgAbility + 3) / 6) * 100));
                         for (const enrollment of studentEnrollments) {
                             try {
                                 await recordStudentReadiness(id, enrollment.classId, {
                                     readinessPercentage: pct,
-                                    questionsAnswered: readinessResults.length,
-                                    correctAnswers: readinessResults.filter(r => r.isCorrect).length,
+                                    questionsAnswered: assignmentReadiness.length,
+                                    correctAnswers: assignmentReadiness.filter(r => r.isCorrect).length,
                                     studyTimeMinutes: 0,
                                     abilityEstimate: avgAbility
                                 });
                             } catch { /* non-fatal */ }
                         }
                     }
-                } catch (readinessError) {
-                    console.error('Error processing readiness:', readinessError);
-                    setReadinessScores([]);
-                }
-            } else {
-                console.log('No answers to process for readiness');
-                setReadinessScores([]);
+                } catch { /* non-fatal */ }
             }
 
             console.log('🎉 Data loading completed successfully!');
@@ -466,44 +431,12 @@ function StudentDashboard() {
         // Handle main navigation
         if (currentView === 'main') {
             switch (activePage) {
-                case 'practice':
-                    return (
-                        <div className="coming-soon">
-                            <BiBookOpen size={64} />
-                            <h2>Practice Questions</h2>
-                            <p>Practice mode coming soon...</p>
-                            <button onClick={() => navigate('/exampage')}>Go to Current Practice Page</button>
-                        </div>
-                    );
                 case 'classes':
                     return <StudentMyClasses studentInfo={student} onClassClick={handleClassClick} />;
-                case 'readiness':
-                    return (
-                        <div className="coming-soon">
-                            <BiBullseye size={64} />
-                            <h2>Exam Readiness</h2>
-                            <p>Detailed readiness analysis coming soon...</p>
-                            <button onClick={() => navigate('/tapagestudent')}>Go to Current Analytics</button>
-                        </div>
-                    );
-                case 'history':
-                    return (
-                        <div className="coming-soon">
-                            <BiTime size={64} />
-                            <h2>Study History</h2>
-                            <p>Study history coming soon...</p>
-                            <button onClick={() => navigate('/fullreview')}>Go to Current Review</button>
-                        </div>
-                    );
+                case 'ta':
+                    return <TAPageStudent />;
                 case 'settings':
-                    return (
-                        <div className="coming-soon">
-                            <BiCog size={64} />
-                            <h2>Settings</h2>
-                            <p>Settings page coming soon...</p>
-                            <button onClick={() => navigate('/updateprofile')}>Go to Current Profile</button>
-                        </div>
-                    );
+                    return <Settings />;
                 default:
                     return renderOverviewContent();
             }
@@ -553,7 +486,7 @@ function StudentDashboard() {
                                     onClick={() => setActiveChartView('progress')}
                                 >
                                     <BiTrendingUp size={16} />
-                                    Progress Over Time
+                                    Practice & Test Progress
                                 </button>
                                 <button 
                                     className={`chart-tab ${activeChartView === 'class' ? 'active' : ''}`}
@@ -592,11 +525,11 @@ function StudentDashboard() {
                                 <BiBullseye size={20} />
                                 Adaptive Test
                             </button>
-                            <button className="action-btn tertiary" onClick={() => navigate('/fullreview')}>
+                            <button className="action-btn tertiary" onClick={() => handleNavClick('ta')}>
                                 <BiClipboard size={20} />
                                 Review Answers
                             </button>
-                            <button className="action-btn quaternary" onClick={() => navigate('/tapagestudent')}>
+                            <button className="action-btn quaternary" onClick={() => handleNavClick('ta')}>
                                 <BiBarChart size={20} />
                                 View Analytics
                             </button>
@@ -666,7 +599,7 @@ function StudentDashboard() {
                             <button className="insight-btn" onClick={() => navigate('/exampage')}>
                                 Start Practice Session
                             </button>
-                            <button className="insight-btn ghost" onClick={() => navigate('/tapagestudent')}>
+                            <button className="insight-btn ghost" onClick={() => handleNavClick('ta')}>
                                 View Detailed Analytics
                             </button>
                         </div>
@@ -709,35 +642,28 @@ function StudentDashboard() {
                         <BiHome style={{ marginRight: '8px', fontSize: '18px'}} />
                         Overview
                     </button>
-                    <button 
-                        className={`sd-nav-item ${activePage === 'practice' ? 'active' : ''}`}
-                        onClick={() => handleNavClick('practice')}
+                    <button
+                        className="sd-nav-item"
+                        onClick={() => navigate('/exampage')}
                     >
                         <BiBookOpen style={{ marginRight: '8px', fontSize: '18px'}} />
                         Practice
                     </button>
-                    <button 
+                    <button
                         className={`sd-nav-item ${activePage === 'classes' ? 'active' : ''}`}
                         onClick={() => handleNavClick('classes')}
                     >
                         <BiClipboard style={{ marginRight: '8px', fontSize: '18px'}} />
                         My Classes
                     </button>
-                    <button 
-                        className={`sd-nav-item ${activePage === 'readiness' ? 'active' : ''}`}
-                        onClick={() => handleNavClick('readiness')}
+                    <button
+                        className="sd-nav-item"
+                        onClick={() => handleNavClick('ta')}
                     >
                         <BiBullseye style={{ marginRight: '8px', fontSize: '18px'}} />
                         Readiness
                     </button>
-                    <button 
-                        className={`sd-nav-item ${activePage === 'history' ? 'active' : ''}`}
-                        onClick={() => handleNavClick('history')}
-                    >
-                        <BiTime style={{ marginRight: '8px', fontSize: '18px'}} />
-                        History
-                    </button>
-                    <button 
+                    <button
                         className={`sd-nav-item ${activePage === 'settings' ? 'active' : ''}`}
                         onClick={() => handleNavClick('settings')}
                     >

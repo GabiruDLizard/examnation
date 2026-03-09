@@ -1,0 +1,222 @@
+.ta-teacher-page {
+    padding: 8px 0;
+}
+
+.ta-teacher-header {
+    margin-bottom: 24px;
+}
+
+.ta-teacher-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.ta-teacher-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ── Shared section style (mirrors TAPageStudent.css) ── */
+.ta-section {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.ta-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+}
+
+.ta-loading { color: #94a3b8; font-size: 0.9rem; }
+.ta-empty   { color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 24px 0; }
+
+/* ── Topic cards grid ── */
+.ta-topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.ta-topic-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    background: #f8fafc;
+}
+
+.ta-topic-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.ta-topic-total {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.ta-mistake-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ta-mistake-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.ta-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.ta-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: #6366f1;
+}
+
+.ta-bar-count {
+    font-weight: 600;
+    color: #475569;
+    min-width: 20px;
+    text-align: right;
+}
+
+.ta-student-count {
+    color: #94a3b8;
+    min-width: 60px;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
+/* ── Struggling students list ── */
+.ta-struggling-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ta-struggling-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.ta-struggling-rank {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+    min-width: 28px;
+}
+
+.ta-struggling-name {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.ta-struggling-count {
+    font-size: 0.8rem;
+    color: #64748b;
+    min-width: 80px;
+    text-align: right;
+}
+
+.ta-struggling-tags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* ── Badge styles (mirrors TAPageStudent.css) ── */
+.mistake-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.badge-sign         { background: #fee2e2; color: #dc2626; }
+.badge-arithmetic   { background: #ffedd5; color: #ea580c; }
+.badge-formula      { background: #fef3c7; color: #d97706; }
+.badge-distribution { background: #fce7f3; color: #db2777; }
+.badge-operation    { background: #ede9fe; color: #7c3aed; }
+.badge-conceptual   { background: #dbeafe; color: #2563eb; }
+.badge-incomplete   { background: #d1fae5; color: #059669; }
+.badge-other        { background: #f1f5f9; color: #64748b; }
+
+.mistake-topic-badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.ta-assign-btn {
+    margin-left: auto;
+    padding: 6px 14px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ta-assign-btn:hover { background: #1d4ed8; }
+
+.ta-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.ta-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+.ta-modal h3 { margin: 0 0 4px; font-size: 1.1rem; }
+.ta-modal p  { margin: 0 0 20px; color: #64748b; font-size: 0.9rem; }
+
+.ta-modal-field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+.ta-modal-field label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+.ta-modal-field select,
+.ta-modal-field input  { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+
+.ta-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.ta-modal-cancel  { padding: 8px 18px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.9rem; }
+.ta-modal-confirm { padding: 8px 18px; border: none; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+.ta-modal-confirm:disabled { background: #93c5fd; cursor: not-allowed; }

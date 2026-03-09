@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
 import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
@@ -121,10 +122,10 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
       await fetchClasses(); // Refresh the list
       setShowCreateForm(false);
       setSelectedColor("#3b82f6"); // Reset color picker
-      alert('Class created successfully!');
+      toast.success('Class created successfully!');
     } catch (error) {
       console.error('Error creating class:', error);
-      alert('Error creating class: ' + error.message);
+      toast.error('Error creating class: ' + error.message);
     }
   };
 
@@ -139,7 +140,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   const handleEditClass = (e, classItem) => {
     e.stopPropagation();
     console.log('Edit class:', classItem.name);
-    alert(`Editing ${classItem.name}...`);
+    toast.info(`Editing ${classItem.name}...`);
   };
 
   const handleDeleteClass = async (e, classItem) => {
@@ -148,10 +149,10 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
       try {
         await deleteTeacherClass(classItem.id);
         await fetchClasses(); // Refresh the list
-        alert(`${classItem.name} deleted successfully!`);
+        toast.success(`${classItem.name} deleted successfully!`);
       } catch (error) {
         console.error('Error deleting class:', error);
-        alert('Error deleting class: ' + error.message);
+        toast.error('Error deleting class: ' + error.message);
       }
     }
   };
@@ -411,7 +412,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
               };
               
               if (!classData.name || !classData.subject || !classData.gradeLevel || !classData.schedule) {
-                alert('Please fill in all required fields');
+                toast.warn('Please fill in all required fields');
                 return;
               }
               

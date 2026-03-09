@@ -36,7 +36,7 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
         classesWithDetails.map(async (classItem) => {
           try {
             console.log(`Fetching assignments for class ${classItem.classId}:`, classItem.name);
-            const assignments = await getAssignmentsForClass(classItem.classId);
+            const assignments = await getAssignmentsForClass(classItem.classId, studentId);
             
             console.log(`Assignments for class ${classItem.name}:`, assignments);
             

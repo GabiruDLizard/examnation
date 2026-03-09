@@ -24,13 +24,14 @@ const AdaptiveTest = () => {
   
   // Get question count from navigation state or default to 10
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
-  const POINTS = {
-    Easy: 1,
-    Medium: 3,
-    Hard: 5
-  };
+  // Marks-based scoring: score = marks × paperWeight
+  const PAPER_WEIGHTS = { Easy: 1.0, Medium: 1.5, Hard: 2.0 };
+  const DEFAULT_MARKS  = { Easy: 2,   Medium: 3,   Hard: 5   };
 
-  const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
+  const getQuestionScore = (q) => {
+    const marks = q.marks || DEFAULT_MARKS[q.Difficulty] || 3;
+    return marks * (PAPER_WEIGHTS[q.Difficulty] || 1.5);
+  };
 
   // State declarations
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -38,7 +39,8 @@ const AdaptiveTest = () => {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [testAnswers, setTestAnswers] = useState([]); // Store all answers
-  const [difficultyLevel, setDifficultyLevel] = useState("Medium"); // Start at medium
+  const [difficultyLevel, setDifficultyLevel] = useState("Medium"); // Display label (last question's difficulty)
+  const [targetScore, setTargetScore] = useState(4.5); // Continuous difficulty score; Medium ~3marks×1.5=4.5
   const [hint, setHint] = useState('');
   const [hintload, setHintload] = useState(false);
   const [steps, setSteps] = useState(['']);
@@ -81,16 +83,17 @@ const AdaptiveTest = () => {
         if (testData.currentIndex >= TOTAL_QUESTIONS) {
           setIsTestComplete(true);
         } else {
-          // Get next question at current difficulty
-          const nextQuestion = getRandomQuestionAtDifficulty(testData.difficultyLevel);
+          // Get next question at saved target score
+          setTargetScore(testData.targetScore || 4.5);
+          const nextQuestion = getQuestionAtScore(testData.targetScore || 4.5);
           setCurrentQuestion(nextQuestion);
         }
       } else {
             // Start new test
             setTestAnswers(new Array(TOTAL_QUESTIONS).fill(null));
-            const firstQuestion = getRandomQuestionAtDifficulty("Medium");
+            const firstQuestion = getQuestionAtScore(4.5);
             setCurrentQuestion(firstQuestion);
-            
+
             // Save initial test state
             const initialTestData = {
             currentIndex: 0,
@@ -98,6 +101,7 @@ const AdaptiveTest = () => {
             correctAnswers: 0,
             answers: new Array(TOTAL_QUESTIONS).fill(null),
             difficultyLevel: "Medium",
+            targetScore: 4.5,
             elapsedTime: 0,
             startTime: Date.now()
             };
@@ -113,41 +117,23 @@ const AdaptiveTest = () => {
     }
   }, [token, navigate]);
 
-  // Get random question at specific difficulty
-  const getRandomQuestionAtDifficulty = (difficulty) => {
-    const questionsAtDifficulty = questions.filter(q => q.Difficulty === difficulty);
-    if (questionsAtDifficulty.length === 0) {
-      // Fallback to Medium if no questions at requested difficulty
-      const fallbackQuestions = questions.filter(q => q.Difficulty === "Medium");
-      const randomIndex = Math.floor(Math.random() * fallbackQuestions.length);
-      return fallbackQuestions[randomIndex];
-    }
-    
-    const randomIndex = Math.floor(Math.random() * questionsAtDifficulty.length);
+  // Get question whose score is closest to targetScore
+  const getQuestionAtScore = (score) => {
+    const scored = questions.map(q => ({ q, dist: Math.abs(getQuestionScore(q) - score) }));
+    scored.sort((a, b) => a.dist - b.dist);
+    const candidates = scored.slice(0, 8);
+    const picked = candidates[Math.floor(Math.random() * candidates.length)].q;
     setCurrentQuestionStartTime(Date.now());
-    return questionsAtDifficulty[randomIndex];
+    setDifficultyLevel(picked.Difficulty);
+    return picked;
   };
 
-  // Adjust difficulty based on performance
+  // Nudge targetScore up on correct, down on wrong; clamp to [1.5, 14]
   const adjustDifficulty = (wasCorrect) => {
-    const currentIndex = DIFFICULTY_LEVELS.indexOf(difficultyLevel);
-    
-    if (wasCorrect && currentIndex < DIFFICULTY_LEVELS.length - 1) {
-      // Increase difficulty if correct and not already at hardest
-      const newDifficulty = DIFFICULTY_LEVELS[currentIndex + 1];
-      setDifficultyLevel(newDifficulty);
-      console.log(`✅ Correct! Difficulty increased to: ${newDifficulty}`);
-      return newDifficulty;
-    } else if (!wasCorrect && currentIndex > 0) {
-      // Decrease difficulty if incorrect and not already at easiest
-      const newDifficulty = DIFFICULTY_LEVELS[currentIndex - 1];
-      setDifficultyLevel(newDifficulty);
-      console.log(`❌ Incorrect! Difficulty decreased to: ${newDifficulty}`);
-      return newDifficulty;
-    }
-    
-    console.log(`🔄 Staying at difficulty: ${difficultyLevel}`);
-    return difficultyLevel;
+    setTargetScore(prev => {
+      const next = wasCorrect ? prev + 1.5 : prev - 1.0;
+      return Math.max(1.5, Math.min(14.0, next));
+    });
   };
 
   // Save test state to localStorage whenever important state changes
@@ -159,6 +145,7 @@ const AdaptiveTest = () => {
         correctAnswers: correctAnswers,
         answers: testAnswers,
         difficultyLevel: difficultyLevel,
+        targetScore: targetScore,
         elapsedTime: elapsedTime,
         timePerQuestion: timePerQuestion,
         startTime: startTime,
@@ -166,7 +153,7 @@ const AdaptiveTest = () => {
       };
       localStorage.setItem('adaptiveTest', JSON.stringify(testData));
     }
-  }, [currentQuestionIndex, totalScore, correctAnswers, testAnswers, difficultyLevel, elapsedTime, isTestComplete, timePerQuestion]);
+  }, [currentQuestionIndex, totalScore, correctAnswers, testAnswers, difficultyLevel, targetScore, elapsedTime, isTestComplete, timePerQuestion]);
 
   // Timer effect
   useEffect(() => {
@@ -181,56 +168,57 @@ const AdaptiveTest = () => {
 
   // Function to check if answer is correct
   const checkAnswer = (userAnswer, correctSolution) => {
-    // Check for empty or whitespace-only answers
-    if (!userAnswer || userAnswer.trim() === '') {
-      return false; // Empty answers are always incorrect
-    }
-    
-    if (!correctSolution || correctSolution.trim() === '') {
-      return false; // No correct solution provided
-    }
+    if (!userAnswer || userAnswer.trim() === '') return false;
+    if (!correctSolution || correctSolution.trim() === '') return false;
 
-    const normalizeAnswer = (answer) => {
-      return answer.toString()
+    const normalize = (ans) => {
+      return ans.toString()
         .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[°]/g, '')
-        .replace(/cm\^?2/g, 'cm²')
-        .replace(/m\^?2/g, 'm²')
-        .replace(/m\^?3/g, 'm³')
+        // Strip LaTeX commands from MathQuill (e.g. \left( \right) \text{} \frac{}{})
+        .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
+        .replace(/\\[a-zA-Z]+/g, '')
+        .replace(/\\\\/g, '')
+        // Strip part labels: (a) (b) (c) (d) (e) (i) (ii) (iii) (iv)
+        .replace(/\([a-e]\)\s*/gi, ' ')
+        .replace(/\(i{1,3}v?\)\s*/gi, ' ')
+        // Strip currency labels
+        .replace(/bsd\$?/gi, '')
         .replace(/\$/g, '')
-        .replace(/,/g, '');
+        // Strip units
+        .replace(/\b(km\/h|m\/s|cm²|m²|cm³|m³|cm|km|mm|mg|ml|kg|g|l)\b/gi, '')
+        .replace(/\b(litres?|minutes?|hours?|seconds?|hrs?|mins?|secs?|pounds?|lbs?)\b/gi, '')
+        // Strip degree symbol and other symbols
+        .replace(/[°×÷≈]/g, '')
+        // Normalize separators to space
+        .replace(/[,;:]/g, ' ')
+        // Collapse whitespace
+        .replace(/\s+/g, ' ')
+        .trim();
     };
 
-    const normalizedUser = normalizeAnswer(userAnswer);
-    const normalizedCorrect = normalizeAnswer(correctSolution);
+    const normalizedUser = normalize(userAnswer);
+    const normalizedCorrect = normalize(correctSolution);
 
-    // Check if normalized answers are empty after processing
-    if (normalizedUser === '' || normalizedCorrect === '') {
-      return false;
-    }
-
-    // Direct match
+    if (normalizedUser === '' || normalizedCorrect === '') return false;
     if (normalizedUser === normalizedCorrect) return true;
 
-    // Check for multiple possible answers
+    // OR alternatives (e.g. "x = 3 or x = -5")
     if (normalizedCorrect.includes(' or ')) {
-      const possibleAnswers = normalizedCorrect.split(' or ').map(ans => normalizeAnswer(ans.trim()));
-      return possibleAnswers.some(ans => normalizedUser.includes(ans) || ans.includes(normalizedUser));
+      const alts = normalizedCorrect.split(' or ').map(a => normalize(a));
+      if (alts.some(a => normalizedUser === a || normalizedUser.includes(a))) return true;
     }
 
-    // Check for fraction equivalents
-    try {
-      const userNum = parseFloat(normalizedUser);
-      const correctNum = parseFloat(normalizedCorrect);
-      if (!isNaN(userNum) && !isNaN(correctNum)) {
-        return Math.abs(userNum - correctNum) < 0.01;
-      }
-    } catch (e) {
-      // Continue with string comparison
+    // Number-sequence comparison: extract all numbers from both and compare positionally
+    // Handles differences in units, labels, spacing, and small rounding
+    const extractNums = (s) => (s.match(/-?\d+\.?\d*/g) || []).map(Number);
+    const correctNums = extractNums(normalizedCorrect);
+    const userNums = extractNums(normalizedUser);
+
+    if (correctNums.length > 0 && correctNums.length === userNums.length) {
+      return correctNums.every((cn, i) => Math.abs(cn - userNums[i]) < 0.05);
     }
 
-    // Partial match for complex answers
+    // Partial match fallback (e.g. student writes subset of multi-part answer)
     return normalizedUser.includes(normalizedCorrect) || normalizedCorrect.includes(normalizedUser);
   };
 
@@ -330,8 +318,8 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       const correct = checkAnswer(finalAnswer, currentQuestion.Solution);
       setIsCorrect(correct);
 
-      // Calculate points for this question
-      const questionPoints = correct ? POINTS[currentQuestion.Difficulty] : 0;
+      // Calculate points for this question using marks × paperWeight
+      const questionPoints = correct ? Math.round(getQuestionScore(currentQuestion) * 10) / 10 : 0;
       
       // Update scores
       const newTotalScore = totalScore + questionPoints;
@@ -352,6 +340,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
         isCorrect: correct,
         pointsEarned: questionPoints,
         difficulty: currentQuestion.Difficulty,
+        topic: currentQuestion.Topic,
         timeSpent: elapsedTime,
         timeToAnswer: timePerQuestion[currentQuestionIndex] || elapsedTime
       };
@@ -382,8 +371,8 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
        
-      // Get next question at the current (possibly adjusted) difficulty level
-      const nextQuestion = getRandomQuestionAtDifficulty(difficultyLevel);
+      // Get next question at the current (possibly adjusted) target score
+      const nextQuestion = getQuestionAtScore(targetScore);
       setCurrentQuestion(nextQuestion);
       
       clearField();
@@ -409,31 +398,32 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
           AttemptMode: "adaptive_test"
         }));
 
-      // Get working steps and question texts for analysis
-      const answercomponents = testAnswers.map(ans => ans && !ans.isCorrect ? ans.workingSteps : '').filter(step => step);
-      const questionTexts = testAnswers.map(ans => ans && !ans.isCorrect ? ans.questionText : '').filter(text => text);
-
-      console.log('🔍 DEBUG: Total test answers:', testAnswers.length);
-      console.log('🔍 DEBUG: Incorrect answers found:', testAnswers.filter(ans => ans && !ans.isCorrect).length);
-      console.log('🔍 DEBUG: Answer components for analysis:', answercomponents.length);
-      console.log('🔍 DEBUG: Question texts for analysis:', questionTexts.length);
+      // Collect wrong answers with full context for TA analysis
+      const wrongAnswers = testAnswers.filter(ans => ans && !ans.isCorrect);
 
       // Save to API
       saveTestResults(apiPayload)
         .then(async response => {
           console.log('✅ Test results saved to database:', response);
-          
-          // Analyze mistake patterns for incorrect answers
-          if (answercomponents.length > 0) {
-            console.log('🚀 Starting mistake analysis...');
+
+          if (wrongAnswers.length > 0) {
             try {
-              const mistakeAnalysis = await analyzeMistakePatterns(answercomponents, questionTexts);
-              console.log('📊 MISTAKE PATTERNS ANALYSIS:', mistakeAnalysis);
+              await analyzeMistakePatterns(
+                wrongAnswers.map(a => a.workingSteps),
+                wrongAnswers.map(a => a.questionText),
+                {
+                  studentId: userId,
+                  questionIds: wrongAnswers.map(a => a.questionId),
+                  topics: wrongAnswers.map(a => a.topic || 'General'),
+                  difficulties: wrongAnswers.map(a => a.difficulty),
+                  correctAnswers: wrongAnswers.map(a => a.correctAnswer),
+                  studentAnswers: wrongAnswers.map(a => a.finalAnswer || a.workingSteps),
+                  source: 'adaptive_test'
+                }
+              );
             } catch (error) {
               console.error('❌ Error analyzing mistakes:', error);
             }
-          } else {
-            console.log('ℹ️ No incorrect answers to analyze (all answers were correct!)');
           }
         })
         .catch(error => {
@@ -519,10 +509,10 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               {testAnswers.map((answer, index) => (
                 answer && (
                   <div key={index} className={`answer-card ${answer.isCorrect ? 'correct' : 'incorrect'}`}>
-                    <p><strong>Q{index + 1}:</strong> {answer.difficulty} ({POINTS[answer.difficulty]} pts)</p>
+                    <p><strong>Q{index + 1}:</strong> {answer.difficulty} ({answer.pointsEarned} pts)</p>
                     <p><strong>Your Answer:</strong> {answer.userAnswer}</p>
                     <p><strong>Correct Answer:</strong> {answer.correctAnswer}</p>
-                    <p><strong>Points:</strong> {answer.pointsEarned}/{POINTS[answer.difficulty]}</p>
+                    <p><strong>Points:</strong> {answer.isCorrect ? answer.pointsEarned : 0}</p>
                   </div>
                 )
               ))}
@@ -581,7 +571,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
               <h2 className="practice-title">{currentQuestion?.UniqueName || "Adaptive Test"}</h2>
               <span className={`question-difficulty ${currentQuestion?.Difficulty?.toLowerCase() || 'medium'}`}>
-                {currentQuestion?.Difficulty || 'Medium'} ({POINTS[currentQuestion?.Difficulty || 'Medium']} pts)
+                {currentQuestion?.Difficulty || 'Medium'} ({currentQuestion ? getQuestionScore(currentQuestion).toFixed(1) : '—'} pts)
               </span>
             </div>
             <div className="questionBlock">
@@ -602,6 +592,28 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
           </div>
           
           <div className="answerBlock">
+            {/* Buttons at top, matching PracticeArea layout */}
+            <div className="tab-actions">
+              <button className="clear-btn" onClick={clearField}>Clear</button>
+              {!hint ? (
+                <button className="hint-btn" onClick={handleHint} disabled={loading || !!feedback}>
+                  {hintload ? 'Loading...' : 'Get Hint'}
+                </button>
+              ) : (
+                <button className="clear-hint-btn" onClick={() => setHint('')}>Clear Hint</button>
+              )}
+              {!feedback && (
+                <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+                  {loading ? 'Analyzing...' : 'Submit'}
+                </button>
+              )}
+              {feedback && (
+                <button className="submit-btn" onClick={goToNextQuestion}>
+                  {currentQuestionIndex < TOTAL_QUESTIONS - 1 ? 'Next Question' : 'Finish Test'}
+                </button>
+              )}
+            </div>
+
             {currentQuestion?.Topic === "Graphs" ? (
               <div className="graph-submission">
                 <div className="graph-instructions">
@@ -646,19 +658,24 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
                 ))}
               </div>
             )}
-            
+
             <div className="submissionField">
               {isCorrect !== null && (
                 <div className={`answer-result ${isCorrect ? 'correct' : 'incorrect'}`}>
                   <strong>{isCorrect ? '✅ Correct!' : '❌ Incorrect'}</strong>
                   <p>Correct Answer: {currentQuestion.Solution}</p>
-                  <p>Points Earned: {isCorrect ? POINTS[currentQuestion.Difficulty] : 0}/{POINTS[currentQuestion.Difficulty]}</p>
+                  <p>Points Earned: {isCorrect ? getQuestionScore(currentQuestion).toFixed(1) : 0}/{getQuestionScore(currentQuestion).toFixed(1)}</p>
                   <p className="difficulty-change">
                     📊 Next Difficulty: <span className={`${difficultyLevel?.toLowerCase() || 'medium'}`}>{difficultyLevel}</span>
                   </p>
                 </div>
               )}
-              
+              {hint && (
+                <div className="practice-hint">
+                  <strong>Hint:</strong>
+                  <div>{renderFeedback(hint)}</div>
+                </div>
+              )}
               {feedback && (
                 <div className="practice-feedback">
                   <strong>Detailed Feedback:</strong>
@@ -666,31 +683,8 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
                     <strong>Solution Breakdown:</strong>
                     {currentQuestion["Solution Breakdown"]}
                   </div>
-                  <button className="next-question-btn" onClick={goToNextQuestion}>
-                    {currentQuestionIndex < TOTAL_QUESTIONS - 1 ? 'Next Question' : 'Finish Test'}
-                  </button>
                 </div>
               )}
-              
-              <div className="submissionButtons">
-                <button className="ClearField" onClick={clearField}>Clear Field</button>
-                {hint && (
-                  <div className="practice-hint">
-                    <strong>Hint:</strong>
-                    <div>{renderFeedback(hint)}</div>
-                  </div>
-                )}
-                {!hint && !feedback && (
-                  <button className="practice-add-step" onClick={handleHint} disabled={loading}>
-                    {hintload ? 'Loading...' : 'Need a Hint?'}
-                  </button>
-                )}
-                {!feedback && (
-                  <button className="practice-add-step" onClick={handleSubmit} disabled={loading}>
-                    {loading ? 'Analyzing...' : 'Submit Answer'}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>

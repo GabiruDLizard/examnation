@@ -3,18 +3,35 @@ import { askGPT } from '../../Worker/chat';
 import { useParams, useNavigate } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { addStyles, EditableMathField } from 'react-mathquill';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import { MathJaxContext } from 'better-react-mathjax';
 import './PracticeArea.css';
-import { renderFeedback } from '../../Worker/feedbackRender';
+import { renderFeedback, renderQuestionText } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
-import InteractiveCartesianPlot from '../PlotlyGraph/PlotlyGraph';
-import ClickToPlotChart from '../chartjs/Chartjs';
 
 const mathJaxConfig = {
   loader: { load: ["input/tex", "output/chtml"] },
 };
 addStyles(); // Loads MathQuill CSS
+
+const getAnswerFormatHint = (solution) => {
+  if (!solution) return null;
+  const s = solution.trim();
+
+  if (/\(a\)/i.test(s))                                              return { text: 'Answer each part separately, labelled (a), (b), etc.',  example: '(a) 12   (b) x = 3' };
+  if (/\$/.test(s))                                                  return { text: 'Give your answer in dollars.',                           example: '$12.50' };
+  if (/^\d[\d\s]*:\s*\d[\d\s]*$/.test(s))                           return { text: 'Give your answer as a ratio in the form a : b.',         example: '3 : 4' };
+  if (/^\([-\d.,\s]+\)$/.test(s))                                   return { text: 'Give your answer as coordinates.',                       example: '(2, 5)' };
+  if (/\d+\.?\d*\s*[x×]\s*10\^/.test(s))                           return { text: 'Give your answer in standard form.',                     example: '3.2 × 10³' };
+  if (/^[a-z0-9]+\^[\{]?[\w-]+[\}]?$/i.test(s))                   return { text: 'Give your answer in index form.',                        example: '2⁶' };
+  if (/\^\d.*[×x×]|[×x×].*\^\d/.test(s))                          return { text: 'Express as a product of prime factors in index form.',   example: '2² × 3 × 5' };
+  if (/°/.test(s))                                                   return { text: 'Give your answer in degrees.',                           example: '45°' };
+  if (/\d\s*(cm²?|m²?|km|kg|g|ml|L|s|hours?|minutes?)\b/i.test(s)) return { text: 'Include appropriate units in your answer.',             example: '12 cm' };
+  if (/^\d+\/\d+$/.test(s))                                         return { text: 'Give your answer as a fraction in its simplest form.',   example: '3/4' };
+  if (/,/.test(s))                                                   return { text: 'List all values separated by commas.',                   example: '2, 4, 6, 8' };
+  if (/^-?\d+(\.\d+)?$/.test(s))                                    return { text: 'Give your answer as a single number.',                   example: '42' };
+  return null;
+};
 
 const PracticeArea = () => {
   const stepReference = useRef([]);
@@ -30,7 +47,7 @@ const PracticeArea = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [graphState, setGraphState] = useState(null);
-  const [pointsInput, setPointsInput] = useState("");
+  const [, setPointsInput] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,7 +78,6 @@ const PracticeArea = () => {
     const newSteps = [...steps];
     newSteps[idx] = latex;
     setSteps(newSteps);
-    console.log(latexString)
   };
   const handleKeyDown = (e, index) => {
     if (e.key === "Enter") {
@@ -95,18 +111,12 @@ const PracticeArea = () => {
         console.error('Error fetching GPT response:', error);
         setHintload(false);
     }
-    console.log(hintString);
-    
-    //const feedback = await askGPT(hintString);
-    console.log(feedback);
   };
   const handleGraphStateChange = (graphState) => {
     setGraphState(graphState);
   };
   const handleSubmit = async () => {
     setIsTimerRunning(false);
-    const finalTime = elapsedTime;
-    console.log(`Time taken: ${formatTime(finalTime)}`);
     const workingSteps = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
     const submissionString = `Question: ${question["Question Text"]}\n\nStudent Working:\n${workingSteps}\n\nFinal Answer: ${finalAnswer}`;
     setLoading(true);
@@ -119,10 +129,6 @@ const PracticeArea = () => {
         console.error('Error fetching GPT response:', error);
         setLoading(false);
     }
-    console.log(submissionString);
-    
-    //const feedback = await askGPT(submissionString);
-    console.log(feedback);
   };
   if (!question) {
         return <div>Question not found</div>;
@@ -167,15 +173,10 @@ const PracticeArea = () => {
     <MathJaxContext version={3} config={mathJaxConfig}>
       <div className = "practicebg">
         <div className="practice-navigation">
-          <button onClick={goToPrevious} disabled={loading}>Previous question</button>
+          <button className="nav-btn" onClick={goToPrevious} disabled={!previousQuestionId || loading}>← Prev</button>
           <div className="timer">Time Elapsed: {formatTime(elapsedTime)}</div>
-          <button onClick={goToNext} disabled={loading}>Next question</button>
-          <button 
-            onClick={() => navigate('/studentdashboard')} 
-            title="Back to dashboard"
-          >
-            ←
-          </button>
+          <button className="nav-btn" onClick={goToNext} disabled={!nextQuestionId || loading}>Next →</button>
+          <button className="nav-btn" onClick={() => navigate('/exampage')} title="Back to question list">Question List</button>
         </div>
         <div className="practiceareagrid"> 
           {/* Question Panel - LeetCode Style */}
@@ -192,8 +193,14 @@ const PracticeArea = () => {
               <div className="problem-statement">
                 <h4>Problem</h4>
                 <div className="questionText">
-                  {question["Question Text"]}
+                  {renderQuestionText(question["Question Text"])}
                 </div>
+                {(() => { const h = getAnswerFormatHint(question.Solution); return h && (
+                  <div className="answer-format-hint">
+                    <span className="answer-format-text">{h.text}</span>
+                    <span className="answer-format-example">e.g. {h.example}</span>
+                  </div>
+                ); })()}
               </div>
             </div>
           </div>
@@ -203,9 +210,13 @@ const PracticeArea = () => {
               <div className="tab active">Solution</div>
               <div className="tab-actions">
                 <button className="clear-btn" onClick={clearField}>Clear</button>
-                {!hint && (
+                {!hint ? (
                   <button className="hint-btn" onClick={handleHint} disabled={loading}>
                     {hintload ? 'Loading...' : 'Get Hint'}
+                  </button>
+                ) : (
+                  <button className="clear-hint-btn" onClick={() => setHint('')}>
+                    Clear Hint
                   </button>
                 )}
                 {!feedback && (

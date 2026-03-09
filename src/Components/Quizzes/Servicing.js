@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://examnationwebapi.azurewebsites.net/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://examnationwebapi.azurewebsites.net/api';
 
 export async function saveTestResults(testAnswers) {
     const token = localStorage.getItem('jwtToken');

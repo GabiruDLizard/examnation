@@ -6,14 +6,12 @@ const UserPopUp = ({ user, onLogout, onClose }) => {
     const navigate = useNavigate();
 
     const goToDashboard = () => {
-        if (user?.role === 'Student') {
+        if (user?.role === 'Teacher') {
+            navigate('/teacherdashboard');
+        } else {
             navigate('/studentdashboard');
         }
-        // Add other role checks if needed
-        // else if (user?.role === 'educator') {
-        //     navigate('/educatordashboard');
-        // }
-        onClose(); // Close the popup after navigation
+        onClose();
     };
 
     return (
@@ -25,6 +23,7 @@ const UserPopUp = ({ user, onLogout, onClose }) => {
                 <p>{`Role: ${user?.role}`}</p>
             </div>
             <button className="user-popup-logout" onClick={goToDashboard}>My Dashboard</button>
+            <button className="user-popup-logout" onClick={() => { navigate('/settings'); onClose(); }}>Settings</button>
             <button className="user-popup-logout" onClick={onLogout}>Logout</button>
         </div>
     );
