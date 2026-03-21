@@ -3,6 +3,7 @@ import './ExamPage.css';
 import { useNavigate } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
 import { BiMenu, BiX, BiArrowBack } from 'react-icons/bi';
+import { getToken } from '../../utils/tokenUtils';
 
 const formatName = (name) =>
     name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
@@ -63,13 +64,19 @@ const ExamPage = () => {
                     <BiMenu /> Filters
                 </button>
                 <span className="exam-topbar-brand">Examnation</span>
-                <button className="exam-back-btn" onClick={() => navigate('/studentdashboard')}>
-                    <BiArrowBack /> Back to Dashboard
-                </button>
+                {getToken() ? (
+                    <button className="exam-back-btn" onClick={() => navigate('/studentdashboard')}>
+                        <BiArrowBack /> Back to Dashboard
+                    </button>
+                ) : (
+                    <button className="exam-back-btn" onClick={() => navigate('/')}>
+                        <BiArrowBack /> Back to Home
+                    </button>
+                )}
             </div>
             <div className="exam-layout">
 
-                {/* Sidebar */}
+                {/* Sidebar */}h
                 <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
                     {/* Move the toggle button inside the sidebar */}
                     <button className="sidebar-toggle-inside" onClick={toggleSidebar}>

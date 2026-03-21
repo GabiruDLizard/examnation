@@ -1,6 +1,8 @@
 import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { analyzeMistakePatterns } from '../../PerformanceEngine/^PerformanceAnalysis';
+import { abilityEstimate } from '../Charts/ReadinessLogic';
+import { updateStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
 
 // ================================================================
 // ASSIGNMENT QUESTION API FUNCTIONS
@@ -52,7 +54,6 @@ export const getQuestionsByAssignmentId = async (assignmentId) => {
                     const questionResponse = await authFetch(`/question/${assignmentQuestion.questionId}`);
 
                     if (!questionResponse.ok) {
-                        console.warn(`Failed to fetch question ${assignmentQuestion.questionId}`);
                         return { ...assignmentQuestion, questionDetails: null };
                     }
 
@@ -156,14 +157,12 @@ export const getUserProgress = async (userId) => {
         const response = await authFetch(`/userprogress/user/${userId}`);
 
         if (!response.ok) {
-            console.warn('Progress API returned:', response.status);
             return {};
         }
 
         const progressData = await response.json();
         return progressData;
     } catch (error) {
-        console.warn('Error fetching user progress:', error);
         return {};
     }
 };
@@ -173,7 +172,6 @@ export const getStudentAnswers = async (userId) => {
         const response = await authFetch(`/answer/user/${userId}`);
 
         if (!response.ok) {
-            console.warn('Student answers API returned:', response.status);
             return [];
         }
 
@@ -190,7 +188,6 @@ export const getStudentEnrollments = async (userId) => {
         const response = await authFetch(`/classenrollment/student/${userId}`);
 
         if (!response.ok) {
-            console.warn('Enrollments API returned:', response.status);
             return [];
         }
 
@@ -207,7 +204,6 @@ export const getClassDetails = async (classId) => {
         const response = await authFetch(`/class/${classId}`);
 
         if (!response.ok) {
-            console.warn(`Class details API returned: ${response.status} for classId: ${classId}`);
             return null;
         }
 
@@ -314,7 +310,6 @@ export const getAssignmentsForClass = async (classId, studentId) => {
                         questions: questions || []
                     };
                 } catch (error) {
-                    console.warn(`Failed to load questions for assignment ${assignment.id}:`, error);
                     return {
                         ...assignment,
                         questions: []
@@ -416,8 +411,6 @@ export const getAnswersBySubmissionId = async (submissionId) => {
 
 export const saveAnswerToBackend = async (answerData) => {
     try {
-        console.log('💾 Saving answer with auto-grading:', answerData);
-
         // Get the question details to check the correct answer
         let questionDetails = null;
         let isCorrect = null;
@@ -427,10 +420,6 @@ export const saveAnswerToBackend = async (answerData) => {
             const questionResponse = await authFetch(`/question/${answerData.questionId}`);
             if (questionResponse.ok) {
                 questionDetails = await questionResponse.json();
-                console.log('📋 Question details loaded:', {
-                    questionId: answerData.questionId,
-                    correctAnswer: questionDetails.correctAnswer
-                });
 
                 if (questionDetails.correctAnswer && answerData.answer) {
                     // Extract final answer from student's work
@@ -438,20 +427,13 @@ export const saveAnswerToBackend = async (answerData) => {
                     
                     // Compare with correct answer
                     isCorrect = compareAnswers(studentFinalAnswer, questionDetails.correctAnswer);
-                    
+
                     // Calculate points (you might need to get this from assignment question link)
                     pointsEarned = isCorrect ? 1 : 0; // Default to 1 point, could be enhanced
-                    
-                    console.log('🔍 Auto-grading result:', {
-                        studentAnswer: studentFinalAnswer,
-                        correctAnswer: questionDetails.correctAnswer,
-                        isCorrect,
-                        pointsEarned
-                    });
                 }
             }
         } catch (questionError) {
-            console.warn('⚠️ Could not load question for auto-grading:', questionError);
+            // Could not load question for auto-grading; proceed without it
         }
 
         // Check if answer already exists
@@ -467,8 +449,6 @@ export const saveAnswerToBackend = async (answerData) => {
                 isCorrect: isCorrect,
                 pointsEarned: pointsEarned
             };
-
-            console.log('🔄 Updating existing answer with grading:', updateData);
 
             const updateResponse = await authFetch(`/assignmentanswer/${existingAnswer.id}`, {
                 method: 'PUT',
@@ -489,8 +469,6 @@ export const saveAnswerToBackend = async (answerData) => {
                 isCorrect: isCorrect,
                 pointsEarned: pointsEarned
             };
-
-            console.log('🆕 Creating new answer with grading:', newAnswerData);
 
             const createResponse = await authFetch(`/assignmentanswer`, {
                 method: 'POST',
@@ -514,16 +492,13 @@ export const submitAssignmentToBackend = async (assignmentId, studentId) => {
     try {
         const submission = await getSubmissionByAssignmentAndStudent(assignmentId, studentId);
 
-        await checkAndGradeAnswers(assignmentId, submission.id);
-
         if (submission) {
             const updatedSubmission = {
                 ...submission,
                 status: 'submitted',
                 submittedAt: new Date().toISOString()
             };
-            const result = await updateSubmission(updatedSubmission);
-            return result;
+            return await updateSubmission(updatedSubmission);
         } else {
             const newSubmission = {
                 assignmentId: assignmentId,
@@ -531,11 +506,7 @@ export const submitAssignmentToBackend = async (assignmentId, studentId) => {
                 status: 'submitted',
                 submittedAt: new Date().toISOString()
             };
-            const result = await createSubmission(newSubmission);
-
-            await checkAndGradeAnswers(assignmentId, result.id);
-
-            return result;
+            return await createSubmission(newSubmission);
         }
     } catch (error) {
         console.error('❌ Error submitting assignment:', error);
@@ -545,18 +516,16 @@ export const submitAssignmentToBackend = async (assignmentId, studentId) => {
 
 export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
     try {
-        console.log('🎯 Starting auto-grading for submission:', submissionId);
-        
         const questions = await getQuestionsByAssignmentId(assignmentId);
         const submittedAnswers = await getAnswersBySubmissionId(submissionId);
-        
-        console.log('📋 Questions loaded:', questions.length);
-        console.log('📝 Submitted answers:', submittedAnswers.length);
 
         let totalScore = 0;
         let totalPoints = 0;
         let gradedAnswers = 0;
+        let theta = 0;
         const wrongAnswersForTA = [];
+        // Per-topic tracking: { subject: { theta, count } }
+        const topicThetas = {};
 
         for (const submittedAnswer of submittedAnswers) {
             try {
@@ -568,8 +537,6 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                 });
 
                 if (!question) {
-                    console.warn('❓ Question not found for answer:', submittedAnswer.questionId);
-                    console.log('Available question IDs:', questions.map(q => q.questionDetails?.id || q.id));
                     continue;
                 }
 
@@ -577,35 +544,15 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                 const correctAnswer = question.questionDetails?.correctAnswer || question.correctAnswer;
                 const questionPoints = question.points || 1;
 
-                console.log('🔍 Grading question:', {
-                    questionId: submittedAnswer.questionId,
-                    correctAnswer: correctAnswer,
-                    studentAnswer: submittedAnswer.answer,
-                    points: questionPoints
-                });
-
                 if (!correctAnswer) {
-                    console.warn('❓ No correct answer found for question:', submittedAnswer.questionId);
                     continue;
                 }
 
                 const studentAnswer = submittedAnswer.answer;
                 const studentFinalAnswer = extractFinalAnswer(studentAnswer);
 
-                console.log('📝 Answer extraction:', {
-                    originalAnswer: studentAnswer,
-                    extractedFinal: studentFinalAnswer
-                });
-
                 const isCorrect = compareAnswers(studentFinalAnswer, correctAnswer);
                 const pointsEarned = isCorrect ? questionPoints : 0;
-
-                console.log('📊 Grading result:', {
-                    questionId: submittedAnswer.questionId,
-                    isCorrect,
-                    pointsEarned,
-                    maxPoints: questionPoints
-                });
 
                 await updateAnswerGrading(submittedAnswer.id, isCorrect, pointsEarned);
 
@@ -620,6 +567,19 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                         difficulty: question.questionDetails?.difficultyLevel || question.difficultyLevel || null,
                     });
                 }
+
+                const difficulty = question.questionDetails?.difficultyLevel || question.difficultyLevel || 'Medium';
+                const subject = question.questionDetails?.subject || question.subject || 'General';
+
+                // Update overall theta
+                theta = abilityEstimate(difficulty, isCorrect, theta, gradedAnswers);
+
+                // Update per-topic theta
+                if (!topicThetas[subject]) topicThetas[subject] = { theta: 0, count: 0 };
+                topicThetas[subject].theta = abilityEstimate(
+                    difficulty, isCorrect, topicThetas[subject].theta, topicThetas[subject].count
+                );
+                topicThetas[subject].count++;
 
                 totalScore += pointsEarned;
                 totalPoints += questionPoints;
@@ -652,11 +612,35 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
             totalScore,
             totalPoints,
             percentage: totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0,
-            gradedAnswers
+            gradedAnswers,
+            abilityEstimate: theta,
+            readinessPercentage: Math.max(0, Math.min(100, ((theta + 4) / 8) * 100))
         };
 
-        console.log('📈 Final grading results:', finalResults);
-        
+        // Save per-topic theta estimates to DB
+        const studentId = getUserIdFromToken();
+        if (studentId && Object.keys(topicThetas).length > 0) {
+            Object.entries(topicThetas).forEach(([subject, { theta: t, count }]) => {
+                updateStudentTopicAbility(studentId, subject, t, count).catch(() => {});
+            });
+        }
+
+        // Persist grade to submission record
+        try {
+            const subResponse = await authFetch(`/assignmentsubmission/${submissionId}`);
+            if (subResponse.ok) {
+                const sub = await subResponse.json();
+                await authFetch(`/assignmentsubmission/${submissionId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        ...sub,
+                        grade: Math.round(finalResults.percentage * 10) / 10,
+                        status: 'graded'
+                    })
+                });
+            }
+        } catch (e) { /* non-fatal */ }
+
         return finalResults;
 
     } catch (error) {
@@ -681,13 +665,6 @@ const extractFinalAnswer = (studentWork) => {
 const compareAnswers = (studentAnswer, correctAnswer) => {
     if (!studentAnswer || !correctAnswer) return false;
 
-    console.log('🔍 Comparing answers:', {
-        student: `"${studentAnswer}"`,
-        correct: `"${correctAnswer}"`,
-        studentType: typeof studentAnswer,
-        correctType: typeof correctAnswer
-    });
-
     const normalizeAnswer = (answer) => {
         return String(answer)
             .toLowerCase()
@@ -702,12 +679,6 @@ const compareAnswers = (studentAnswer, correctAnswer) => {
     const normalizedStudent = normalizeAnswer(studentAnswer);
     const normalizedCorrect = normalizeAnswer(correctAnswer);
 
-    console.log('🔄 Normalized comparison:', {
-        student: `"${normalizedStudent}"`,
-        correct: `"${normalizedCorrect}"`,
-        match: normalizedStudent === normalizedCorrect
-    });
-
     // First try exact match after normalization
     if (normalizedStudent === normalizedCorrect) {
         return true;
@@ -718,11 +689,6 @@ const compareAnswers = (studentAnswer, correctAnswer) => {
     const correctNum = parseFloat(normalizedCorrect);
     
     if (!isNaN(studentNum) && !isNaN(correctNum)) {
-        console.log('🔢 Numeric comparison:', {
-            studentNum,
-            correctNum,
-            match: Math.abs(studentNum - correctNum) < 0.001
-        });
         // Allow small floating point differences
         return Math.abs(studentNum - correctNum) < 0.001;
     }
@@ -732,22 +698,13 @@ const compareAnswers = (studentAnswer, correctAnswer) => {
 
 const updateAnswerGrading = async (answerId, isCorrect, pointsEarned) => {
     try {
-        console.log('📊 Updating answer grading:', {
-            answerId,
-            isCorrect: isCorrect,
-            isCorrectType: typeof isCorrect,
-            pointsEarned
-        });
-
         // Ensure isCorrect is a proper boolean
         const isCorrectBoolean = Boolean(isCorrect);
-        
+
         const updateData = {
             isCorrect: isCorrectBoolean,
             pointsEarned: Number(pointsEarned) || 0
         };
-
-        console.log('📤 Sending update data:', updateData);
 
         const response = await authFetch(`/assignmentanswer/${answerId}`, {
             method: 'PUT',
@@ -766,7 +723,6 @@ const updateAnswerGrading = async (answerId, isCorrect, pointsEarned) => {
         }
 
         const result = await response.json();
-        console.log('✅ Answer grading updated successfully:', result);
         return result;
     } catch (error) {
         console.error('❌ Error updating answer grading:', error);

@@ -6,8 +6,8 @@ import {
   BiTime, BiBullseye, BiMenu, BiX
 } from 'react-icons/bi';
 import '../StudentDashboard.css';
-import { getStudentAnswers, getStudentEnrollments } from './StudentDashboardService.js'; // Keep this for student answers
-import { getStudentReadinessHistory, recordStudentReadiness } from '../TeacherDashboard/TeacherDashboardService.js';
+import { getStudentAnswers } from './StudentDashboardService.js';
+import { getStudentReadinessHistory } from '../TeacherDashboard/TeacherDashboardService.js';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useDashboardNav } from '../../../hooks/useDashboardNav';
 import { authFetch } from '../../../utils/api';
@@ -17,6 +17,7 @@ import StudentMyClasses from './MyClasses.js';
 import StudentClassOverview from './ClassOverview.js';
 import AssignmentOverview from './AssignmentOverview.js';
 import AssignmentQuestionPage from './AssignmentQuestionPage.js';
+import AssignmentReview from './AssignmentReview.js';
 import TAPageStudent from '../TAPage/TAPageStudent.js';
 import Settings from '../../Settings/Settings.js';
 
@@ -35,61 +36,48 @@ const groupAnswersByDate = (answers) => {
         grouped[dateKey].push(answer);
     });
     
-    console.log('Grouped answers by date:', grouped);
     return grouped;
 };
 
 // Processing function with better error handling
-const processGroupedAnswers = async (groupedAnswers) => {
+const processGroupedAnswers = (groupedAnswers) => {
     const results = [];
     let runningTheta = 0;
-    
+    let globalIndex = 0;
+
     const sortedDates = Object.keys(groupedAnswers).sort();
-    console.log('Processing dates in order:', sortedDates);
-    
-    try {
-        for (const date of sortedDates) {
-            const answersForDate = groupedAnswers[date];
-            const sessionLength = answersForDate.length;
-            
-            for (let i = 0; i < answersForDate.length; i++) {
-                const answer = answersForDate[i];
-                
-                if (!answer.difficultyLevel || typeof answer.isCorrect !== 'boolean') {
-                    console.warn('Invalid answer data:', answer);
-                    continue;
-                }
-                
-                const newTheta = await abilityEstimate(
-                    answer.difficultyLevel,
-                    answer.isCorrect,
-                    runningTheta,
-                    sessionLength
-                );
-                
-                runningTheta = newTheta;
-                
-                results.push({
-                    date,
-                    sessionLength,
-                    questionIndex: i + 1,
-                    questionId: answer.questionId,
-                    difficulty: answer.difficultyLevel,
-                    isCorrect: answer.isCorrect,
-                    abilityEstimate: newTheta,
-                    priorEstimate: runningTheta,
-                    attemptMode: answer.attemptMode || 'practice'
-                });
-            }
+
+    for (const date of sortedDates) {
+        const answersForDate = groupedAnswers[date];
+
+        for (let i = 0; i < answersForDate.length; i++) {
+            const answer = answersForDate[i];
+
+            if (!answer.difficultyLevel || typeof answer.isCorrect !== 'boolean') continue;
+
+            const newTheta = abilityEstimate(
+                answer.difficultyLevel,
+                answer.isCorrect,
+                runningTheta,
+                globalIndex
+            );
+
+            runningTheta = newTheta;
+            globalIndex++;
+
+            results.push({
+                date,
+                questionIndex: i + 1,
+                questionId: answer.questionId,
+                difficulty: answer.difficultyLevel,
+                isCorrect: answer.isCorrect,
+                abilityEstimate: newTheta,
+                attemptMode: answer.attemptMode || 'practice'
+            });
         }
-        
-        console.log(`Processed ${results.length} readiness calculations`);
-        return results;
-        
-    } catch (error) {
-        console.error('Error processing grouped answers:', error);
-        return [];
     }
+
+    return results;
 };
 
 function StudentDashboard() {
@@ -113,6 +101,7 @@ function StudentDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedAssignment, setSelectedAssignment] = useState(null);
+    const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [classReadinessHistory, setClassReadinessHistory] = useState([]);
 
     // Chart view state
@@ -126,9 +115,12 @@ function StudentDashboard() {
     const navigate = useNavigate();
 
     const handleNavigateFromOverview = (section, data = null) => {
-        console.log('🎯 Navigating to:', section, data);
         if (section === 'assignment-questions' && data?.assignment) {
             setSelectedAssignment(data.assignment);
+        }
+        if (section === 'assignment-review' && data?.assignment) {
+            setSelectedAssignment(data.assignment);
+            setSelectedSubmission(data.submission);
         }
         setCurrentView(section);
     };
@@ -146,33 +138,22 @@ function StudentDashboard() {
 
         const fetchAllData = async () => {
             if (!id) {
-                console.log('No user ID found');
                 return;
             }
 
             setLoading(true);
-            
+
             try {
-                console.log('Starting data fetch for user:', id);
-                
                 // 1. Fetch student data
-                console.log('Fetching student data...');
                 const studentResponse = await authFetch(`/user/${id}`);
-                
+
                 if (studentResponse.ok) {
                     const studentData = await studentResponse.json();
-                    console.log('✅ Student data received:', studentData);
                     setStudent(studentData);
                     setError(null);
                 } else {
                     throw new Error(`Failed to fetch student data: ${studentResponse.status}`);
                 }
-
-                // Fetch enrollments (needed for readiness save later)
-                let studentEnrollments = [];
-                try {
-                    studentEnrollments = await getStudentEnrollments(id);
-                } catch { /* non-fatal */ }
 
                 // Fetch class readiness history for the per-class chart
                 try {
@@ -181,20 +162,16 @@ function StudentDashboard() {
                 } catch { /* non-fatal */ }
 
                 // 2. Try to fetch progress data (skip if it fails)
-                console.log('Trying to fetch progress data...');
                 try {
                     const progressResponse = await authFetch(`/userprogress/${id}`);
-                    
+
                     if (progressResponse.ok) {
                         const progressData = await progressResponse.json();
-                        console.log('✅ Progress data received:', progressData);
                         setStudentProgress(progressData);
                     } else {
-                        console.warn('⚠️ Progress endpoint failed, using empty data');
                         setStudentProgress({});
                     }
                 } catch (progressError) {
-                    console.warn('⚠️ Progress API error (CORS/500), skipping:', progressError.message);
                     setStudentProgress({});
                 }
 
@@ -207,66 +184,30 @@ function StudentDashboard() {
             const correctAnswersCount = answersResponse.filter(answer => answer.isCorrect).length;
             setCorrectAns(correctAnswersCount);
             setAverageCorrectness(answersResponse.length ? (correctAnswersCount / answersResponse.length) * 100 : 0);
-            
-            console.log('📊 Basic statistics calculated - Q:', answersResponse.length, 'Correct:', correctAnswersCount);
 
-            // Split answers by source
+            // Practice & Test chart — personal readiness from practice + adaptive_test only
             const practiceTestAnswers = answersResponse.filter(a =>
                 a.attemptMode === 'practice' || a.attemptMode === 'adaptive_test'
             );
-            const assignmentAnswers = answersResponse.filter(a =>
-                a.attemptMode === 'assignment'
-            );
 
-            // Practice & Test chart — personal readiness from practice + adaptive_test only
             if (practiceTestAnswers.length > 0) {
-                console.log('Processing practice/test readiness scores...');
                 try {
                     const grouped = groupAnswersByDate(practiceTestAnswers);
-                    const readinessResults = await processGroupedAnswers(grouped);
+                    const readinessResults = processGroupedAnswers(grouped);
                     setReadinessScores(readinessResults);
-                    console.log('✅ Practice/test readiness processed:', readinessResults.length);
                 } catch (readinessError) {
                     console.error('Error processing readiness:', readinessError);
                     setReadinessScores([]);
                 }
             } else {
-                console.log('No practice/test answers for readiness');
                 setReadinessScores([]);
             }
-
-            // Class readiness — save to enrolled classes using assignment answers only
-            if (assignmentAnswers.length > 0 && studentEnrollments.length > 0) {
-                try {
-                    const assignmentGrouped = groupAnswersByDate(assignmentAnswers);
-                    const assignmentReadiness = await processGroupedAnswers(assignmentGrouped);
-                    if (assignmentReadiness.length > 0) {
-                        const totalAbility = assignmentReadiness.reduce((s, r) => s + r.abilityEstimate, 0);
-                        const avgAbility = totalAbility / assignmentReadiness.length;
-                        const pct = Math.max(0, Math.min(100, ((avgAbility + 3) / 6) * 100));
-                        for (const enrollment of studentEnrollments) {
-                            try {
-                                await recordStudentReadiness(id, enrollment.classId, {
-                                    readinessPercentage: pct,
-                                    questionsAnswered: assignmentReadiness.length,
-                                    correctAnswers: assignmentReadiness.filter(r => r.isCorrect).length,
-                                    studyTimeMinutes: 0,
-                                    abilityEstimate: avgAbility
-                                });
-                            } catch { /* non-fatal */ }
-                        }
-                    }
-                } catch { /* non-fatal */ }
-            }
-
-            console.log('🎉 Data loading completed successfully!');
 
         } catch (error) {
             console.error('❌ Critical error fetching data:', error);
             setError(`Failed to load dashboard: ${error.message}`);
         } finally {
             setLoading(false);
-            console.log('Loading state completed');
         }
     };
 
@@ -305,7 +246,7 @@ function StudentDashboard() {
         // Use cumulative calculation - average of all ability estimates (same as chart)
         const totalAbility = readinessScores.reduce((sum, score) => sum + score.abilityEstimate, 0);
         const averageAbility = totalAbility / readinessScores.length;
-        const percentage = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
+        const percentage = Math.max(0, Math.min(100, ((averageAbility + 4) / 8) * 100));
         
         let level;
         if (percentage >= 85) level = "Ready";
@@ -348,7 +289,7 @@ function StudentDashboard() {
             // Calculate cumulative readiness for this test (average of all ability estimates in this session)
             const totalAbility = session.questions.reduce((sum, q) => sum + q.abilityEstimate, 0);
             const averageAbility = totalAbility / session.questions.length;
-            const finalReadinessPercentage = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
+            const finalReadinessPercentage = Math.max(0, Math.min(100, ((averageAbility + 4) / 8) * 100));
             
             const testType = session.questions[0].attemptMode || 'practice';
             
@@ -379,7 +320,6 @@ function StudentDashboard() {
     const renderPageContent = () => {
         // Handle class overview navigation first
         if (selectedClass && currentView === 'class-overview') {
-            console.log('✅ Rendering StudentClassOverview');
             return (
                 <StudentClassOverview 
                     studentInfo={student} 
@@ -391,7 +331,6 @@ function StudentDashboard() {
         }
 
         if (selectedClass && currentView === 'assignments') {
-            console.log('✅ Rendering Assignment Overview');
             return (
                 <AssignmentOverview 
                     selectedClass={selectedClass} 
@@ -401,8 +340,17 @@ function StudentDashboard() {
             );
         }
 
+        if (selectedClass && currentView === 'assignment-review' && selectedAssignment && selectedSubmission) {
+            return (
+                <AssignmentReview
+                    assignment={selectedAssignment}
+                    submission={selectedSubmission}
+                    onBack={() => setCurrentView('assignments')}
+                />
+            );
+        }
+
         if (selectedClass && currentView === 'assignment-questions' && selectedAssignment) {
-            console.log('✅ Rendering Assignment Questions');
             return (
                 <AssignmentQuestionPage 
                     assignment={selectedAssignment}
@@ -418,7 +366,6 @@ function StudentDashboard() {
         }
 
         if (selectedClass && currentView === 'progress') {
-            console.log('✅ Rendering Class Progress');
             return (
                 <div className="coming-soon">
                     <button onClick={handleBackToOverview} className="back-btn">← Back to Overview</button>
@@ -443,7 +390,6 @@ function StudentDashboard() {
         }
 
         // Fallback
-        console.log('⚠️ Fallback render - unknown view state');
         return <div>Unknown view state</div>;
     };
 

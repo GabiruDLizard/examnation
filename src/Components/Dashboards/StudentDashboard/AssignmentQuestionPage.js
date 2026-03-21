@@ -88,12 +88,10 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         submittedAt: null,
                         grade: null
                     });
-                    console.log('✅ Created new submission:', existingSubmission);
                 }
-                
+
                 setSubmission(existingSubmission);
                 setIsSubmitted(existingSubmission.status === 'submitted');
-                console.log('📋 Loaded submission:', existingSubmission);
             } catch (error) {
                 console.error('Error initializing submission:', error);
             }
@@ -126,6 +124,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         questionIndex ? parseInt(questionIndex) - 1 : 0
     );
     const [steps, setSteps] = useState(['']);
+    const [selectedOption, setSelectedOption] = useState(null);
     const [isFlagged, setIsFlagged] = useState(false);
     
     // Initialize savedAnswers from localStorage
@@ -141,6 +140,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const [submission, setSubmission] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isPastDeadline, setIsPastDeadline] = useState(false);
+    const [gradingResult, setGradingResult] = useState(null);
 
     const currentQuestion = questions[currentQuestionIndex];
     const isFirstQuestion = currentQuestionIndex === 0;
@@ -167,7 +167,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             const currentSavedAnswers = { ...savedAnswers, [currentQuestion.id]: answerData };
             setSavedAnswers(currentSavedAnswers);
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
-            console.log('💾 Auto-saved answer to localStorage:', answerData);
 
             // Save to backend
             try {
@@ -176,7 +175,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     questionId: currentQuestion.id,
                     answer: answerText
                 });
-                console.log('📡 Saved to backend successfully');
             } catch (error) {
                 console.error('Error saving to backend:', error);
                 // Continue with local save even if backend fails
@@ -194,13 +192,14 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         const currentSavedAnswers = saved ? JSON.parse(saved) : {};
         
         if (currentSavedAnswers[currentQuestion?.id]) {
-            setSteps(currentSavedAnswers[currentQuestion.id].steps || ['']);
-            setIsFlagged(currentSavedAnswers[currentQuestion.id].flagged || false);
-            console.log('✅ Loaded saved answer for question', currentQuestion.id, currentSavedAnswers[currentQuestion.id]);
+            const saved = currentSavedAnswers[currentQuestion.id];
+            setSteps(saved.steps || ['']);
+            setIsFlagged(saved.flagged || false);
+            setSelectedOption(saved.steps?.[0] || null);
         } else {
             setSteps(['']);
+            setSelectedOption(null);
             setIsFlagged(false);
-            console.log('🆕 Starting fresh for question', currentQuestion?.id);
         }
     }, [currentQuestionIndex, currentQuestion?.id, assignment?.id]);
 
@@ -285,7 +284,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             const currentSavedAnswers = { ...savedAnswers, [currentQuestion.id]: answerData };
             setSavedAnswers(currentSavedAnswers);
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
-            console.log('💾 Manually saved answer:', answerData);
 
             // Save to backend
             try {
@@ -294,7 +292,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     questionId: currentQuestion.id,
                     answer: answerText
                 });
-                console.log('📡 Manually saved to backend successfully');
             } catch (error) {
                 console.error('Error saving to backend:', error);
                 // Continue with local save even if backend fails
@@ -329,59 +326,44 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     };
 
     const submitAssignment = async () => {
-        console.log('🎯 SUBMIT ASSIGNMENT TRIGGERED');
-        console.log('📋 Assignment ID:', assignment.id);
-        console.log('👤 Current User ID:', currentUserId);
-        
         // Check if past deadline
         if (isPastDeadline) {
             toast.error('Cannot submit assignment: deadline has passed.');
             return;
         }
-        
+
         // Final save of current answer
         await saveAnswer();
-        console.log('💾 Final answer saved');
-        
+
         try {
-            console.log('🚀 Starting submission process...');
-            
             // Submit assignment to backend
             const submittedSubmission = await submitAssignmentToBackend(assignment.id, currentUserId);
-            
-            console.log('✅ Submission process completed:', submittedSubmission);
-            
+
             setSubmission(submittedSubmission);
             setIsSubmitted(true);
 
-            // Save readiness based on assignment grade
+            // Grade and save readiness
             try {
-                const gradingResult = await checkAndGradeAnswers(assignment.id, submittedSubmission.id);
-                const pct = Math.min(100, Math.max(0, gradingResult.percentage));
-                const classId = selectedClass?.classId || selectedClass?.id;
+                const result = await checkAndGradeAnswers(assignment.id, submittedSubmission.id);
+                setGradingResult(result);
+
+                const classId = selectedClass?.classId || selectedClass?.id || assignment?.classId;
                 if (classId) {
+                    // Use grade percentage (not IRT theta) for class readiness — IRT starts at 0
+                    // so short assignments always produce ~50%, masking real class differences.
                     await recordStudentReadiness(currentUserId, classId, {
-                        readinessPercentage: pct,
-                        questionsAnswered: gradingResult.gradedAnswers,
-                        correctAnswers: Math.round((pct / 100) * gradingResult.gradedAnswers),
+                        readinessPercentage: Math.round(result.percentage * 10) / 10,
+                        questionsAnswered: result.gradedAnswers,
+                        correctAnswers: Math.round((result.percentage / 100) * result.gradedAnswers),
                         studyTimeMinutes: 0,
-                        abilityEstimate: 0
+                        abilityEstimate: result.abilityEstimate
                     });
                 }
-            } catch { /* non-fatal — submit must succeed even if readiness save fails */ }
+            } catch { /* non-fatal */ }
 
             // Clear localStorage since assignment is submitted
             const assignmentId = assignment?.id || 'temp-assignment';
             localStorage.removeItem(`assignment-answers-${assignmentId}`);
-            
-            console.log('✅ Assignment submitted successfully:', submittedSubmission);
-            
-            // Navigate back or call completion handler
-            if (onComplete) {
-                onComplete();
-            } else {
-                navigate('/student-dashboard');
-            }
         } catch (error) {
             console.error('❌ Error submitting assignment:', error);
             toast.error('Failed to submit assignment. Please try again.');
@@ -416,7 +398,57 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         <MathJaxContext version={3} config={mathJaxConfig}>
             <div className="assignment-question-page">
                 {/* Loading State */}
-                {loadingQuestions ? (
+                {/* Results screen — shown after submission */}
+                {isSubmitted && gradingResult ? (
+                    <div className="results-screen">
+                        <div className="results-header">
+                            <BiCheckCircle className="results-icon" />
+                            <h2>Assignment Submitted!</h2>
+                            <p>{assignment?.title}</p>
+                        </div>
+
+                        <div className="results-score-card">
+                            <div className="score-percentage">
+                                {Math.round(gradingResult.percentage)}%
+                            </div>
+                            <div className="score-points">
+                                {gradingResult.totalScore} / {gradingResult.totalPoints} points
+                            </div>
+                            <div className={`letter-grade grade-${
+                                gradingResult.percentage >= 90 ? 'a' :
+                                gradingResult.percentage >= 80 ? 'b' :
+                                gradingResult.percentage >= 70 ? 'c' :
+                                gradingResult.percentage >= 60 ? 'd' : 'f'
+                            }`}>
+                                {gradingResult.percentage >= 90 ? 'A' :
+                                 gradingResult.percentage >= 80 ? 'B' :
+                                 gradingResult.percentage >= 70 ? 'C' :
+                                 gradingResult.percentage >= 60 ? 'D' : 'F'}
+                            </div>
+                        </div>
+
+                        <div className="results-stats">
+                            <div className="results-stat">
+                                <span className="stat-label">Questions Graded</span>
+                                <span className="stat-value">{gradingResult.gradedAnswers}</span>
+                            </div>
+                            <div className="results-stat">
+                                <span className="stat-label">Questions Total</span>
+                                <span className="stat-value">{questions.length}</span>
+                            </div>
+                        </div>
+
+                        <button
+                            className="btn-primary"
+                            onClick={() => {
+                                if (onComplete) onComplete();
+                                else navigate('/student-dashboard');
+                            }}
+                        >
+                            Done
+                        </button>
+                    </div>
+                ) : loadingQuestions ? (
                     <div className="loading-state">
                         <div className="spinner"></div>
                         <p>Loading assignment questions...</p>
@@ -587,26 +619,50 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             {isPastDeadline && !isSubmitted && <span style={{color: '#EF4444'}}>(Deadline Passed)</span>}
                         </h3>
                         <div className="answer-input">
-                            {steps.map((step, idx) => (
-                                <div key={idx} className="answer-step">
-                                    <span className="step-number">{idx + 1}.</span>
-                                    <EditableMathField
-                                        latex={step}
-                                        onChange={mf => !isEditingDisabled && handleStepChange(idx, mf.latex())}
-                                        onKeyDown={e => !isEditingDisabled && handleKeyDown(e, idx)}
-                                        mathquillDidMount={mf => {
-                                            stepReference.current[idx] = mf;
-                                        }}
-                                        config={{
-                                            spaceBehavesLikeTab: !isEditingDisabled,
-                                            leftRightIntoCmdGoes: 'up',
-                                            restrictMismatchedBrackets: true,
-                                            sumStartsWithNEquals: true,
-                                            readOnly: isEditingDisabled
-                                        }}
-                                    />
+                            {currentQuestion?.options?.length > 0 ? (
+                                <div className="mc-options">
+                                    {currentQuestion.options.map((option, idx) => (
+                                        <label
+                                            key={idx}
+                                            className={`mc-option ${selectedOption === option ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="mc-answer"
+                                                value={option}
+                                                checked={selectedOption === option}
+                                                disabled={isEditingDisabled}
+                                                onChange={() => {
+                                                    setSelectedOption(option);
+                                                    setSteps([option]);
+                                                }}
+                                            />
+                                            {option}
+                                        </label>
+                                    ))}
                                 </div>
-                            ))}
+                            ) : (
+                                steps.map((step, idx) => (
+                                    <div key={idx} className="answer-step">
+                                        <span className="step-number">{idx + 1}.</span>
+                                        <EditableMathField
+                                            latex={step}
+                                            onChange={mf => !isEditingDisabled && handleStepChange(idx, mf.latex())}
+                                            onKeyDown={e => !isEditingDisabled && handleKeyDown(e, idx)}
+                                            mathquillDidMount={mf => {
+                                                stepReference.current[idx] = mf;
+                                            }}
+                                            config={{
+                                                spaceBehavesLikeTab: !isEditingDisabled,
+                                                leftRightIntoCmdGoes: 'up',
+                                                restrictMismatchedBrackets: true,
+                                                sumStartsWithNEquals: true,
+                                                readOnly: isEditingDisabled
+                                            }}
+                                        />
+                                    </div>
+                                ))
+                            )}
                         </div>
                         
                         {savedAnswers[currentQuestion?.id] && (

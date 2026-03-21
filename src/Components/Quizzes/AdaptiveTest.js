@@ -9,6 +9,8 @@ import { renderFeedback } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
 import { saveTestResults, saveUserProgress } from './Servicing';
+import { updateStudentTopicAbility, getStudentTopicAbility } from '../Dashboards/TeacherDashboard/TeacherDashboardService';
+import { abilityEstimate } from '../Dashboards/Charts/ReadinessLogic';
 import { analyzeMistakePatterns } from '../PerformanceEngine/^PerformanceAnalysis';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 
@@ -55,6 +57,16 @@ const AdaptiveTest = () => {
   const [currentQuestionStartTime, setCurrentQuestionStartTime] = useState(null);
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [isCorrect, setIsCorrect] = useState(null);
+  // Per-topic theta map: { "Algebra (Linear Equations)": 0.5, ... }
+  const [topicThetas, setTopicThetas] = useState({});
+
+  const [usedQuestionIds, setUsedQuestionIds] = useState(() => {
+    // Load seen question IDs from localStorage (persists across sessions)
+    try {
+      const stored = localStorage.getItem('adaptiveSeenQuestions');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
 
   // Get authentication token
   const token = localStorage.getItem('token');
@@ -66,11 +78,11 @@ const AdaptiveTest = () => {
       return;
     }
     else{
-        
+
     const initializeTest = () => {
       // Check if there's a saved test in localStorage
       const savedTest = localStorage.getItem('adaptiveTest');
-      
+
       if (savedTest) {
         const testData = JSON.parse(savedTest);
         setCurrentQuestionIndex(testData.currentIndex);
@@ -79,19 +91,28 @@ const AdaptiveTest = () => {
         setTestAnswers(testData.answers);
         setDifficultyLevel(testData.difficultyLevel);
         setElapsedTime(testData.elapsedTime);
-        
+        if (testData.usedIds) {
+          setUsedQuestionIds(new Set(testData.usedIds));
+        }
+
         if (testData.currentIndex >= TOTAL_QUESTIONS) {
           setIsTestComplete(true);
         } else {
           // Get next question at saved target score
           setTargetScore(testData.targetScore || 4.5);
-          const nextQuestion = getQuestionAtScore(testData.targetScore || 4.5);
+          const nextQuestion = getQuestionAtScore(testData.targetScore || 4.5, new Set(testData.usedIds || []));
           setCurrentQuestion(nextQuestion);
         }
       } else {
             // Start new test
             setTestAnswers(new Array(TOTAL_QUESTIONS).fill(null));
-            const firstQuestion = getQuestionAtScore(4.5);
+            const seenIds = (() => {
+              try {
+                const stored = localStorage.getItem('adaptiveSeenQuestions');
+                return stored ? new Set(JSON.parse(stored)) : new Set();
+              } catch { return new Set(); }
+            })();
+            const firstQuestion = getQuestionAtScore(4.5, seenIds);
             setCurrentQuestion(firstQuestion);
 
             // Save initial test state
@@ -103,23 +124,38 @@ const AdaptiveTest = () => {
             difficultyLevel: "Medium",
             targetScore: 4.5,
             elapsedTime: 0,
-            startTime: Date.now()
+            startTime: Date.now(),
+            usedIds: firstQuestion ? [firstQuestion['Question ID']] : []
             };
             localStorage.setItem('adaptiveTest', JSON.stringify(initialTestData));
         }
-        
+
         // Start timer
         setStartTime(Date.now());
         setIsTimerRunning(true);
         };
 
         initializeTest();
+
+        // Load existing per-topic thetas so we start from the student's current ability
+        const userId = getUserIdFromToken();
+        if (userId) {
+            getStudentTopicAbility(userId).then(rows => {
+                const map = {};
+                rows.forEach(r => { map[r.topic] = r.theta; });
+                setTopicThetas(map);
+            }).catch(() => {});
+        }
     }
   }, [token, navigate]);
 
-  // Get question whose score is closest to targetScore
-  const getQuestionAtScore = (score) => {
-    const scored = questions.map(q => ({ q, dist: Math.abs(getQuestionScore(q) - score) }));
+  // Get question whose score is closest to targetScore, excluding already-seen questions
+  const getQuestionAtScore = (score, seenIds = usedQuestionIds) => {
+    // Filter out seen questions; fall back to full pool only if exhausted
+    const available = questions.filter(q => !seenIds.has(q['Question ID']));
+    const pool = available.length > 0 ? available : questions;
+
+    const scored = pool.map(q => ({ q, dist: Math.abs(getQuestionScore(q) - score) }));
     scored.sort((a, b) => a.dist - b.dist);
     const candidates = scored.slice(0, 8);
     const picked = candidates[Math.floor(Math.random() * candidates.length)].q;
@@ -139,6 +175,7 @@ const AdaptiveTest = () => {
   // Save test state to localStorage whenever important state changes
   useEffect(() => {
     if (currentQuestionIndex > 0 || totalScore > 0) {
+      const usedIdsArray = Array.from(usedQuestionIds);
       const testData = {
         currentIndex: currentQuestionIndex,
         totalScore: totalScore,
@@ -149,11 +186,14 @@ const AdaptiveTest = () => {
         elapsedTime: elapsedTime,
         timePerQuestion: timePerQuestion,
         startTime: startTime,
-        isComplete: isTestComplete
+        isComplete: isTestComplete,
+        usedIds: usedIdsArray
       };
       localStorage.setItem('adaptiveTest', JSON.stringify(testData));
+      // Also persist seen IDs globally so the next test avoids them
+      localStorage.setItem('adaptiveSeenQuestions', JSON.stringify(usedIdsArray));
     }
-  }, [currentQuestionIndex, totalScore, correctAnswers, testAnswers, difficultyLevel, targetScore, elapsedTime, isTestComplete, timePerQuestion]);
+  }, [currentQuestionIndex, totalScore, correctAnswers, testAnswers, difficultyLevel, targetScore, elapsedTime, isTestComplete, timePerQuestion, usedQuestionIds]);
 
   // Timer effect
   useEffect(() => {
@@ -352,6 +392,29 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       // **ADAPTIVE DIFFICULTY ADJUSTMENT**
       adjustDifficulty(correct);
 
+      // Update per-topic IRT theta
+      const topic = currentQuestion.Topic;
+      if (topic) {
+          const priorTopicTheta = topicThetas[topic] ?? 0;
+          const topicQCount = Object.values(testAnswers).filter(
+              a => a && a.topic === topic
+          ).length;
+          const newTopicTheta = abilityEstimate(
+              currentQuestion.Difficulty,
+              correct,
+              priorTopicTheta,
+              topicQCount
+          );
+          const updatedTopicThetas = { ...topicThetas, [topic]: newTopicTheta };
+          setTopicThetas(updatedTopicThetas);
+
+          const userId = getUserIdFromToken();
+          if (userId) {
+              const totalForTopic = (topicQCount + 1);
+              updateStudentTopicAbility(userId, topic, newTopicTheta, totalForTopic).catch(() => {});
+          }
+      }
+
       // Get GPT feedback
       const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
       const latexString = `Question: ${currentQuestion["Question Text"]}\n\nUser Solution:\n${submission}\n\nCorrect Answer: ${currentQuestion.Solution}`;
@@ -370,9 +433,14 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
     if (currentQuestionIndex < TOTAL_QUESTIONS - 1) {
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
-       
+
+      // Mark current question as seen before picking next
+      const newSeen = new Set(usedQuestionIds);
+      if (currentQuestion) newSeen.add(currentQuestion['Question ID']);
+      setUsedQuestionIds(newSeen);
+
       // Get next question at the current (possibly adjusted) target score
-      const nextQuestion = getQuestionAtScore(targetScore);
+      const nextQuestion = getQuestionAtScore(targetScore, newSeen);
       setCurrentQuestion(nextQuestion);
       
       clearField();
@@ -446,7 +514,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       } catch (error) {
         console.error('Failed to save progress:', error.message);
       }
-      
+
       const finalResults = {
         totalScore: totalScore,
         correctAnswers: correctAnswers,
@@ -472,6 +540,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
   const resetTest = () => {
     localStorage.removeItem('adaptiveTest');
     localStorage.removeItem('adaptiveTestResults');
+    localStorage.removeItem('adaptiveSeenQuestions');
     window.location.reload();
   };
 
@@ -579,6 +648,11 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               <div className="questionText">
                 {currentQuestion["Question Text"]}
               </div>
+              {currentQuestion["Image URL"] && (
+                <div className="question-image">
+                  <img src={currentQuestion["Image URL"]} alt="Question Visual" />
+                </div>
+              )}
               <div>
                 <h2>How to Answer:</h2>
                 <p>To get the question correct, you must leave your final answer in the same format as the example provided below.<br /> You must also leave your final answer as the last line of your response.</p>

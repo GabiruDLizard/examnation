@@ -34,9 +34,13 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
         for (const questionData of questionsArray) {
             let figureBlobUrl = null;
             if (questionData.imageAssociated) {
-                console.log('📷 Uploading question image...');
-                figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
-                console.log('✅ Image uploaded:', figureBlobUrl);
+                try {
+                    console.log('📷 Uploading question image...');
+                    figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
+                    console.log('✅ Image uploaded:', figureBlobUrl);
+                } catch (uploadError) {
+                    console.warn('⚠️ Image upload failed, continuing without image:', uploadError.message);
+                }
             }
 
             const formattedQuestionData = {

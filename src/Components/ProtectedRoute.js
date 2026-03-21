@@ -5,34 +5,32 @@ import { getToken, removeToken, getRoleFromToken } from '../utils/tokenUtils';
 const ProtectedRoute = ({ children, requiredRole }) => {
     const token = getToken();
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
-    }
+    if (!token) return <Navigate to="/login" replace />;
 
     try {
-        const userRole = getRoleFromToken();
+        const userRole = getRoleFromToken()?.toLowerCase();
+        const required  = requiredRole?.toLowerCase();
 
-        const normalizedUserRole = userRole?.toLowerCase();
-        const normalizedRequiredRole = requiredRole?.toLowerCase();
-
-        if (normalizedRequiredRole === 'teacher') {
-            if (normalizedUserRole === 'educator' || normalizedUserRole === 'teacher') {
-                return children;
-            }
-        } else if (normalizedRequiredRole === 'student') {
-            if (normalizedUserRole === 'student' || normalizedUserRole === 'learner') {
-                return children;
-            }
+        // Admin / superadmin go to their own dashboard
+        if (userRole === 'admin' || userRole === 'superadmin') {
+            if (!required || required === 'admin') return children;
+            return <Navigate to="/admindashboard" replace />;
         }
 
-        if (normalizedUserRole === 'educator' || normalizedUserRole === 'teacher') {
-            return <Navigate to="/teacherdashboard" replace />;
-        } else {
-            return <Navigate to="/studentdashboard" replace />;
+        if (required === 'teacher') {
+            if (userRole === 'educator' || userRole === 'teacher') return children;
+        } else if (required === 'student') {
+            if (userRole === 'student' || userRole === 'learner') return children;
+        } else if (!required) {
+            return children; // no role restriction
         }
 
-    } catch (error) {
-        console.error('Error decoding token:', error);
+        // Wrong role — send to their own dashboard
+        if (userRole === 'educator' || userRole === 'teacher') return <Navigate to="/teacherdashboard" replace />;
+        if (userRole === 'student' || userRole === 'learner')  return <Navigate to="/studentdashboard" replace />;
+        return <Navigate to="/login" replace />;
+
+    } catch {
         removeToken();
         return <Navigate to="/login" replace />;
     }

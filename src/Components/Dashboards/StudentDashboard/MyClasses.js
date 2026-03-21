@@ -92,6 +92,24 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="my-classes-container">
+        <div className="error-state" style={{ padding: '40px', textAlign: 'center' }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '12px' }}>Failed to Load Classes</h2>
+          <p style={{ color: '#64748b', marginBottom: '20px' }}>{error}</p>
+          <button
+            onClick={fetchStudentClasses}
+            style={{ padding: '8px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate stats from real data (matching teacher dashboard)
   const totalClasses = classesData.length;
   const avgReadiness = totalClasses > 0 
@@ -244,12 +262,6 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="error-banner">
-          <p>⚠️ {error}</p>
-        </div>
-      )}
 
       {/* Classes Content */}
       {classesData.length === 0 ? (

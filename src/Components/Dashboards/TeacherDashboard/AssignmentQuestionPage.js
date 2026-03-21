@@ -1,16 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { BiPlus, BiBarChart, BiEdit, BiTrendingUp, BiCalendar, BiFile, BiGroup, BiSave, BiX, BiArrowBack, BiBrain, BiBullseye } from 'react-icons/bi';
+import { BiPlus, BiSave, BiX } from 'react-icons/bi';
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
 import { createCompleteAssignment } from './AssignmentService';
+import MathToolbar from './MathToolbar';
+import MathInput from './MathInput';
 import '../Assignments.css';
+import './MathToolbar.css';
+import './MathInput.css';
+
+const mathJaxConfig = {
+    loader: { load: ['input/tex', 'output/chtml'] },
+};
+
+// Convert $...$ inline delimiters → \(...\) which MathJax 3 always handles
+const toMJ = (str) => (str || '').replace(/\$([^$\n]+)\$/g, '\\($1\\)');
+
+const TOPICS = [
+    'Number Properties', 'Percentages', 'Ratios & Proportions',
+    'Speed/Distance/Time', 'Algebra (Linear Equations)',
+    'Algebra (Simultaneous Equations)', 'Algebra (Quadratics)',
+    'Algebra (Algebraic Fractions)', 'Sequences', 'Functions',
+    'Coordinate Geometry', 'Graphs', 'Geometry (Angles/Triangles)',
+    'Geometry (Circles/Area)', 'Mensuration (Area/Volume)',
+    'Trigonometry', 'Statistics (Mean/Median/Mode)',
+    'Probability', 'Matrices', 'Vectors'
+];
 
 const AssignmentQuestionCreationPage = ({ onBack }) => {
+    const questionTextRef = useRef(null);
+    const breakdownRef = useRef(null);
+
     const [formData, setFormData] = useState({
         questionText: '',
         imageAssociated: null,
-        difficultyLevel: 1,
+        difficultyLevel: 'Medium',
+        topic: TOPICS[0],
         answerType: 'Short Answer',
         multipleChoiceOptions: [],
+        solution: '',
+        answerBreakdown: '',
         points: 1.0
     });
     const [questionsArray, setQuestionsArray] = useState([]); // Store all questions
@@ -119,14 +148,18 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         setFormData({
             questionText: '',
             imageAssociated: null,
-            difficultyLevel: 1,
+            difficultyLevel: 'Medium',
+            topic: TOPICS[0],
             answerType: 'Short Answer',
             multipleChoiceOptions: [],
+            solution: '',
+            answerBreakdown: '',
             points: 1.0
         });
     };
 
     return (
+      <MathJaxContext version={3} config={mathJaxConfig}>
         <div className="assignment-question-page">
             {loading && (
                 <div className="loading-state">
@@ -156,77 +189,79 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
 
                     <form className="assignment-question-form" onSubmit={handleSubmit}>
                         <div className="form-sections">
+
+                            {/* Question Text */}
                             <div className="form-group">
-                                <label>Question Text</label>
+                                <label>Question Text *</label>
                                 <textarea
+                                    ref={questionTextRef}
+                                    className="math-textarea-field"
                                     value={formData.questionText || ''}
                                     onChange={(e) => setFormData({ ...formData, questionText: e.target.value })}
                                     required
-                                    placeholder='Enter the question text here...'
+                                    rows={4}
+                                    placeholder="Type your question here…"
                                 />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Image Associated (optional)</label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setFormData({ ...formData, imageAssociated: e.target.files[0] })}
-                                />
-                                <label className="file-hint">Accepted formats: JPG, PNG, GIF. Max size: 5MB.</label>
-                                <input
-                                    type="checkbox"
-                                    checked={isAddingImgDescription}
-                                    onChange={(e) => setIsAddingImgDescription(e.target.checked)}
-                                /> Add Image Description
-                                {isAddingImgDescription && (
-                                    <textarea
-                                        value={formData.imageDescription || ''}
-                                        onChange={(e) => setFormData({ ...formData, imageDescription: e.target.value })}
-                                        placeholder="Enter image description for accessibility"
-                                    />
+                                <MathToolbar textareaRef={questionTextRef} />
+                                {formData.questionText && (
+                                    <div className="math-preview">
+                                        <div className="math-preview-label">Preview</div>
+                                        <MathJax dynamic>{toMJ(formData.questionText)}</MathJax>
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="form-group">
-                                <label>Difficulty Level</label>
-                                <select
-                                    value={formData.difficultyLevel}
-                                    onChange={(e) => setFormData({ ...formData, difficultyLevel: parseInt(e.target.value) })}
-                                >
-                                    <option value={1}>1</option>
-                                    <option value={2}>2</option>
-                                    <option value={3}>3</option>
-                                    <option value={4}>4</option>
-                                    <option value={5}>5</option>   
-                                </select>
+                            {/* Topic + Difficulty side by side */}
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Topic *</label>
+                                    <select
+                                        value={formData.topic}
+                                        onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                                        required
+                                    >
+                                        {TOPICS.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Difficulty *</label>
+                                    <select
+                                        value={formData.difficultyLevel}
+                                        onChange={(e) => setFormData({ ...formData, difficultyLevel: e.target.value })}
+                                    >
+                                        <option value="Very Easy">Very Easy</option>
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                        <option value="Very Hard">Very Hard</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Points *</label>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0.5"
+                                        value={formData.points}
+                                        onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Answer Type</label>
+                                    <select
+                                        value={formData.answerType}
+                                        onChange={(e) => setFormData({ ...formData, answerType: e.target.value })}
+                                    >
+                                        <option value="Short Answer">Short Answer</option>
+                                        <option value="Multiple Choice">Multiple Choice</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="form-group">
-                                <label>Answer Type</label>
-                                <select
-                                    value={formData.answerType}
-                                    onChange={(e) => setFormData({ ...formData, answerType: e.target.value })}
-                                >
-                                    <option value="Short Answer">Short Answer</option>
-                                    <option value="Multiple Choice">Multiple Choice</option>
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Points</label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    min="0.1"
-                                    value={formData.points}
-                                    onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
-                                    placeholder="Question points value"
-                                />
-                            </div>
-
+                            {/* Multiple choice options */}
                             {formData.answerType === 'Multiple Choice' && (
                                 <div className="form-group">
-                                    <label>Multiple Choice Options</label>
+                                    <label>Answer Options</label>
                                     {formData.multipleChoiceOptions.map((option, index) => (
                                         <input
                                             key={index}
@@ -237,35 +272,64 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                                                 newOptions[index] = e.target.value;
                                                 setFormData({ ...formData, multipleChoiceOptions: newOptions });
                                             }}
-                                            placeholder={`Option ${index + 1}`}
+                                            placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                                            style={{ marginBottom: 6 }}
                                         />
                                     ))}
                                     <button
                                         type="button"
-                                        onClick={() => setFormData({ 
-                                            ...formData, 
-                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, ''] 
+                                        className="btn-secondary"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, '']
                                         })}
                                     >
-                                        Add Option
+                                        + Add Option
                                     </button>
                                 </div>
                             )}
+
+                            {/* Correct Answer */}
                             <div className="form-group">
-                                <label>Solution *</label>
-                                <textarea
+                                <label>Correct Answer *</label>
+                                <MathInput
+                                    mode="math"
                                     value={formData.solution || ''}
-                                    onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
-                                    placeholder='Enter the solution or answer here...'
+                                    onChange={(v) => setFormData({ ...formData, solution: v })}
                                     required
                                 />
-                                <label>Answer Breakdown (optional)</label>
+                            </div>
+
+                            {/* Solution steps */}
+                            <div className="form-group">
+                                <label>Solution Steps <span style={{fontWeight:400,color:'#94a3b8'}}>(shown to student after incorrect answer)</span></label>
                                 <textarea
+                                    ref={breakdownRef}
+                                    className="math-textarea-field"
                                     value={formData.answerBreakdown || ''}
                                     onChange={(e) => setFormData({ ...formData, answerBreakdown: e.target.value })}
-                                    placeholder='Enter the answer breakdown here...'
+                                    rows={5}
+                                    placeholder={'Step 1: …\nStep 2: …\nStep 3: …'}
+                                />
+                                <MathToolbar textareaRef={breakdownRef} />
+                                {formData.answerBreakdown && (
+                                    <div className="math-preview">
+                                        <div className="math-preview-label">Preview</div>
+                                        <MathJax dynamic>{toMJ(formData.answerBreakdown)}</MathJax>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Image upload */}
+                            <div className="form-group">
+                                <label>Figure / Image (optional)</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setFormData({ ...formData, imageAssociated: e.target.files[0] })}
                                 />
                             </div>
+
                         </div>
 
                         {/* Show added questions
@@ -295,36 +359,47 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                             </div>
                         )} */}
                         
-                        <div className="form-actions">
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                className="btn-secondary"
-                                disabled={isSubmitting}
-                            >
-                                <BiX /> Reset
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleAddMore}
-                                className="btn-secondary"
-                                disabled={isSubmitting || !formData.questionText.trim()}
-                            >
-                                <BiPlus />Add More ({questionsArray.length} added)
-                            </button>
-                            <button
-                                type="submit"
-                                className="btn-primary"
-                                disabled={isSubmitting}
-                            >
-                                <BiSave />
-                                {isSubmitting ? 'Creating...' : 'Create Assignment'}
-                            </button>
+                        <div className="aqp-sticky-bar">
+                            <div className="aqp-bar-left">
+                                {questionsArray.length > 0 && (
+                                    <span className="aqp-queued-badge">
+                                        {questionsArray.length} question{questionsArray.length !== 1 ? 's' : ''} queued
+                                    </span>
+                                )}
+                            </div>
+                            <div className="aqp-bar-right">
+                                <button
+                                    type="button"
+                                    onClick={handleReset}
+                                    className="aqp-btn-ghost"
+                                    disabled={isSubmitting}
+                                    title="Clear this question"
+                                >
+                                    <BiX /> Reset
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleAddMore}
+                                    className="aqp-btn-secondary"
+                                    disabled={isSubmitting || !formData.questionText.trim()}
+                                >
+                                    <BiPlus /> Add Another
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="aqp-btn-primary"
+                                    disabled={isSubmitting}
+                                >
+                                    <BiSave />
+                                    {isSubmitting ? 'Creating…' : 'Finish & Create'}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </>
             )}
         </div>
+      </MathJaxContext>
     );
 }
 

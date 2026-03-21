@@ -143,6 +143,10 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             newErrors.duration = 'Duration must be greater than 0';
         }
 
+        if (!formData.assignedClass) {
+            newErrors.assignedClass = 'Please select a class';
+        }
+
         if (formData.allowMultipleAttempts && (!formData.maxAttempts || formData.maxAttempts <= 0)) {
             newErrors.maxAttempts = 'Maximum attempts must be greater than 0';
         }
@@ -161,6 +165,12 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
         }
         console.log('✅ Form validation passed');
 
+        const classId = parseInt(formData.assignedClass, 10);
+        if (!classId || isNaN(classId)) {
+            toast.error('Please select a valid class.');
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -174,7 +184,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                 pointsPossible: parseInt(formData.passingMarks) || 100,
                 assignmentType: 'homework',
                 status: 'active',
-                classId: parseInt(formData.assignedClass),
+                classId: classId,
                 teacherId: parseInt(teacherId),
                 // Additional metadata for future use
                 metadata: {
@@ -350,15 +360,16 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                                 <select
                                     value={formData.assignedClass}
                                     onChange={(e) => setFormData({ ...formData, assignedClass: e.target.value })}
-                                    className="filter-select"
+                                    className={`filter-select${errors.assignedClass ? ' error' : ''}`}
                                 >
-                                    <option value="all">Assign to all</option>
+                                    <option value="">Select a class</option>
                                     {classesData.map((cls) => (
                                         <option key={cls.id} value={cls.id}>
                                             {cls.name}
                                         </option>
                                     ))}
                                 </select>
+                                {errors.assignedClass && <span className="error-message">{errors.assignedClass}</span>}
                                
 
                                 {/* <input

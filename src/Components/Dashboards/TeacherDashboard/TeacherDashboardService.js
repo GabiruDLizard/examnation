@@ -1,7 +1,6 @@
 import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 
-const API_BASE_URL_BLOB = process.env.REACT_APP_BLOB_URL;
 
 // ================================================================
 // READINESS TRACKING API FUNCTIONS
@@ -30,6 +29,46 @@ export const recordStudentReadiness = async (studentId, classId, readinessData) 
     } catch (error) {
         console.error('Error recording student readiness:', error);
         throw error;
+    }
+};
+
+// ================================================================
+// TOPIC ABILITY (MIRT) API FUNCTIONS
+// ================================================================
+
+export const updateStudentTopicAbility = async (studentId, topic, theta, questionsAnswered) => {
+    try {
+        const response = await authFetch('/studenttopicability/upsert', {
+            method: 'POST',
+            body: JSON.stringify({ studentId, topic, theta, questionsAnswered })
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating topic ability:', error);
+        throw error;
+    }
+};
+
+export const getStudentTopicAbility = async (studentId) => {
+    try {
+        const response = await authFetch(`/studenttopicability/student/${studentId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching student topic ability:', error);
+        return [];
+    }
+};
+
+export const getClassTopicAbility = async (classId) => {
+    try {
+        const response = await authFetch(`/studenttopicability/class/${classId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching class topic ability:', error);
+        return [];
     }
 };
 
@@ -301,7 +340,6 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         const enrollments = await response.json();
 
         if (!Array.isArray(enrollments)) {
-            console.warn(`Expected array of enrollments but got:`, enrollments);
             return [];
         }
 
@@ -323,14 +361,12 @@ export const getAllEnrolledStudentInfo = async (classId) => {
                 const studentId = enrollment.studentId || enrollment.StudentId;
 
                 if (!studentId) {
-                    console.warn('No student ID found in enrollment:', enrollment);
                     return null;
                 }
 
                 const studentInfoResponse = await authFetch(`/user/${studentId}`);
 
                 if (!studentInfoResponse.ok) {
-                    console.warn(`Could not fetch info for student ${studentId}`);
                     return null;
                 }
 
@@ -343,9 +379,9 @@ export const getAllEnrolledStudentInfo = async (classId) => {
                 const completed = studentSubmissions.filter(
                     s => s.status === 'submitted' || s.status === 'graded'
                 );
-                const scored = completed.filter(s => s.score != null);
+                const scored = completed.filter(s => s.grade != null);
                 const averageScore = scored.length > 0
-                    ? Math.round(scored.reduce((sum, s) => sum + s.score, 0) / scored.length)
+                    ? Math.round(scored.reduce((sum, s) => sum + s.grade, 0) / scored.length)
                     : 0;
                 const lastSubmission = completed
                     .sort((a, b) => new Date(b.submittedAt ?? 0) - new Date(a.submittedAt ?? 0))[0];
@@ -492,7 +528,7 @@ export const uploadQuestionImage = async (imageFile) => {
     try {
         const formData = new FormData();
         formData.append('file', imageFile);
-        const response = await authFetch(`${API_BASE_URL_BLOB}/upload`, {
+        const response = await authFetch(`/File/upload`, {
             method: 'POST',
             body: formData
         });
@@ -757,7 +793,6 @@ export const getSubmissionStatsForTeacher = async (teacherId) => {
                 totalPossibleSubmissions += totalStudents;
 
             } catch (error) {
-                console.warn(`Error processing assignment ${assignment.id}:`, error);
                 submissionsByAssignment[assignment.id] = {
                     submitted: 0,
                     total: 0,
@@ -927,7 +962,6 @@ export const getAssignmentQuestionsById = async (assignmentId) => {
                     const response = await authFetch(`/question/${link.questionId}`);
 
                     if (!response.ok) {
-                        console.warn(`Failed to fetch question ${link.questionId}:`, response.status);
                         return null;
                     }
 
@@ -939,7 +973,6 @@ export const getAssignmentQuestionsById = async (assignmentId) => {
                         assignmentQuestionId: link.id
                     };
                 } catch (error) {
-                    console.warn(`Error fetching question ${link.questionId}:`, error);
                     return null;
                 }
             })
@@ -1027,3 +1060,4 @@ export const deleteQuestionFromAssignment = async (assignmentId, questionId) => 
         throw error;
     }
 };
+

@@ -1,12 +1,13 @@
 import React from 'react';
 import './App.css';
+import ErrorBoundary from './Components/ErrorBoundary';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Auth from './Components/Authentication/Auth';
 import { AuthProvider } from './contexts/AuthContext';
 import ResetPassword from './Components/ResetPassword';
 import LandingPageAuth from './LandingPageAuth';
-import SetUp from './Components/AccountSetUp/SetUp';
+import AdminDashboard from './Components/Dashboards/AdminDashboard/AdminDashboard';
 import StudentDashboard from './Components/Dashboards/StudentDashboard/StudentDashboard';
 import TeacherDashboard from './Components/Dashboards/TeacherDashboard/TeacherDashboard';
 import ExamPage from './Components/ExamPage/ExamPage';
@@ -23,6 +24,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <Router>
         <div className="App">
@@ -30,8 +32,12 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPageAuth />} />
               <Route path="/login" element={<Auth />} />
-              <Route path="/setup" element={<SetUp />} />
               <Route path="/passwordreset" element={<ResetPassword />} />
+              <Route path="/admindashboard" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
               <Route path="/studentdashboard" element={
                 <ProtectedRoute requiredRole="student">
                   <StudentDashboard />
@@ -42,16 +48,8 @@ function App() {
                   <TeacherDashboard />
                 </ProtectedRoute>
               } />
-              <Route path="/exampage" element={
-                <ProtectedRoute requiredRole="student">
-                  <ExamPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/practice/:id" element={
-                <ProtectedRoute requiredRole="student">
-                  <PracticeArea />
-                </ProtectedRoute>
-              } />
+              <Route path="/exampage" element={<ExamPage />} />
+              <Route path="/practice/:id" element={<PracticeArea />} />
               <Route path="/adaptivetest" element={
                 <ProtectedRoute requiredRole="student">
                   <AdaptiveTest />
@@ -93,6 +91,7 @@ function App() {
         <ToastContainer position="top-right" autoClose={4000} />
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

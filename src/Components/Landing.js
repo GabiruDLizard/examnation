@@ -77,7 +77,6 @@ export default function ExamNationLanding() {
                         <button className="navbar-signup" onClick={() => scrollToSection('about')}>About</button>
                         <button className="navbar-signup" onClick={() => scrollToSection('contact')}>Contact</button>
                         <button className="navbar-signup" onClick={handleLogin}>Login</button>
-                        <button className="navbar-signup" onClick={handleRegister}>Sign Up</button>
                     </div>
 
                     {/* Mobile Hamburger Button */}
@@ -94,7 +93,6 @@ export default function ExamNationLanding() {
                             <button className="mobile-nav-item" onClick={() => scrollToSection('about')}>About</button>
                             <button className="mobile-nav-item" onClick={() => scrollToSection('contact')}>Contact</button>
                             <button className="mobile-nav-item" onClick={handleLogin}>Login</button>
-                            <button className="mobile-nav-item primary" onClick={handleRegister}>Sign Up</button>
                         </div>
                     </div>
                 )}
@@ -196,7 +194,7 @@ export default function ExamNationLanding() {
                         </div>
                     </div>
                     <div className="practice-cta">
-                        <button className="primary" onClick={handleGetStarted}>Start Practicing Now</button>
+                        <button className="primary" onClick={() => navigate('/exampage')}>Start Practicing Now</button>
                     </div>
                 </div>
             </section>
@@ -275,7 +273,7 @@ export default function ExamNationLanding() {
             {/* CTA Footer - Add id for contact section */}
             <footer id="contact" className="cta-footer">
                 <h2>Join the Next Generation of Learners</h2>
-                <button className="primary" onClick={handleRegister}>Sign Up Free</button>
+                <button className="primary" onClick={handleLogin}>Get Started</button>
                 <div className="footer-bottom">
                     <p className="footer-copyright">
                         &copy; {new Date().getFullYear()} Lofty Goals Software. All rights reserved.

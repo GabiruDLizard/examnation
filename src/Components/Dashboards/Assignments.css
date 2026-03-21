@@ -1,3 +1,61 @@
+/* Confirm Delete Dialog */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-dialog h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.confirm-dialog p {
+  margin: 0 0 24px;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
 .assignments-dashboard {
   padding: 0;
   height: 100%;
@@ -348,8 +406,9 @@
   .assignment-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+    height: auto;
   }
-  
+
   .assignment-stats {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -359,9 +418,19 @@
   .assignment-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .assignment-stats {
     grid-template-columns: 1fr;
+  }
+
+  .assignment-grid {
+    height: auto;
+  }
+
+  .grid-main,
+  .grid-sidebar {
+    overflow-y: visible;
+    height: auto;
   }
 }
 

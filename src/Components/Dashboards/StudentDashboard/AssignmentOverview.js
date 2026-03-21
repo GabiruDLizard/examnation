@@ -94,7 +94,15 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
     };
 
     const handleAssignmentClick = (assignment) => {
-        // Navigate to assignment question page
+        const submission = userSubmissions[assignment.id];
+        const status = getAssignmentStatus(assignment);
+
+        // Completed assignments go to the review page
+        if (status === 'completed' && submission) {
+            onNavigate('assignment-review', { assignment, submission });
+            return;
+        }
+
         onNavigate('assignment-questions', { assignment });
     };
 

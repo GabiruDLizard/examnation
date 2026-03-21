@@ -4,7 +4,7 @@ import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiH
 import "../TeacherDashboard.css";
 
 // Import services
-import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo, getTeacherReadinessChartData } from "./TeacherDashboardService";
+import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo, getTeacherReadinessChartData, getClassTopicAbility } from "./TeacherDashboardService";
 import { useAuth } from '../../../contexts/AuthContext';
 import { useDashboardNav } from '../../../hooks/useDashboardNav';
 
@@ -14,6 +14,7 @@ import { generateClassColors, calculateTeacherStats } from "../Charts/TeacherRea
 
 // Import the components
 import MyClasses from "./MyClasses";
+import StudentProfile from "./StudentProfile";
 
 import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
@@ -22,18 +23,40 @@ import MyTA from "../TAPage/TAPageTeacher";
 import Settings from "../../Settings/Settings";
 
 
-const topics = ["Algebra", "Geometry", "Statistics", "Trigonometry", "Number Theory"];
-const heatmap = [
-  [0.6, 0.5, 0.4, 0.3, 0.2],
-  [0.3, 0.5, 0.4, 0.6, 0.7],
-  [0.5, 0.6, 0.7, 0.5, 0.4],
-  [0.2, 0.3, 0.6, 0.7, 0.6],
-  [0.4, 0.5, 0.6, 0.5, 0.3]
-];
-
 function heatColor(v) {
-  const hue = 220 - v * 140;
-  return `hsl(${hue}deg 70% ${30 + v*30}%)`;
+  // 0 = red, 0.5 = amber, 1 = green
+  const hue = Math.round(v * 120);
+  return `hsl(${hue}deg 65% ${35 + v * 20}%)`;
+}
+
+// Compute weak spots from flat array of { studentId, topic, theta } rows
+function computeWeakSpots(rows) {
+  // Deduplicate: keep one row per (studentId, topic) — last wins is fine
+  const lookup = {};
+  rows.forEach(r => {
+    const key = `${r.studentId}::${r.topic}`;
+    lookup[key] = r.theta;
+  });
+
+  const byTopic = {};
+  Object.entries(lookup).forEach(([key, theta]) => {
+    const topic = key.split('::')[1];
+    if (!byTopic[topic]) byTopic[topic] = { total: 0, struggling: 0, thetaSum: 0 };
+    byTopic[topic].total += 1;
+    if (theta < 0) byTopic[topic].struggling += 1;
+    byTopic[topic].thetaSum += theta;
+  });
+
+  return Object.entries(byTopic)
+    .map(([topic, d]) => ({
+      topic,
+      strugglingCount: d.struggling,
+      totalCount: d.total,
+      avgReadiness: Math.round(((d.thetaSum / d.total + 4) / 8) * 100),
+      pctStruggling: Math.round((d.struggling / d.total) * 100),
+    }))
+    .filter(s => s.strugglingCount > 0)
+    .sort((a, b) => b.pctStruggling - a.pctStruggling);
 }
 
 export default function TeacherDashboard() {
@@ -60,6 +83,11 @@ export default function TeacherDashboard() {
   const [teacherStats, setTeacherStats] = useState({});
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
+  const [heatmapData, setHeatmapData] = useState({ topics: [], students: [], grid: [] });
+  const [loadingHeatmap, setLoadingHeatmap] = useState(false);
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
+  const [weakSpots, setWeakSpots] = useState([]);
+  const [loadingWeakSpots, setLoadingWeakSpots] = useState(false);
 
   const navigate = useNavigate();
 
@@ -195,7 +223,26 @@ export default function TeacherDashboard() {
       
       setTotalStudentsCount(uniqueStudentCount);
       setActualStudentsData(studentsArray);
-      
+
+      // Load cross-class weak spots
+      setLoadingWeakSpots(true);
+      try {
+        const allTopicRows = [];
+        for (const classItem of classes) {
+          const cid = classItem.classId || classItem.id;
+          if (!cid) continue;
+          const rows = await getClassTopicAbility(cid);
+          if (Array.isArray(rows)) allTopicRows.push(...rows);
+        }
+        setWeakSpots(computeWeakSpots(allTopicRows));
+        console.log('📊 Weak spots computed:', computeWeakSpots(allTopicRows).length, 'topics');
+      } catch (wsErr) {
+        console.error('Error loading weak spots:', wsErr);
+        setWeakSpots([]);
+      } finally {
+        setLoadingWeakSpots(false);
+      }
+
       // Generate chart data from real API
       await generateReadinessChartData(classes);
       
@@ -227,6 +274,48 @@ export default function TeacherDashboard() {
     }
   };
 
+  // Load topic heatmap whenever we have enrolled students and classes
+  useEffect(() => {
+    const classId = selectedClass?.classId || selectedClass?.id;
+    if (!classId) return;
+
+    setLoadingHeatmap(true);
+    getClassTopicAbility(classId)
+      .then(rows => {
+        if (!rows || rows.length === 0) {
+          setHeatmapData({ topics: [], students: [], grid: [] });
+          return;
+        }
+
+        // Unique sorted topics and student IDs
+        const topics = [...new Set(rows.map(r => r.topic))].sort();
+        const studentIds = [...new Set(rows.map(r => r.studentId))];
+
+        // Build lookup: studentId → topic → readiness (0-1)
+        const lookup = {};
+        rows.forEach(r => {
+          if (!lookup[r.studentId]) lookup[r.studentId] = {};
+          // Convert theta (-4 to +4) → 0 to 1
+          lookup[r.studentId][r.topic] = Math.max(0, Math.min(1, (r.theta + 4) / 8));
+        });
+
+        // Grid: rows = topics, columns = students
+        const grid = topics.map(topic =>
+          studentIds.map(sid => lookup[sid]?.[topic] ?? null)
+        );
+
+        // Match student names from actualStudentsData if available
+        const students = studentIds.map(sid => {
+          const found = actualStudentsData.find(s => s.studentId === sid || s.id === sid);
+          return found ? (found.studentName || found.name || `Student ${sid}`) : `Student ${sid}`;
+        });
+
+        setHeatmapData({ topics, students, grid });
+      })
+      .catch(() => setHeatmapData({ topics: [], students: [], grid: [] }))
+      .finally(() => setLoadingHeatmap(false));
+  }, [selectedClass, actualStudentsData]);
+
   // Function to get teacher display name
   const getTeacherDisplayName = () => {
     if (loading) return 'Loading...';
@@ -251,6 +340,18 @@ export default function TeacherDashboard() {
   }
   // Function to render different page content
   const renderPageContent = () => {
+    // ===== STUDENT PROFILE VIEW =====
+    if (selectedStudentProfile) {
+      return (
+        <StudentProfile
+          studentId={selectedStudentProfile.studentId}
+          studentName={selectedStudentProfile.studentName}
+          classId={selectedClass?.classId || selectedClass?.id}
+          onBack={() => setSelectedStudentProfile(null)}
+        />
+      );
+    }
+
     // ===== CLASS-SPECIFIC VIEWS (HIGHEST PRIORITY) =====
     if (selectedClass && currentView === 'students') {
         return (
@@ -367,14 +468,17 @@ export default function TeacherDashboard() {
           </div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-title">Avg. Readiness</div>
-          <div className="kpi-value">
+          <div className="kpi-title">At-Risk Students</div>
+          <div className="kpi-value" style={{ color: actualStudentsData.filter(s => (s.readiness || 0) < 50).length > 0 ? '#ef4444' : '#10b981' }}>
             {loadingStudentsData ? (
               <div className="loading-indicator">...</div>
-            ) : actualStudentsData.length > 0 ? (
-              `${Math.round(actualStudentsData.reduce((s, st) => s + (st.readiness || 0), 0) / actualStudentsData.length)}%`
-            ) : '—'}
+            ) : (
+              actualStudentsData.filter(s => (s.readiness || 0) < 50).length
+            )}
           </div>
+          {!loadingStudentsData && (
+            <div className="kpi-subtitle">Readiness below 50%</div>
+          )}
         </div>
       </section>
 
@@ -389,35 +493,57 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        <div className="panel panel-small" style={{ 
-          opacity: 0.7, 
-          pointerEvents: 'none',
-          position: 'relative'
-        }}>
-          <div className="panel-title" style={{ color: '#888' }}>Topic Mastery (Coming Soon)</div>
-          <div className="heatmap">
-            <div className="heatmap-label-column">
-              {topics.map((t) => <div key={t} className="heatmap-label" style={{ color: '#aaa' }}>{t}</div>)}
+        <div className="panel panel-small">
+          <div className="panel-title">Topic Mastery by Student</div>
+          {loadingHeatmap ? (
+            <div className="loading-indicator">Loading heatmap...</div>
+          ) : heatmapData.topics.length === 0 ? (
+            <div className="no-data" style={{ padding: '16px', color: '#888', fontSize: '13px' }}>
+              No topic data yet. Students need to complete adaptive tests or assignments for this class.
             </div>
-            <div className="heatmap-grid">
-              {heatmap.map((row, rIdx) => (
-                <div key={rIdx} className="heatmap-row">
-                  {row.map((cell, cIdx) => (
-                    <div
-                      key={cIdx}
-                      className="heatmap-cell"
-                      style={{ 
-                        background: heatColor(cell),
-                        cursor: 'not-allowed',
-                        filter: 'grayscale(50%)'
-                      }}
-                      title={`${topics[rIdx]} - ${(cell*100).toFixed(0)}%`}
-                    />
-                  ))}
-                </div>
-              ))}
+          ) : (
+            <div className="heatmap" style={{ overflowX: 'auto' }}>
+              {/* Column headers = student names */}
+              <div style={{ display: 'flex', marginLeft: '140px', marginBottom: '4px' }}>
+                {heatmapData.students.map((name, i) => (
+                  <div key={i} style={{ width: 32, fontSize: '10px', color: '#666', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>
+                    {name.split(' ')[0]}
+                  </div>
+                ))}
+              </div>
+              <div className="heatmap-label-column" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {heatmapData.topics.map((topic, rIdx) => (
+                  <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className="heatmap-label" style={{ width: '136px', fontSize: '11px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }} title={topic}>
+                      {topic}
+                    </div>
+                    {heatmapData.grid[rIdx].map((cell, cIdx) => (
+                      <div
+                        key={cIdx}
+                        className="heatmap-cell"
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 4,
+                          flexShrink: 0,
+                          background: cell === null ? '#e8e8e8' : heatColor(cell),
+                          cursor: 'default'
+                        }}
+                        title={cell === null
+                          ? `${heatmapData.students[cIdx]} — no data`
+                          : `${heatmapData.students[cIdx]} · ${topic}: ${Math.round(cell * 100)}%`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', fontSize: '11px', color: '#666' }}>
+                <div style={{ width: 12, height: 12, borderRadius: 2, background: heatColor(0.1) }} /> Low
+                <div style={{ width: 12, height: 12, borderRadius: 2, background: heatColor(0.5), marginLeft: 6 }} /> Mid
+                <div style={{ width: 12, height: 12, borderRadius: 2, background: heatColor(0.9), marginLeft: 6 }} /> High
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="panel panel-medium">
@@ -439,7 +565,11 @@ export default function TeacherDashboard() {
               </thead>
               <tbody>
                 {actualStudentsData.slice(0, 5).map((student, index) => (
-                  <tr key={student.id}>
+                  <tr
+                    key={student.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedStudentProfile({ studentId: student.id, studentName: student.name })}
+                  >
                     <td>
                       <div className="student-info">
                         <div className="student-name">{student.name}</div>
@@ -486,22 +616,58 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="panel panel-medium">
+          <div className="panel-title">Struggling Topics</div>
+          {loadingWeakSpots ? (
+            <div className="loading-indicator" style={{ padding: '12px', color: '#94a3b8', fontSize: '13px' }}>Analyzing topic data...</div>
+          ) : weakSpots.length === 0 ? (
+            <div style={{ padding: '12px', color: '#94a3b8', fontSize: '13px' }}>
+              No weak spots detected yet — students need to complete adaptive tests or assignments.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '4px 0' }}>
+              {weakSpots.slice(0, 5).map(s => (
+                <div key={s.topic} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>{s.topic}</span>
+                    <span style={{
+                      fontSize: '12px', fontWeight: 600, padding: '1px 7px', borderRadius: '999px',
+                      background: s.pctStruggling > 60 ? '#fef2f2' : s.pctStruggling > 30 ? '#fffbeb' : '#f0fdf4',
+                      color: s.pctStruggling > 60 ? '#dc2626' : s.pctStruggling > 30 ? '#d97706' : '#16a34a',
+                    }}>
+                      {s.strugglingCount}/{s.totalCount} students
+                    </span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, background: '#1e293b', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3,
+                      width: `${s.pctStruggling}%`,
+                      background: s.pctStruggling > 60 ? '#ef4444' : s.pctStruggling > 30 ? '#f59e0b' : '#10b981',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="panel panel-medium">
           <div className="panel-title">Insights Summary</div>
           <div className="ai-text">
             {loadingStudentsData ? (
               'Analyzing student performance...'
             ) : actualStudentsData.length > 0 ? (
               <>
-                Your students averaged <strong>{Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length)}% readiness</strong> this month. 
-                Top performer is <strong>{actualStudentsData[0]?.name}</strong> with {actualStudentsData[0]?.readiness}% readiness.
+                Your students averaged <strong>{Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length)}% readiness</strong> this month.{' '}
+                {weakSpots.length > 0 ? (
+                  <><strong>{weakSpots[0].topic}</strong> needs attention — {weakSpots[0].strugglingCount} of {weakSpots[0].totalCount} students ({weakSpots[0].pctStruggling}%) are below 50% readiness on this topic.</>
+                ) : (
+                  <>Top performer is <strong>{actualStudentsData[0]?.name}</strong> with {actualStudentsData[0]?.readiness}% readiness.</>
+                )}
               </>
             ) : (
               'No student data available for analysis.'
             )}
-          </div>
-          <div className="ai-actions">
-            <button className="ai-btn" onClick={generateQuiz}>Generate new practice quiz</button>
-            <button className="ai-btn ghost">Send feedback to students</button>
           </div>
         </div>
       </section>

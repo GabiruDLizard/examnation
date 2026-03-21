@@ -195,6 +195,9 @@ const PracticeArea = () => {
                 <div className="questionText">
                   {renderQuestionText(question["Question Text"])}
                 </div>
+                <div className="question-image">
+                  {question["Image URL"] && <img src={question["Image URL"]} alt="Question Visual" />}
+                </div>
                 {(() => { const h = getAnswerFormatHint(question.Solution); return h && (
                   <div className="answer-format-hint">
                     <span className="answer-format-text">{h.text}</span>

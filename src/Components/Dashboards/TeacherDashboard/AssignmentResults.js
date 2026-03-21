@@ -160,7 +160,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                 case 'submitted_at':
                     return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
                 case 'score':
-                    return (b.score || 0) - (a.score || 0);
+                    return (b.grade || 0) - (a.grade || 0);
                 default:
                     return 0;
             }
@@ -254,7 +254,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
 
     const handleStartGrading = (submission) => {
         setGradingSubmission(submission);
-        setGradeScore(submission.score || '');
+        setGradeScore(submission.grade || '');
         setGradeFeedback(submission.feedback || '');
     };
 
@@ -306,7 +306,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             return [
                 name,
                 getSubmissionStatus(sub),
-                sub.score !== null ? `${sub.score}%` : 'Not graded',
+                sub.grade !== null ? `${sub.grade}%` : 'Not graded',
                 formatDateTime(sub.submittedAt),
                 sub.timeSpent || 'N/A'
             ];
@@ -332,7 +332,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
         const csvContent = [header, ...rows]
             .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
             .join('\n');
-        return `Student: ${studentName}\nStatus: ${getSubmissionStatus(details)}\nScore: ${details.score !== null ? `${details.score}%` : 'Not graded'}\n\n${csvContent}`;
+        return `Student: ${studentName}\nStatus: ${getSubmissionStatus(details)}\nScore: ${details.grade !== null ? `${details.grade}%` : 'Not graded'}\n\n${csvContent}`;
     };
 
     const handleExportData = () => {
@@ -350,7 +350,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
         const submittedSubmissions = submissions.filter(s => s.status === 'submitted');
         
         const scores = submittedSubmissions
-            .map(s => s.score)
+            .map(s => s.grade)
             .filter(score => score != null && !isNaN(score));
         
         const averageScore = scores.length > 0 
@@ -407,7 +407,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                     </div>
                                     <div className="info-item">
                                         <label>Score</label>
-                                        <span>{details.score !== null ? `${details.score}%` : 'Not graded'}</span>
+                                        <span>{details.grade != null ? `${details.grade}%` : 'Not graded'}</span>
                                     </div>
                                     <div className="info-item">
                                         <label>Started At</label>
@@ -521,7 +521,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                     onClick={() => handleStartGrading(details)}
                                     className="btn-primary"
                                 >
-                                    {details.score !== null ? 'Update Grade' : 'Grade Submission'}
+                                    {details.grade != null ? 'Update Grade' : 'Grade Submission'}
                                 </button>
                             </div>
                         </>
@@ -743,8 +743,8 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                     <div className="results-controls">
                         <div className="control-group">
                             <label>Status Filter</label>
-                            <select 
-                                value={statusFilter} 
+                            <select
+                                value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 className="filter-select"
                             >
@@ -754,24 +754,11 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                 <option value="not_started">Not Started</option>
                             </select>
                         </div>
-                        
-                        <div className="control-group">
-                            <label>Search Students</label>
-                            <div className="search-input">
-                                <BiSearch />
-                                <input
-                                    type="text"
-                                    placeholder="Search by name or ID..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        
+
                         <div className="control-group">
                             <label>Sort By</label>
-                            <select 
-                                value={sortBy} 
+                            <select
+                                value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                                 className="sort-select"
                             >
@@ -830,7 +817,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                 </span>
                                             </div>
                                             <div className="col-score">
-                                                {submission.score !== null ? `${submission.score}%` : 'Not graded'}
+                                                {submission.grade != null ? `${submission.grade}%` : 'Not graded'}
                                             </div>
                                             <div className="col-submitted">
                                                 {formatDateTime(submission.submittedAt)}
@@ -842,16 +829,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                     title="View Details"
                                                 >
                                                     <BiShow />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        const csv = buildSubmissionsCSV([submission]);
-                                                        downloadCSV(csv, `submission-${submission.id}.csv`);
-                                                    }}
-                                                    className="action-btn download-btn"
-                                                    title="Download Submission"
-                                                >
-                                                    <BiDownload />
                                                 </button>
                                             </div>
                                         </div>

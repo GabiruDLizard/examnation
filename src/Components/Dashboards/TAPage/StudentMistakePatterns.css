@@ -1,0 +1,253 @@
+/* ── Root ─────────────────────────────────────────────── */
+.smp-root {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.smp-loading {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    padding: 12px 0;
+}
+
+.smp-empty {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    padding: 16px 0;
+    font-style: italic;
+}
+
+/* ── Summary line ─────────────────────────────────────── */
+.smp-summary {
+    font-size: 0.875rem;
+    color: #475569;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.smp-summary-alert {
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.smp-summary-ok {
+    font-weight: 700;
+    color: #16a34a;
+}
+
+/* ── Pattern Card ─────────────────────────────────────── */
+.smp-card {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    transition: border-color 0.15s;
+}
+
+.smp-card.status-active {
+    border-color: #fca5a5;
+}
+
+.smp-card.status-improving {
+    border-color: #fcd34d;
+}
+
+.smp-card.status-resolved {
+    border-color: #86efac;
+}
+
+.smp-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    cursor: pointer;
+    background: #f8fafc;
+    user-select: none;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.smp-card.status-active .smp-card-header {
+    background: #fff5f5;
+}
+
+.smp-card.status-improving .smp-card-header {
+    background: #fffdf0;
+}
+
+.smp-card-header:hover {
+    filter: brightness(0.97);
+}
+
+.smp-card-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.smp-card-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.smp-card-topic {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.smp-card-streak {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.smp-card-count {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1e293b;
+    min-width: 28px;
+    text-align: right;
+}
+
+.smp-card-last {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.smp-chevron {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+/* ── Badge ─────────────────────────────────────────────── */
+.smp-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Status Pill ───────────────────────────────────────── */
+.smp-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.smp-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ── Examples ─────────────────────────────────────────── */
+.smp-examples {
+    padding: 14px 16px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.smp-examples-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.smp-example-row {
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.smp-example-q {
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.smp-example-reason {
+    font-size: 0.82rem;
+    color: #9a3412;
+    background: #fff7ed;
+    border-radius: 5px;
+    padding: 5px 9px;
+}
+
+.smp-step-ref {
+    font-weight: 700;
+    color: #ea580c;
+}
+
+.smp-example-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.smp-diff {
+    font-size: 0.7rem;
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.smp-date {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.smp-timeline {
+    font-size: 0.78rem;
+    color: #64748b;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+/* ── Show more ─────────────────────────────────────────── */
+.smp-show-more {
+    background: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    color: #6366f1;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 4px;
+    transition: background 0.15s;
+}
+
+.smp-show-more:hover {
+    background: #f5f3ff;
+    border-color: #c7d2fe;
+}

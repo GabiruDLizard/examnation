@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://examnationwebapi.azurewebsites.net/api';
 
 export async function saveTestResults(testAnswers) {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/answer/batch`, {
         method: 'POST',
         headers: { 
@@ -19,7 +19,7 @@ export async function saveTestResults(testAnswers) {
 }
 
 export async function getStudentAnswers(userId) {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/answer/user/${userId}`, {
         method: 'GET',
         headers: { 
@@ -35,7 +35,7 @@ export async function getStudentAnswers(userId) {
 }
 
 export async function saveUserProgress(userProgress) {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/userprogress/upsert`, {
         method: 'POST',
         headers: { 

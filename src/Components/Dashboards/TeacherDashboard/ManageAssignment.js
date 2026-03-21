@@ -13,6 +13,7 @@ import {
 import AssignmentCreation from './AssignmentCreation';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import EnhancedManageAssignment from './EnhancedManageAssignment';
+import { toast } from 'react-toastify';
 
 const ManageAssignment = ({ onBack }) => {
     const [classes, setClasses] = useState([]);
@@ -29,6 +30,7 @@ const ManageAssignment = ({ onBack }) => {
     const [dueDate, setDueDate] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [editingAssignment, setEditingAssignment] = useState(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
     useEffect(() => {
         loadInitialData();
@@ -160,17 +162,20 @@ const ManageAssignment = ({ onBack }) => {
         }
     };
 
-    const handleDeleteAssignment = async (assignmentId) => {
-        if (!window.confirm('Are you sure you want to delete this assignment? This action cannot be undone.')) {
-            return;
-        }
+    const handleDeleteAssignment = (assignmentId) => {
+        setConfirmDeleteId(assignmentId);
+    };
 
+    const confirmDelete = async () => {
         try {
-            await deleteAssignment(assignmentId);
+            await deleteAssignment(confirmDeleteId);
+            toast.success('Assignment deleted!');
+            setConfirmDeleteId(null);
             await loadAssignments();
         } catch (error) {
             console.error('Error deleting assignment:', error);
-            setError('Failed to delete assignment');
+            toast.error('Failed to delete assignment');
+            setConfirmDeleteId(null);
         }
     };
 
@@ -470,6 +475,29 @@ const ManageAssignment = ({ onBack }) => {
                     )}
                 </div>
             )}
+        {/* Confirm Delete Dialog */}
+        {confirmDeleteId && (
+            <div className="confirm-overlay">
+                <div className="confirm-dialog">
+                    <h3>Delete Assignment?</h3>
+                    <p>This will permanently delete the assignment and all associated questions and submissions.</p>
+                    <div className="confirm-actions">
+                        <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="btn-secondary"
+                        >
+                            <BiX /> Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            className="btn-danger"
+                        >
+                            <BiTrash /> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 };
