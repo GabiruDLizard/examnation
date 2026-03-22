@@ -32,6 +32,16 @@
     margin-bottom: 2px;
 }
 
+.ad-brand-org {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6366f1;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .ad-brand-sub {
     font-size: 11px;
     font-weight: 700;
@@ -69,6 +79,54 @@
 .ad-nav-item.active {
     background: rgba(99,102,241,0.1);
     color: #4f46e5;
+}
+
+.ad-row-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.ad-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.ad-icon-btn:hover {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #4f46e5;
+}
+.ad-icon-btn--danger:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.ad-badge {
+    margin-left: auto;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.ad-req-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .ad-sidebar-bottom {
@@ -372,6 +430,25 @@
     box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
 }
 
+/* ── Select ─────────────────────────────────────────────────── */
+.ad-select {
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ad-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
 /* ── Password wrap ──────────────────────────────────────── */
 .ad-pw-wrap {
     display: flex;
@@ -462,4 +539,6 @@
     .ad-table td:nth-child(2),
     .ad-table th:nth-child(5),
     .ad-table td:nth-child(5) { display: none; }
+    .ad-sidebar { display: none; }
+    .ad-main { margin-left: 0; padding: 16px; }
 }

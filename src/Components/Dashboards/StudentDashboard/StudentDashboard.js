@@ -20,6 +20,7 @@ import AssignmentQuestionPage from './AssignmentQuestionPage.js';
 import AssignmentReview from './AssignmentReview.js';
 import TAPageStudent from '../TAPage/TAPageStudent.js';
 import Settings from '../../Settings/Settings.js';
+import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
 
 // Helper function for grouping answers by date
 const groupAnswersByDate = (answers) => {
@@ -555,6 +556,39 @@ function StudentDashboard() {
         );
     };
 
+    // Breadcrumb trail based on current nav state
+    const getBreadcrumbs = () => {
+        const home = { label: 'Home', onClick: () => handleNavClick('overview') };
+
+        if (selectedClass) {
+            const classesCrumb = { label: 'My Classes', onClick: handleBackToClasses };
+            const classCrumb = { label: selectedClass.name, onClick: handleBackToOverview };
+
+            if (currentView === 'class-overview') {
+                return [home, classesCrumb, { label: selectedClass.name }];
+            }
+            if (currentView === 'assignments') {
+                return [home, classesCrumb, classCrumb, { label: 'Assignments' }];
+            }
+            if (currentView === 'assignment-questions' && selectedAssignment) {
+                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => setCurrentView('assignments') }, { label: selectedAssignment.title }];
+            }
+            if (currentView === 'assignment-review') {
+                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => setCurrentView('assignments') }, { label: selectedAssignment?.title || 'Review' }];
+            }
+            if (currentView === 'progress') {
+                return [home, classesCrumb, classCrumb, { label: 'Progress' }];
+            }
+        }
+
+        switch (activePage) {
+            case 'classes': return [home, { label: 'My Classes' }];
+            case 'ta': return [home, { label: 'Readiness' }];
+            case 'settings': return [home, { label: 'Settings' }];
+            default: return [home];
+        }
+    };
+
     // Get page title based on active page
     const getPageTitle = () => {
         switch (activePage) {
@@ -638,6 +672,7 @@ function StudentDashboard() {
                     <h1>{getPageTitle()}</h1>
                     <div className="sd-user">{getStudentDisplayName()}</div>
                 </header>
+                <Breadcrumb crumbs={getBreadcrumbs()} />
 
                 {error && (
                     <div className="error-notification">

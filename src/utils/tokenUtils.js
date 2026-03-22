@@ -36,3 +36,10 @@ export function getRoleFromToken() {
         null
     );
 }
+
+export function getInstitutionIdFromToken() {
+    const p = decodeToken();
+    const val = p?.institution_id;
+    const num = parseInt(val, 10);
+    return (!isNaN(num) && num > 0) ? num : null;
+}

@@ -2,22 +2,35 @@ import React, { useState } from 'react';
 import './ResetPassword.css';
 import logo from '../Resources/PHold-logo.png';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../utils/api';
 
 const ResetPassword = () => {
-    const [email, setEmail] = useState('');
-    const [submitted, setSubmitted] = useState(false);
-    const [error, setError] = useState('');
+    const [usernameOrEmail, setUsernameOrEmail] = useState('');
+    const [submitted, setSubmitted]             = useState(false);
+    const [loading,   setLoading]               = useState(false);
+    const [error,     setError]                 = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address.');
+        if (!usernameOrEmail.trim()) {
+            setError('Please enter your username or email.');
             return;
         }
         setError('');
-        setSubmitted(true);
+        setLoading(true);
+        try {
+            await fetch(`${API_BASE_URL}/PasswordResetRequest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usernameOrEmail: usernameOrEmail.trim() }),
+            });
+            setSubmitted(true);
+        } catch {
+            setError('Could not connect to the server. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -42,31 +55,31 @@ const ResetPassword = () => {
                     {!submitted ? (
                         <>
                             <h2 className="reset-title">Forgot your password?</h2>
-                            <p className="reset-subtitle">Enter your email and we'll send you a reset link.</p>
+                            <p className="reset-subtitle">Enter your username or email and your school admin will be notified to reset it for you.</p>
                             <form onSubmit={handleSubmit}>
                                 <input
-                                    type="email"
-                                    placeholder="Email address"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    placeholder="Username or email"
+                                    value={usernameOrEmail}
+                                    onChange={(e) => setUsernameOrEmail(e.target.value)}
                                     required
                                 />
                                 {error && (
                                     <div className="auth-error-message" role="alert">{error}</div>
                                 )}
-                                <button type="submit" className="submit-btn">
-                                    Send Reset Link
+                                <button type="submit" className="submit-btn" disabled={loading}>
+                                    {loading ? 'Sending...' : 'Request Password Reset'}
                                 </button>
                                 <div className="bottomloginnav">
-                                    <p onClick={() => navigate('/login')}>Back to Login</p>
+                                    <button className="link-btn" onClick={() => navigate('/login')}>Back to Login</button>
                                 </div>
                             </form>
                         </>
                     ) : (
                         <div className="reset-success">
-                            <div className="reset-success-icon">✉️</div>
-                            <h2>Check your inbox</h2>
-                            <p>If <strong>{email}</strong> is registered, you'll receive a reset link shortly.</p>
+                            <div className="reset-success-icon">✅</div>
+                            <h2>Request sent</h2>
+                            <p>Your school admin has been notified. They will reset your password and let you know your new credentials.</p>
                             <button className="submit-btn" onClick={() => navigate('/login')}>
                                 Back to Login
                             </button>

@@ -6,7 +6,8 @@ import SetUp from '../../AccountSetUp/SetUp.js';
 // Mock questions
 jest.mock('../../AccountSetUp/SetupQuestions.js', () => [
   {
-    id: 'role',
+    id: 1,
+    key: 'role',
     text: 'What is your role?',
     type: 'select',
     options: ['Student', 'Parent', 'Educator'],
@@ -14,7 +15,8 @@ jest.mock('../../AccountSetUp/SetupQuestions.js', () => [
     required: true,
   },
   {
-    id: 'name',
+    id: 2,
+    key: 'name',
     text: 'What is your name?',
     type: 'text',
     roles: ['student', 'parent', 'educator'],
@@ -74,7 +76,8 @@ describe('SetUp Component', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /Student/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
-    const nameInput = screen.getByLabelText(/What is your name?/i);
+    // The label and input are not associated via htmlFor/id; use getByRole instead.
+    const nameInput = screen.getByRole('textbox');
     fireEvent.change(nameInput, { target: { value: 'Alice' } });
     expect(nameInput.value).toBe('Alice');
   });

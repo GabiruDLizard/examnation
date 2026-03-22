@@ -280,10 +280,12 @@ export const enrollStudentInClass = async (classId, studentId) => {
     }
 };
 
-export const searchStudents = async (query) => {
+export const searchStudents = async (query, institutionId) => {
     if (!query || query.trim().length < 2) return [];
     try {
-        const response = await authFetch(`/user/search?query=${encodeURIComponent(query.trim())}`);
+        const qs = new URLSearchParams({ query: query.trim() });
+        if (institutionId) qs.set('institutionId', institutionId);
+        const response = await authFetch(`/user/search?${qs}`);
         if (!response.ok) return [];
         return await response.json();
     } catch (error) {

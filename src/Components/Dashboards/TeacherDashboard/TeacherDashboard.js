@@ -21,6 +21,7 @@ import StudentView from "./StudentView";
 import Assignments from "./Assignments";
 import MyTA from "../TAPage/TAPageTeacher";
 import Settings from "../../Settings/Settings";
+import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
 
 
 function heatColor(v) {
@@ -700,6 +701,39 @@ export default function TeacherDashboard() {
     }
   };
 
+  // Breadcrumb trail based on current nav state
+  const getBreadcrumbs = () => {
+    const home = { label: 'Home', onClick: () => handleNavClick('overview') };
+
+    if (selectedClass) {
+      const classesCrumb = { label: 'My Classes', onClick: handleBackToClasses };
+      const classCrumb = { label: selectedClass.name, onClick: handleBackToOverview };
+
+      if (currentView === 'class-overview') {
+        return [home, classesCrumb, { label: selectedClass.name }];
+      }
+      if (currentView === 'students') {
+        return [home, classesCrumb, classCrumb, { label: 'Students' }];
+      }
+      if (currentView === 'analytics') {
+        return [home, classesCrumb, classCrumb, { label: 'Analytics' }];
+      }
+      if (currentView === 'assignments') {
+        return [home, classesCrumb, classCrumb, { label: 'Assignments' }];
+      }
+    }
+
+    switch (activePage) {
+      case 'classes': return [home, { label: 'My Classes' }];
+      case 'assignments': return [home, { label: 'Assignments' }];
+      case 'insights': return [home, { label: 'Insights' }];
+      case 'ta': return [home, { label: 'My TA' }];
+      case 'reports': return [home, { label: 'Reports' }];
+      case 'settings': return [home, { label: 'Settings' }];
+      default: return [home];
+    }
+  };
+
   return (
     <div className="td-root">
       <aside className={`td-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -784,6 +818,7 @@ export default function TeacherDashboard() {
           <h1>{getPageTitle()}</h1>
           <div className="td-user">{getTeacherDisplayName()}</div>
         </header>
+        <Breadcrumb crumbs={getBreadcrumbs()} />
 
         {/* ONLY RENDER PAGE CONTENT - NO DUPLICATE COMPONENTS */}
         {renderPageContent()}

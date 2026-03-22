@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
@@ -76,9 +77,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
         try {
           const enrolls = await getClassEnrollments(classItem.id);
           studentcount = enrolls ? enrolls.length : 0;
-          console.log(`Class ${classItem.name} ID ${classItem.id} has ${studentcount} students.`);
           studentcount = Array.isArray(enrolls) ? enrolls.length : 0;
-          console.log(studentcount);
         } catch (error) {
           console.error('Error fetching class enrollments:', error);
           studentcount = 0;
@@ -130,7 +129,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
   };
 
   const handleClassClick = (classItem) => {
-    console.log('Clicked on class:', classItem.name);
     // Call the parent function to switch views
     if (onClassClick) {
       onClassClick(classItem);
@@ -139,16 +137,25 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
   const handleEditClass = (e, classItem) => {
     e.stopPropagation();
-    console.log('Edit class:', classItem.name);
     toast.info(`Editing ${classItem.name}...`);
   };
 
   const handleDeleteClass = async (e, classItem) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete ${classItem.name}?`)) {
+    const result = await Swal.fire({
+      title: 'Delete class?',
+      text: `"${classItem.name}" and all its data will be permanently removed.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#e2e8f0',
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+    });
+    if (result.isConfirmed) {
       try {
         await deleteTeacherClass(classItem.id);
-        await fetchClasses(); // Refresh the list
+        await fetchClasses();
         toast.success(`${classItem.name} deleted successfully!`);
       } catch (error) {
         console.error('Error deleting class:', error);

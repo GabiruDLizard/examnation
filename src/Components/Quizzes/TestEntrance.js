@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import './TestEntrance.css'; // Add styling if you want
 import { getToken } from '../../utils/tokenUtils';
@@ -8,11 +9,19 @@ const TestEntrance = () => {
   const token = getToken();
   const [selectedQuestionCount, setSelectedQuestionCount] = useState(10); // Default to 10 questions
 
-  const ToExam = () => {
+  const ToExam = async () => {
     if(!token){
-        if(window.confirm("You need to be logged in to take the adaptive test. Proceed to login page?")){
-            navigate('/login');
-        }
+        const result = await Swal.fire({
+            title: 'Not logged in',
+            text: 'You need to be logged in to take the adaptive test.',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#e2e8f0',
+            confirmButtonText: 'Go to login',
+            cancelButtonText: 'Cancel',
+        });
+        if (result.isConfirmed) navigate('/login');
     }
     else{
         // Pass the selected question count to the adaptive test

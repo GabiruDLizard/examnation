@@ -33,7 +33,6 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
         try {
             setLoading(true);
             const assignmentData = await getAssignmentsForClass(selectedClass.classId, currentUserId);
-            console.log('Fetched assignments:', assignmentData);
             setAssignments(assignmentData);
             
             // Fetch submission data for each assignment
@@ -49,7 +48,6 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                 }
             }
             setUserSubmissions(submissionsData);
-            console.log('User submissions:', submissionsData);
             
         } catch (error) {
             console.error('Error fetching assignments:', error);

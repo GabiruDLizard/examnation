@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { BiPlus, BiEdit, BiTrash, BiSave, BiX, BiArrowBack, BiFile, BiTime, BiBarChart, BiBookOpen, BiTarget } from 'react-icons/bi';
 import { updateAssignment, getAssignmentQuestionsById, saveQuestionToAssignment, deleteQuestionFromAssignment, updateQuestionInAssignment } from './TeacherDashboardService';
 import '../Assignments.css';
@@ -49,7 +50,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             const assignmentQuestions = await getAssignmentQuestionsById(assignment.id);
             
             setQuestions(assignmentQuestions || []);
-            console.log('Loaded questions for assignment:', assignment.id, assignmentQuestions);
         } catch (error) {
             console.error('Error loading questions:', error);
             setError(`Failed to load questions: ${error.message}`);
@@ -146,9 +146,17 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
     };
 
     const handleDeleteQuestion = async (questionId) => {
-        if (!window.confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Delete question?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#e2e8f0',
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel',
+        });
+        if (!result.isConfirmed) return;
 
         try {
             setLoading(true);

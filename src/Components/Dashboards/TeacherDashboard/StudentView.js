@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BiSearch, BiFilter, BiPlus, BiUser, BiEnvelope, BiPhone, BiCalendar, BiTrendingUp, BiGridAlt, BiListUl } from 'react-icons/bi';
 import { getTeacherClasses, enrollStudentInClass, searchStudents, getAllEnrolledStudentInfo } from "./TeacherDashboardService";
-import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { getUserIdFromToken, getInstitutionIdFromToken } from '../../../utils/tokenUtils';
 import "../StudentView.css";
 
 export default function StudentView({ teacherInfo, selectedClass, onBack }) {
@@ -488,7 +488,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                                                     if (val.trim().length < 2) { setEnrollResults([]); return; }
                                                     setEnrollSearching(true);
                                                     searchDebounceRef.current = setTimeout(async () => {
-                                                        const results = await searchStudents(val);
+                                                        const results = await searchStudents(val, getInstitutionIdFromToken());
                                                         setEnrollResults(results);
                                                         setEnrollSearching(false);
                                                     }, 300);

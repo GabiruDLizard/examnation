@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { askGPT } from '../../Worker/chat';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
@@ -544,8 +545,18 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
     window.location.reload();
   };
 
-  const cancelTest = () => {
-    if(window.confirm("Are you sure you want to cancel the test? Your progress will be lost.")){
+  const cancelTest = async () => {
+    const result = await Swal.fire({
+      title: 'Cancel test?',
+      text: 'Your progress will be lost.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#e2e8f0',
+      confirmButtonText: 'Yes, cancel test',
+      cancelButtonText: 'Keep going',
+    });
+    if (result.isConfirmed) {
       clearTestData();
       navigate('/testentrance');
     }
@@ -600,7 +611,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
   if (!currentQuestion) {
     return (
       <div className="practicebg">
-        <div>Loading adaptive test...</div>
+        <div role="status" aria-live="polite">Loading adaptive test...</div>
       </div>
     );
   }
