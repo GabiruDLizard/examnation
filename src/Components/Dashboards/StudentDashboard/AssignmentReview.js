@@ -27,7 +27,6 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                 ans.forEach(a => { if (!a.isCorrect) autoExpand[a.questionId] = true; });
                 setExpandedQuestions(autoExpand);
             } catch (err) {
-                console.error('Error loading review data:', err);
             } finally {
                 setLoading(false);
             }

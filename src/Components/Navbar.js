@@ -28,7 +28,6 @@ const Navbar = () => {
                     const data = await response.json();
                     setUser(data);
                 } catch (error) {
-                    console.error(error);
                 }
             }
         };

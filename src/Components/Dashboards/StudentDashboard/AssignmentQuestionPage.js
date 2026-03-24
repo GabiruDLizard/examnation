@@ -70,7 +70,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     const questionData = await getQuestionsByAssignmentId(assignment.id);
                     setQuestions(Array.isArray(questionData) ? questionData : []);
                 } catch (error) {
-                    console.error('Error loading assignment questions:', error);
                     setQuestions([]);
                 } finally {
                     setLoadingQuestions(false);
@@ -118,7 +117,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     });
                 }
             } catch (error) {
-                console.error('Error initializing submission:', error);
             }
         };
         
@@ -201,7 +199,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     answer: answerText
                 });
             } catch (error) {
-                console.error('Error saving to backend:', error);
                 // Continue with local save even if backend fails
             }
             
@@ -318,7 +315,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     answer: answerText
                 });
             } catch (error) {
-                console.error('Error saving to backend:', error);
                 // Continue with local save even if backend fails
             }
 
@@ -400,7 +396,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             const assignmentId = assignment?.id || 'temp-assignment';
             localStorage.removeItem(`assignment-answers-${assignmentId}`);
         } catch (error) {
-            console.error('❌ Error submitting assignment:', error);
             toast.error('Failed to submit assignment. Please try again.');
         }
     };

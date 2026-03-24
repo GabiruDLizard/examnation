@@ -61,7 +61,6 @@ export const analyzeMistakePatterns = async (
         }
     }
 
-    console.log("Mistake Patterns:", mistakePatterns);
     return mistakePatterns;
 };
 

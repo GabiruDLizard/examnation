@@ -58,7 +58,6 @@ const Auth = () => {
                 const data = await response.json();
                 setUser(data);
             } catch (error) {
-                console.error(error);
             }
         };
         if (token) fetchUserData();

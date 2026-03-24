@@ -197,7 +197,6 @@ function StudentDashboard() {
                     const readinessResults = processGroupedAnswers(grouped);
                     setReadinessScores(readinessResults);
                 } catch (readinessError) {
-                    console.error('Error processing readiness:', readinessError);
                     setReadinessScores([]);
                 }
             } else {
@@ -205,7 +204,6 @@ function StudentDashboard() {
             }
 
         } catch (error) {
-            console.error('❌ Critical error fetching data:', error);
             setError(`Failed to load dashboard: ${error.message}`);
         } finally {
             setLoading(false);

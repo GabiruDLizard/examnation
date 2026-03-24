@@ -67,7 +67,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
             setAssignments(teacherAssignments);
         } catch (error) {
-            console.error('Error loading assignments:', error);
             setError('Failed to load assignments');
         } finally {
             setLoading(false);
@@ -79,7 +78,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             setLoading(true);
             setError('');
             
-            console.log('Loading assignment results for assignment ID:', selectedAssignment.id);
             
             // Get detailed assignment data with submission stats
             const assignmentWithStats = await getAssignmentWithSubmissionStats(selectedAssignment.id);
@@ -94,23 +92,19 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             
             for (const submission of submissionData) {
                 try {
-                    console.log('🔄 Processing submission:', submission.id, 'for student:', submission.studentId);
                     
                     // Get student info
                     const studentInfo = await getUserById(submission.studentId);
                     studentsData.push(studentInfo);
-                    console.log('👤 Student info loaded:', studentInfo.firstName, studentInfo.lastName);
                     
                     // Get answers for this submission
                     const answers = await getAnswersBySubmissionId(submission.id);
-                    console.log('📝 Loaded answers for submission', submission.id, ':', answers);
                     
                     enrichedSubmissions.push({
                         ...submission,
                         answers: answers
                     });
                 } catch (error) {
-                    console.warn(`Failed to load data for submission ${submission.id}:`, error);
                     enrichedSubmissions.push(submission);
                 }
             }
@@ -119,7 +113,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             setStudents(studentsData);
             
         } catch (error) {
-            console.error('Error loading assignment results:', error);
             setError('Failed to load assignment results');
         } finally {
             setLoading(false);
@@ -201,14 +194,11 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                 return questionDetails;
             }
         } catch (error) {
-            console.warn('Could not fetch question details for question', questionId, ':', error);
         }
         return null;
     };
 
     const handleViewSubmission = async (submission) => {
-        console.log('👀 Viewing submission:', submission);
-        console.log('📝 Submission answers:', submission.answers);
         
         try {
             setLoadingDetails(true);
@@ -217,12 +207,9 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             // Use the enriched submission data that already has answers loaded
             let details;
             if (submission.answers && submission.answers.length > 0) {
-                console.log('✅ Using pre-loaded answers:', submission.answers);
                 details = submission;
             } else {
-                console.log('🔄 Loading submission details from API...');
                 details = await getSubmissionDetails(submission.id);
-                console.log('📋 Loaded submission details:', details);
             }
             
             // Fetch question details for each answer
@@ -245,7 +232,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             
             setSubmissionDetails(details);
         } catch (error) {
-            console.error('Error loading submission details:', error);
             setError('Failed to load submission details');
         } finally {
             setLoadingDetails(false);
@@ -279,7 +265,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             setGradeFeedback('');
             
         } catch (error) {
-            console.error('Error saving grade:', error);
             setError('Failed to save grade');
         } finally {
             setSavingGrade(false);

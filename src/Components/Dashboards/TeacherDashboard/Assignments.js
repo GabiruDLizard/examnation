@@ -69,10 +69,8 @@ const Assignments = ({
                     });
                     
                     setAssignmentsWithStats(assignmentsWithSubmissionData);
-                    console.log('Fetched assignments with stats:', assignmentsWithSubmissionData);
                     
                 } catch (error) {
-                    console.error('Error fetching assignments:', error);
                     setAssignments([]);
                     setAssignmentsWithStats([]);
                 } finally {
@@ -86,7 +84,6 @@ const Assignments = ({
 
     // Add this useEffect to log when assignments state actually updates
     useEffect(() => {
-        console.log('Assignments state updated:', assignments);
     }, [assignments]);
 
     useEffect(() => {
@@ -111,7 +108,6 @@ const Assignments = ({
                 setRecentAssignments(assignmentsWithStats.slice(0, 6));
                 
             } catch (error) {
-                console.error('Error fetching assignment data:', error);
             } finally {
                 setLoading(false);
             }

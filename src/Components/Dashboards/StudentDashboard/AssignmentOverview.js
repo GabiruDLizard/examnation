@@ -44,13 +44,11 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                         submissionsData[assignment.id] = submission;
                     }
                 } catch (error) {
-                    console.warn(`No submission found for assignment ${assignment.id}:`, error);
                 }
             }
             setUserSubmissions(submissionsData);
             
         } catch (error) {
-            console.error('Error fetching assignments:', error);
             setError('Failed to load assignments');
             setAssignments([]);
         } finally {

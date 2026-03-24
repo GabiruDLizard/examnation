@@ -6,9 +6,6 @@
 // Calculate class-specific readiness progression over time
 export function generateClassReadinessData(classes, studentsData, timeperiods = 8) {
   try {
-    console.log('📊 Generating class readiness data...');
-    console.log('Classes:', classes.map(c => c.name));
-    console.log('Students:', studentsData.length);
     
     // Generate time periods (weeks/sessions)
     const periods = Array.from({ length: timeperiods }, (_, i) => `Week ${i + 1}`);
@@ -37,11 +34,9 @@ export function generateClassReadinessData(classes, studentsData, timeperiods = 
       return dataPoint;
     });
     
-    console.log('Generated chart data:', chartData);
     return chartData;
     
   } catch (error) {
-    console.error('Error generating class readiness data:', error);
     return [];
   }
 }
@@ -85,7 +80,6 @@ export function generateClassColors(classes) {
     classColors[classItem.name] = colorPalette[index % colorPalette.length];
   });
   
-  console.log('Generated class colors:', classColors);
   return classColors;
 }
 

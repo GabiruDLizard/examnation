@@ -176,7 +176,6 @@ export default function TeacherDashboard() {
         
       } catch (err) {
         setError('Failed to load teacher information');
-        console.error('Error loading teacher data:', err);
       } finally {
         setLoading(false);
       }
@@ -236,10 +235,8 @@ export default function TeacherDashboard() {
               });
             }
             
-            console.log(`👥 Class "${classItem.name}": ${studentCount} enrollments`);
           });
         } catch (classError) {
-          console.error(`❌ Error getting students for class ${classItem.name}:`, classError);
           // Continue with other classes even if one fails
         }
       }
@@ -257,7 +254,6 @@ export default function TeacherDashboard() {
         });
       
       if (totalEnrollments > uniqueStudentCount) {
-        console.log(`🔄 Found ${totalEnrollments - uniqueStudentCount} duplicate enrollments (students in multiple classes)`);
       }
       
       setTotalStudentsCount(uniqueStudentCount);
@@ -274,9 +270,7 @@ export default function TeacherDashboard() {
           if (Array.isArray(rows)) allTopicRows.push(...rows);
         }
         setWeakSpots(computeWeakSpots(allTopicRows));
-        console.log('📊 Weak spots computed:', computeWeakSpots(allTopicRows).length, 'topics');
       } catch (wsErr) {
-        console.error('Error loading weak spots:', wsErr);
         setWeakSpots([]);
       } finally {
         setLoadingWeakSpots(false);
@@ -286,7 +280,6 @@ export default function TeacherDashboard() {
       await generateReadinessChartData(classes);
       
     } catch (error) {
-      console.error('❌ Error calculating unique students:', error);
       setTotalStudentsCount(0);
       setActualStudentsData([]);
     } finally {
@@ -306,7 +299,6 @@ export default function TeacherDashboard() {
       setClassColors(colors);
       setTeacherStats(stats);
     } catch (error) {
-      console.error('Error generating chart data:', error);
       setReadinessChartData([]);
       setClassColors({});
       setTeacherStats({});
