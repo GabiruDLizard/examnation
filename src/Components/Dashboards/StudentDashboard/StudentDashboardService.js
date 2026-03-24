@@ -2,7 +2,8 @@ import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { analyzeMistakePatterns } from '../../PerformanceEngine/^PerformanceAnalysis';
 import { abilityEstimate } from '../Charts/ReadinessLogic';
-import { updateStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
+import { updateStudentTopicAbility, getStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
+import { evaluate as mjsEval } from 'mathjs';
 
 // ================================================================
 // ASSIGNMENT QUESTION API FUNCTIONS
@@ -519,13 +520,23 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
         const questions = await getQuestionsByAssignmentId(assignmentId);
         const submittedAnswers = await getAnswersBySubmissionId(submissionId);
 
+        const studentId = getUserIdFromToken();
+
         let totalScore = 0;
         let totalPoints = 0;
         let gradedAnswers = 0;
         let theta = 0;
         const wrongAnswersForTA = [];
-        // Per-topic tracking: { subject: { theta, count } }
+
+        // Seed per-topic thetas from the student's stored cumulative ability so
+        // estimation continues from their current level rather than starting at 0.
+        const existingThetas = studentId
+            ? await getStudentTopicAbility(studentId).catch(() => [])
+            : [];
         const topicThetas = {};
+        existingThetas.forEach(row => {
+            topicThetas[row.topic] = { theta: row.theta, count: row.questionsAnswered || 1 };
+        });
 
         for (const submittedAnswer of submittedAnswers) {
             try {
@@ -592,7 +603,6 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
 
         // Fire-and-forget TA analysis for wrong answers
         if (wrongAnswersForTA.length > 0) {
-            const studentId = getUserIdFromToken();
             analyzeMistakePatterns(
                 wrongAnswersForTA.map(a => a.workingSteps),
                 wrongAnswersForTA.map(a => a.questionText),
@@ -608,17 +618,27 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
             ).catch(() => { /* non-fatal */ });
         }
 
+        // Compute readiness from the updated cumulative topic thetas (weighted average).
+        // This reflects the student's overall ability trajectory, not just this session.
+        const topicValues = Object.values(topicThetas);
+        let readinessTheta = theta; // fallback: overall session theta if no topics
+        if (topicValues.length > 0) {
+            const totalCount = topicValues.reduce((s, t) => s + t.count, 0);
+            readinessTheta = totalCount > 0
+                ? topicValues.reduce((s, t) => s + t.theta * t.count, 0) / totalCount
+                : topicValues.reduce((s, t) => s + t.theta, 0) / topicValues.length;
+        }
+
         const finalResults = {
             totalScore,
             totalPoints,
             percentage: totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0,
             gradedAnswers,
             abilityEstimate: theta,
-            readinessPercentage: Math.max(0, Math.min(100, ((theta + 4) / 8) * 100))
+            readinessPercentage: Math.max(0, Math.min(100, ((readinessTheta + 4) / 8) * 100))
         };
 
         // Save per-topic theta estimates to DB
-        const studentId = getUserIdFromToken();
         if (studentId && Object.keys(topicThetas).length > 0) {
             Object.entries(topicThetas).forEach(([subject, { theta: t, count }]) => {
                 updateStudentTopicAbility(studentId, subject, t, count).catch(() => {});
@@ -662,38 +682,120 @@ const extractFinalAnswer = (studentWork) => {
     return steps.length > 0 ? steps[steps.length - 1].trim() : '';
 };
 
+// Convert a LaTeX expression string to a mathjs-compatible expression string.
+const latexToMathjs = (raw) => {
+    if (!raw) return '';
+    let s = String(raw).trim();
+
+    // Strip outer LaTeX math delimiters
+    s = s.replace(/^\$\$([\s\S]*?)\$\$$/, '$1').trim();
+    s = s.replace(/^\$([\s\S]*?)\$$/, '$1').trim();
+    s = s.replace(/^\\\[([\s\S]*?)\\\]$/, '$1').trim();
+    s = s.replace(/^\\\(([\s\S]*?)\\\)$/, '$1').trim();
+
+    // \frac{num}{den} → (num)/(den)  — repeat to handle nested fractions
+    const expandFrac = (str) =>
+        str.replace(/\\frac\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+            (_, num, den) => `(${num})/(${den})`);
+    let prev;
+    do { prev = s; s = expandFrac(s); } while (s !== prev);
+
+    // \sqrt{a} → sqrt(a)
+    s = s.replace(/\\sqrt\s*\{([^{}]*)\}/g, 'sqrt($1)');
+    s = s.replace(/\\sqrt\s+(\w)/g, 'sqrt($1)');
+
+    // \left( \right) \left[ \right] → ( )
+    s = s.replace(/\\left\s*\(/g, '(').replace(/\\right\s*\)/g, ')');
+    s = s.replace(/\\left\s*\[/g, '(').replace(/\\right\s*\]/g, ')');
+    s = s.replace(/\\left\s*\|/g, 'abs(').replace(/\\right\s*\|/g, ')');
+
+    // x^{2} → x^(2)
+    s = s.replace(/\^\s*\{([^{}]*)\}/g, '^($1)');
+
+    // \cdot \times → *
+    s = s.replace(/\\cdot/g, '*').replace(/\\times/g, '*');
+
+    // \pi → pi,  \infty → Infinity
+    s = s.replace(/\\pi\b/g, 'pi');
+    s = s.replace(/\\infty\b/g, 'Infinity');
+
+    // Remove remaining LaTeX commands (e.g. \left \right \, \! \; etc.)
+    s = s.replace(/\\[a-zA-Z]+/g, '');
+
+    // Remove remaining braces
+    s = s.replace(/[{}]/g, '');
+
+    return s.trim();
+};
+
 const compareAnswers = (studentAnswer, correctAnswer) => {
     if (!studentAnswer || !correctAnswer) return false;
 
-    const normalizeAnswer = (answer) => {
-        return String(answer)
+    const normalizeStr = (answer) =>
+        String(answer)
             .toLowerCase()
             .trim()
-            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-            .replace(/[()]/g, '') // Remove parentheses
-            .replace(/\$/g, '') // Remove dollar signs
-            .replace(/,/g, '') // Remove commas
-            .replace(/[^\w\s.-]/g, ''); // Remove special characters except word chars, spaces, dots, hyphens
-    };
+            .replace(/\s+/g, ' ')
+            .replace(/[()]/g, '')
+            .replace(/\$/g, '')
+            .replace(/,/g, '')
+            .replace(/[^\w\s.-]/g, '');
 
-    const normalizedStudent = normalizeAnswer(studentAnswer);
-    const normalizedCorrect = normalizeAnswer(correctAnswer);
+    const normStudent = normalizeStr(studentAnswer);
+    const normCorrect = normalizeStr(correctAnswer);
 
-    // First try exact match after normalization
-    if (normalizedStudent === normalizedCorrect) {
-        return true;
+    // 1. Exact match after normalization
+    if (normStudent === normCorrect) return true;
+
+    // 2. Pure numeric comparison
+    const sNum = parseFloat(normStudent);
+    const cNum = parseFloat(normCorrect);
+    if (!isNaN(sNum) && !isNaN(cNum)) {
+        return Math.abs(sNum - cNum) < 0.001;
     }
 
-    // Try numeric comparison if both look like numbers
-    const studentNum = parseFloat(normalizedStudent);
-    const correctNum = parseFloat(normalizedCorrect);
-    
-    if (!isNaN(studentNum) && !isNaN(correctNum)) {
-        // Allow small floating point differences
-        return Math.abs(studentNum - correctNum) < 0.001;
-    }
+    // 3. Math-aware symbolic/numeric comparison via mathjs
+    try {
+        const sExpr = latexToMathjs(studentAnswer);
+        const cExpr = latexToMathjs(correctAnswer);
+        if (!sExpr || !cExpr) return false;
 
-    return false;
+        // Detect standalone single-letter variables (exclude mathjs constants e, i, E)
+        const CONSTANTS = new Set(['e', 'i', 'E', 'I']);
+        const singleLetterRe = /\b([a-zA-Z])\b/g;
+        const vars = new Set();
+        for (const m of (sExpr + ' ' + cExpr).matchAll(singleLetterRe)) {
+            if (!CONSTANTS.has(m[1])) vars.add(m[1]);
+        }
+
+        // Remove any chars that are part of known function names (sqrt, sin, cos, pi, …)
+        const knownFuncs = ['sqrt', 'sin', 'cos', 'tan', 'log', 'abs', 'exp', 'pi', 'Infinity'];
+        knownFuncs.forEach(fn => [...fn].forEach(ch => vars.delete(ch)));
+
+        const varList = [...vars];
+        const probeValues = [2, 3, 5, 7, 0.7, -1];
+
+        const probePoints = varList.length === 0
+            ? [{}]
+            : probeValues.map(v => Object.fromEntries(varList.map(vn => [vn, v])));
+
+        let matches = 0;
+        for (const scope of probePoints) {
+            try {
+                const sv = mjsEval(sExpr, scope);
+                const cv = mjsEval(cExpr, scope);
+                if (typeof sv !== 'number' || typeof cv !== 'number') continue;
+                if (!isFinite(sv) || !isFinite(cv)) continue;
+                if (Math.abs(sv - cv) > 1e-6) return false;
+                matches++;
+            } catch (_) { /* singularity at this probe point — skip */ }
+        }
+
+        // Require at least 2 successful probe evaluations that all agreed
+        return matches >= 2;
+    } catch (_) {
+        return false;
+    }
 };
 
 const updateAnswerGrading = async (answerId, isCorrect, pointsEarned) => {

@@ -51,6 +51,20 @@ const PracticeArea = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const block = (e) => e.preventDefault();
+    document.addEventListener('copy', block);
+    document.addEventListener('cut', block);
+    document.addEventListener('paste', block);
+    document.addEventListener('contextmenu', block);
+    return () => {
+      document.removeEventListener('copy', block);
+      document.removeEventListener('cut', block);
+      document.removeEventListener('paste', block);
+      document.removeEventListener('contextmenu', block);
+    };
+  }, []);
+
+  useEffect(() => {
     // Start timer when component mounts
     setStartTime(Date.now());
     setIsTimerRunning(true);

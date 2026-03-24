@@ -76,7 +76,7 @@ const ExamPage = () => {
             </div>
             <div className="exam-layout">
 
-                {/* Sidebar */}h
+                {/* Sidebar */}
                 <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
                     {/* Move the toggle button inside the sidebar */}
                     <button className="sidebar-toggle-inside" onClick={toggleSidebar}>

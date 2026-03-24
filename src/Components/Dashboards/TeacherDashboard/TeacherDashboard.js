@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome, BiMenu, BiX } from "react-icons/bi";
 import "../TeacherDashboard.css";
@@ -84,8 +84,46 @@ export default function TeacherDashboard() {
   const [teacherStats, setTeacherStats] = useState({});
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
-  const [heatmapData, setHeatmapData] = useState({ topics: [], students: [], grid: [] });
+  const MOCK_HEATMAP = {
+    topics: ['Algebra', 'Fractions', 'Geometry', 'Linear Equations', 'Probability', 'Statistics', 'Trigonometry', 'Quadratics', 'Polynomials', 'Inequalities', 'Ratios & Proportions', 'Number Theory', 'Sequences & Series', 'Matrices', 'Vectors'],
+    students: ['Alice B.', 'Marcus T.', 'Jordan L.', 'Priya K.', 'Dylan R.', 'Sofia M.', 'Ethan W.', 'Chloe N.', 'Isaiah F.', 'Maya R.', 'Lucas G.', 'Zara H.'],
+    grid: [
+      // Algebra
+      [0.82, 0.91, 0.55, 0.73, 0.40, 0.88, 0.67, 0.79, 0.91, 0.44, 0.58, 0.83],
+      // Fractions
+      [0.60, 0.48, 0.79, 0.85, 0.30, 0.67, 0.52, 0.88, 0.41, 0.76, 0.93, 0.35],
+      // Geometry
+      [0.75, 0.83, 0.91, 0.52, 0.88, 0.44, 0.70, 0.61, 0.55, 0.89, 0.38, 0.77],
+      // Linear Equations
+      [0.90, 0.72, 0.38, 0.61, 0.77, 0.95, 0.84, 0.43, 0.68, 0.55, 0.72, 0.60],
+      // Probability
+      [0.45, 0.55, 0.68, null, 0.82, 0.33, 0.91, 0.50, 0.74, null, 0.48, 0.86],
+      // Statistics
+      [0.33, 0.76, 0.50, 0.44, null, 0.71, 0.38, 0.92, 0.60, 0.55, 0.80, null],
+      // Trigonometry
+      [0.20, 0.35, 0.88, 0.59, 0.65, 0.25, 0.44, 0.70, 0.32, 0.81, 0.55, 0.42],
+      // Quadratics
+      [0.78, 0.62, 0.44, 0.91, 0.55, 0.80, 0.35, 0.67, 0.88, 0.50, 0.41, 0.93],
+      // Polynomials
+      [0.55, 0.70, 0.33, 0.48, 0.88, 0.61, 0.77, 0.39, 0.52, 0.83, 0.66, 0.28],
+      // Inequalities
+      [0.88, 0.41, 0.75, 0.60, 0.35, 0.92, 0.53, 0.80, 0.44, 0.68, 0.30, 0.75],
+      // Ratios & Proportions
+      [0.65, 0.88, 0.57, null, 0.72, 0.48, 0.83, 0.61, null, 0.77, 0.52, 0.90],
+      // Number Theory
+      [0.40, 0.55, 0.80, 0.33, 0.91, 0.62, 0.48, 0.75, 0.57, 0.38, 0.84, 0.66],
+      // Sequences & Series
+      [0.30, 0.44, 0.66, 0.78, null, 0.50, 0.62, 0.35, 0.89, 0.47, null, 0.71],
+      // Matrices
+      [0.22, 0.60, 0.48, 0.55, 0.40, 0.35, 0.70, 0.28, 0.63, 0.44, 0.55, 0.38],
+      // Vectors
+      [0.50, 0.38, 0.72, 0.44, 0.60, 0.28, 0.55, 0.83, 0.40, 0.65, 0.35, 0.78],
+    ],
+  };
+  const [heatmapData, setHeatmapData] = useState(MOCK_HEATMAP);
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
+  const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
+  const heatmapRef = useRef(null);
   const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
   const [weakSpots, setWeakSpots] = useState([]);
   const [loadingWeakSpots, setLoadingWeakSpots] = useState(false);
@@ -260,7 +298,7 @@ export default function TeacherDashboard() {
   // Function to generate readiness chart data from real API data
   const generateReadinessChartData = async (classes) => {
     try {
-      const chartData = await getTeacherReadinessChartData(userId, 8);
+      const chartData = await getTeacherReadinessChartData(userId, 30);
       const colors = generateClassColors(classes);
       const stats = calculateTeacherStats(chartData);
 
@@ -495,7 +533,14 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="panel panel-small">
-          <div className="panel-title">Topic Mastery by Student</div>
+          <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            Topic Mastery by Student
+            {heatmapData.topics.length > 0 && (
+              <button onClick={() => setHeatmapModalOpen(true)} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', color: '#374151' }}>
+                Expand
+              </button>
+            )}
+          </div>
           {loadingHeatmap ? (
             <div className="loading-indicator">Loading heatmap...</div>
           ) : heatmapData.topics.length === 0 ? (
@@ -503,19 +548,29 @@ export default function TeacherDashboard() {
               No topic data yet. Students need to complete adaptive tests or assignments for this class.
             </div>
           ) : (
-            <div className="heatmap" style={{ overflowX: 'auto' }}>
-              {/* Column headers = student names */}
-              <div style={{ display: 'flex', marginLeft: '140px', marginBottom: '4px' }}>
-                {heatmapData.students.map((name, i) => (
-                  <div key={i} style={{ width: 32, fontSize: '10px', color: '#666', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>
-                    {name.split(' ')[0]}
-                  </div>
-                ))}
-              </div>
-              <div className="heatmap-label-column" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div className="heatmap" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '260px' }}>
+              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
+
+                {/* Header row: empty label cell + rotated student names */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '4px' }}>
+                  <div style={{ width: 136, flexShrink: 0 }} />
+                  {heatmapData.students.map((name, i) => (
+                    <div key={i} style={{ width: 28, flexShrink: 0, display: 'flex', justifyContent: 'center', overflow: 'visible' }}>
+                      <div style={{
+                        fontSize: '10px', color: '#555', whiteSpace: 'nowrap',
+                        transform: 'rotate(-45deg)', transformOrigin: 'bottom center',
+                        maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }} title={name}>
+                        {name.split(' ')[0]}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Data rows */}
                 {heatmapData.topics.map((topic, rIdx) => (
                   <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div className="heatmap-label" style={{ width: '136px', fontSize: '11px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }} title={topic}>
+                    <div style={{ width: 136, fontSize: '11px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }} title={topic}>
                       {topic}
                     </div>
                     {heatmapData.grid[rIdx].map((cell, cIdx) => (
@@ -523,10 +578,7 @@ export default function TeacherDashboard() {
                         key={cIdx}
                         className="heatmap-cell"
                         style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 4,
-                          flexShrink: 0,
+                          width: 28, height: 28, borderRadius: 4, flexShrink: 0,
                           background: cell === null ? '#e8e8e8' : heatColor(cell),
                           cursor: 'default'
                         }}
@@ -823,6 +875,67 @@ export default function TeacherDashboard() {
         {/* ONLY RENDER PAGE CONTENT - NO DUPLICATE COMPONENTS */}
         {renderPageContent()}
       </main>
+
+      {/* Heatmap expanded modal */}
+      {heatmapModalOpen && (
+        <div onClick={() => setHeatmapModalOpen(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#fff', borderRadius: 12, padding: '24px',
+            maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: '16px' }}>Topic Mastery by Student</div>
+              <button onClick={() => setHeatmapModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>✕</button>
+            </div>
+
+            {/* Header row */}
+            <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', marginBottom: '6px' }}>
+                <div style={{ width: 180, flexShrink: 0 }} />
+                {heatmapData.students.map((name, i) => (
+                  <div key={i} style={{ width: 40, flexShrink: 0, display: 'flex', justifyContent: 'center', overflow: 'visible' }}>
+                    <div style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', transform: 'rotate(-45deg)', transformOrigin: 'bottom center' }}>
+                      {name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Data rows */}
+              {heatmapData.topics.map((topic, rIdx) => (
+                <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: 180, fontSize: '12px', color: '#444', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                    {topic}
+                  </div>
+                  {heatmapData.grid[rIdx].map((cell, cIdx) => (
+                    <div key={cIdx} style={{
+                      width: 40, height: 40, borderRadius: 6, flexShrink: 0,
+                      background: cell === null ? '#e8e8e8' : heatColor(cell),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', color: '#fff', fontWeight: 600,
+                    }}
+                      title={cell === null ? `${heatmapData.students[cIdx]} — no data` : `${heatmapData.students[cIdx]} · ${topic}: ${Math.round(cell * 100)}%`}
+                    >
+                      {cell !== null ? `${Math.round(cell * 100)}%` : ''}
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              {/* Legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '11px', color: '#666' }}>
+                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.1) }} /> Low
+                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.5), marginLeft: 8 }} /> Mid
+                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.9), marginLeft: 8 }} /> High
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

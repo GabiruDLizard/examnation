@@ -102,9 +102,9 @@ export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
     }
 };
 
-export const getTeacherReadinessChartData = async (teacherId, weeksBack = 8) => {
+export const getTeacherReadinessChartData = async (teacherId, daysBack = 30) => {
     try {
-        const response = await authFetch(`/Readiness/teacher/${teacherId}/chart-data?weeksBack=${weeksBack}`);
+        const response = await authFetch(`/Readiness/teacher/${teacherId}/chart-data?daysBack=${daysBack}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

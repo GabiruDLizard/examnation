@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 import './Settings.css';
+import { ConfirmOldPassword } from './confirmOldPswd';
 
 const Settings = () => {
     const userId = getUserIdFromToken();
@@ -12,6 +13,7 @@ const Settings = () => {
         lastName: '',
         email: '',
         username: '',
+        role: '',
     });
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,6 +33,7 @@ const Settings = () => {
                     lastName: data.lastName || '',
                     email: data.email || '',
                     username: data.username || '',
+                    role: data.role || '',
                 });
             } catch (err) {
                 setErrorMsg('Could not load your details. Please try again.');
@@ -60,6 +63,14 @@ const Settings = () => {
             setErrorMsg('Passwords do not match.');
             return;
         }
+        let currentPassword = null;
+        if(newPassword && newPassword === confirmPassword) {
+            currentPassword = await ConfirmOldPassword();
+            if (!currentPassword) {
+                setErrorMsg('Password confirmation cancelled. Changes not saved.');
+                return;
+            }
+        }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(form.email)) {
@@ -74,7 +85,8 @@ const Settings = () => {
                 LastName: form.lastName,
                 Email: form.email,
                 Username: form.username,
-                ...(newPassword ? { PasswordHash: newPassword } : {}),
+                Role: form.role,
+                ...(newPassword ? { PasswordHash: newPassword, CurrentPassword: currentPassword } : {}),
             };
             const res = await authFetch(`/user/${userId}`, {
                 method: 'PUT',

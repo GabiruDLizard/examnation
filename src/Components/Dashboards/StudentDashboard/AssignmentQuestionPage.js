@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { useNavigate, useParams } from 'react-router-dom';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
@@ -39,6 +40,20 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const [loadingQuestions, setLoadingQuestions] = useState(!preloadedQuestions);
     
     // Only load questions if not preloaded
+    useEffect(() => {
+        const block = (e) => e.preventDefault();
+        document.addEventListener('copy', block);
+        document.addEventListener('cut', block);
+        document.addEventListener('paste', block);
+        document.addEventListener('contextmenu', block);
+        return () => {
+            document.removeEventListener('copy', block);
+            document.removeEventListener('cut', block);
+            document.removeEventListener('paste', block);
+            document.removeEventListener('contextmenu', block);
+        };
+    }, []);
+
     useEffect(() => {
         if (preloadedQuestions?.length > 0) {
             // Questions already loaded, no need to fetch
@@ -91,7 +106,17 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 }
 
                 setSubmission(existingSubmission);
-                setIsSubmitted(existingSubmission.status === 'submitted');
+                const alreadySubmitted = existingSubmission.status === 'submitted' || existingSubmission.status === 'graded';
+                setIsSubmitted(alreadySubmitted);
+                // Re-hydrate results screen from stored grade when re-entering a submitted assignment
+                if (alreadySubmitted && existingSubmission.grade != null) {
+                    setGradingResult({
+                        percentage: existingSubmission.grade,
+                        totalScore: existingSubmission.grade,
+                        totalPoints: 100,
+                        gradedAnswers: null,
+                    });
+                }
             } catch (error) {
                 console.error('Error initializing submission:', error);
             }
@@ -326,11 +351,22 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     };
 
     const submitAssignment = async () => {
-        // Check if past deadline
         if (isPastDeadline) {
             toast.error('Cannot submit assignment: deadline has passed.');
             return;
         }
+
+        const { isConfirmed } = await Swal.fire({
+            title: 'Submit assignment?',
+            text: 'You will not be able to edit your answers after submitting.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, submit',
+            cancelButtonText: 'Go back',
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#6b7280',
+        });
+        if (!isConfirmed) return;
 
         // Final save of current answer
         await saveAnswer();
@@ -341,6 +377,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
             setSubmission(submittedSubmission);
             setIsSubmitted(true);
+            toast.success('Assignment submitted!');
 
             // Grade and save readiness
             try {
@@ -349,10 +386,8 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
                 const classId = selectedClass?.classId || selectedClass?.id || assignment?.classId;
                 if (classId) {
-                    // Use grade percentage (not IRT theta) for class readiness — IRT starts at 0
-                    // so short assignments always produce ~50%, masking real class differences.
                     await recordStudentReadiness(currentUserId, classId, {
-                        readinessPercentage: Math.round(result.percentage * 10) / 10,
+                        readinessPercentage: Math.round(result.readinessPercentage * 10) / 10,
                         questionsAnswered: result.gradedAnswers,
                         correctAnswers: Math.round((result.percentage / 100) * result.gradedAnswers),
                         studyTimeMinutes: 0,
@@ -398,45 +433,56 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         <MathJaxContext version={3} config={mathJaxConfig}>
             <div className="assignment-question-page">
                 {/* Loading State */}
-                {/* Results screen — shown after submission */}
-                {isSubmitted && gradingResult ? (
+                {/* Results screen — shown any time the assignment is submitted */}
+                {isSubmitted ? (
                     <div className="results-screen">
                         <div className="results-header">
                             <BiCheckCircle className="results-icon" />
-                            <h2>Assignment Submitted!</h2>
+                            <h2>Assignment Submitted</h2>
                             <p>{assignment?.title}</p>
                         </div>
 
-                        <div className="results-score-card">
-                            <div className="score-percentage">
-                                {Math.round(gradingResult.percentage)}%
-                            </div>
-                            <div className="score-points">
-                                {gradingResult.totalScore} / {gradingResult.totalPoints} points
-                            </div>
-                            <div className={`letter-grade grade-${
-                                gradingResult.percentage >= 90 ? 'a' :
-                                gradingResult.percentage >= 80 ? 'b' :
-                                gradingResult.percentage >= 70 ? 'c' :
-                                gradingResult.percentage >= 60 ? 'd' : 'f'
-                            }`}>
-                                {gradingResult.percentage >= 90 ? 'A' :
-                                 gradingResult.percentage >= 80 ? 'B' :
-                                 gradingResult.percentage >= 70 ? 'C' :
-                                 gradingResult.percentage >= 60 ? 'D' : 'F'}
-                            </div>
-                        </div>
+                        {gradingResult && (
+                            <>
+                                <div className="results-score-card">
+                                    <div className="score-percentage">
+                                        {Math.round(gradingResult.percentage)}%
+                                    </div>
+                                    {gradingResult.totalPoints === 100 ? (
+                                        // Re-entry: only grade percentage available
+                                        <div className="score-points">Grade on file</div>
+                                    ) : (
+                                        <div className="score-points">
+                                            {gradingResult.totalScore} / {gradingResult.totalPoints} points
+                                        </div>
+                                    )}
+                                    <div className={`letter-grade grade-${
+                                        gradingResult.percentage >= 90 ? 'a' :
+                                        gradingResult.percentage >= 80 ? 'b' :
+                                        gradingResult.percentage >= 70 ? 'c' :
+                                        gradingResult.percentage >= 60 ? 'd' : 'f'
+                                    }`}>
+                                        {gradingResult.percentage >= 90 ? 'A' :
+                                         gradingResult.percentage >= 80 ? 'B' :
+                                         gradingResult.percentage >= 70 ? 'C' :
+                                         gradingResult.percentage >= 60 ? 'D' : 'F'}
+                                    </div>
+                                </div>
 
-                        <div className="results-stats">
-                            <div className="results-stat">
-                                <span className="stat-label">Questions Graded</span>
-                                <span className="stat-value">{gradingResult.gradedAnswers}</span>
-                            </div>
-                            <div className="results-stat">
-                                <span className="stat-label">Questions Total</span>
-                                <span className="stat-value">{questions.length}</span>
-                            </div>
-                        </div>
+                                {gradingResult.gradedAnswers != null && (
+                                    <div className="results-stats">
+                                        <div className="results-stat">
+                                            <span className="stat-label">Questions Graded</span>
+                                            <span className="stat-value">{gradingResult.gradedAnswers}</span>
+                                        </div>
+                                        <div className="results-stat">
+                                            <span className="stat-label">Questions Total</span>
+                                            <span className="stat-value">{questions.length}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
 
                         <button
                             className="btn-primary"

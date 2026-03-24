@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BiHome, BiBookOpen, BiBarChart, BiClipboard,
   BiTrendingUp, BiCog, BiLogOut, BiPlay, BiCheckCircle,
-  BiTime, BiBullseye, BiMenu, BiX
+  BiTime, BiBullseye, BiMenu, BiX, BiBrain
 } from 'react-icons/bi';
 import '../StudentDashboard.css';
 import { getStudentAnswers } from './StudentDashboardService.js';
@@ -583,7 +583,7 @@ function StudentDashboard() {
 
         switch (activePage) {
             case 'classes': return [home, { label: 'My Classes' }];
-            case 'ta': return [home, { label: 'Readiness' }];
+            case 'ta': return [home, { label: 'My TA' }];
             case 'settings': return [home, { label: 'Settings' }];
             default: return [home];
         }
@@ -640,8 +640,8 @@ function StudentDashboard() {
                         className="sd-nav-item"
                         onClick={() => handleNavClick('ta')}
                     >
-                        <BiBullseye style={{ marginRight: '8px', fontSize: '18px'}} />
-                        Readiness
+                        <BiBrain style={{ marginRight: '8px', fontSize: '18px'}} />
+                        My TA
                     </button>
                     <button
                         className={`sd-nav-item ${activePage === 'settings' ? 'active' : ''}`}

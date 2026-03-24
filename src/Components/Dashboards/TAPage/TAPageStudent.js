@@ -240,8 +240,13 @@ export default function MyTA() {
     }, [studentId]);
 
     const handleStartCurated = () => {
-        localStorage.setItem('curatedQuizIds', JSON.stringify(curated.questionIds));
-        navigate('/exampage');
+        navigate('/adaptivetest', {
+            state: {
+                curatedQuizIds: curated.questionIds,
+                focusTopics: curated.focusTopics,
+                questionCount: curated.questionIds.length,
+            },
+        });
     };
 
     // Top 3 most frequent (topic, mistakeType) pairs for the Focus section
@@ -272,7 +277,7 @@ export default function MyTA() {
                 {/* ── Header ── */}
                 <div className="ta-header">
                     <div>
-                        <h1 className="ta-title">My Learning Assistant</h1>
+                        <h1 className="ta-title">My TA</h1>
                         {hasData && (
                             <p className="ta-subtitle">
                                 {mistakes.length} mistake{mistakes.length !== 1 ? 's' : ''} analyzed

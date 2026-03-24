@@ -27,6 +27,11 @@ const AdaptiveTest = () => {
   
   // Get question count from navigation state or default to 10
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
+  // When launched from the TA page, restrict to the curated question IDs
+  const curatedIds = location.state?.curatedQuizIds;
+  const questionPool = curatedIds?.length
+    ? questions.filter(q => curatedIds.includes(q['Question ID']))
+    : questions;
   // Marks-based scoring: score = marks × paperWeight
   const PAPER_WEIGHTS = { Easy: 1.0, Medium: 1.5, Hard: 2.0 };
   const DEFAULT_MARKS  = { Easy: 2,   Medium: 3,   Hard: 5   };
@@ -74,6 +79,20 @@ const AdaptiveTest = () => {
 
   // Initialize test
   useEffect(() => {
+    const block = (e) => e.preventDefault();
+    document.addEventListener('copy', block);
+    document.addEventListener('cut', block);
+    document.addEventListener('paste', block);
+    document.addEventListener('contextmenu', block);
+    return () => {
+      document.removeEventListener('copy', block);
+      document.removeEventListener('cut', block);
+      document.removeEventListener('paste', block);
+      document.removeEventListener('contextmenu', block);
+    };
+  }, []);
+
+  useEffect(() => {
     if(!token) {
       navigate('/login');
       return;
@@ -81,6 +100,11 @@ const AdaptiveTest = () => {
     else{
 
     const initializeTest = () => {
+      // Curated sessions always start fresh — don't restore an unrelated saved test
+      if (curatedIds?.length) {
+        localStorage.removeItem('adaptiveTest');
+      }
+
       // Check if there's a saved test in localStorage
       const savedTest = localStorage.getItem('adaptiveTest');
 
@@ -153,8 +177,8 @@ const AdaptiveTest = () => {
   // Get question whose score is closest to targetScore, excluding already-seen questions
   const getQuestionAtScore = (score, seenIds = usedQuestionIds) => {
     // Filter out seen questions; fall back to full pool only if exhausted
-    const available = questions.filter(q => !seenIds.has(q['Question ID']));
-    const pool = available.length > 0 ? available : questions;
+    const available = questionPool.filter(q => !seenIds.has(q['Question ID']));
+    const pool = available.length > 0 ? available : questionPool;
 
     const scored = pool.map(q => ({ q, dist: Math.abs(getQuestionScore(q) - score) }));
     scored.sort((a, b) => a.dist - b.dist);
