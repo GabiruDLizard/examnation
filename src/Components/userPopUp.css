@@ -1,0 +1,40 @@
+.user-popup {
+    position: absolute;
+    top: 60px;
+    right: 32px;
+    background: #fff;
+    border: 1px solid #b2ebf2;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    padding: 24px 32px 16px 32px;
+    z-index: 1000;
+    min-width: 220px;
+}
+.user-popup-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.user-popup-content {
+    margin-bottom: 18px;
+    text-align: left;
+    color: black;
+}
+.user-popup-logout {
+    width: 100%;
+    padding: 10px 0;
+    background: #00796b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.user-popup-logout:hover {
+    background: #004d40;
+}

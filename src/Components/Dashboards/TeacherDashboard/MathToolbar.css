@@ -1,0 +1,155 @@
+/* ── Wrap ──────────────────────────────────────────────── */
+.math-toolbar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── Textarea (when used alongside toolbar) ────────────── */
+.math-textarea-field {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+    color: #1e293b;
+    background: #fff;
+    line-height: 1.55;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.math-textarea-field:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+/* ── Toggle row ────────────────────────────────────────── */
+.math-toolbar-toggle-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.math-toolbar-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+}
+.math-toolbar-toggle:hover,
+.math-toolbar-toggle.open {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
+
+.math-toolbar-toggle-icon {
+    font-size: 0.9rem;
+}
+.math-toolbar-toggle-chevron {
+    font-size: 0.6rem;
+    color: #94a3b8;
+}
+
+/* ── Symbol panel ──────────────────────────────────────── */
+.math-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-top: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    animation: toolbar-slide-in 0.12s ease;
+}
+
+@keyframes toolbar-slide-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.math-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding-right: 12px;
+    border-right: 1px solid #e2e8f0;
+}
+.math-toolbar-group:last-child {
+    border-right: none;
+    padding-right: 0;
+}
+
+.math-toolbar-group-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin-right: 5px;
+    white-space: nowrap;
+}
+
+.math-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 7px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.08s;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.math-toolbar-btn:hover {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(99,102,241,0.12);
+}
+.math-toolbar-btn:active {
+    background: #e0e7ff;
+    transform: translateY(0);
+}
+
+/* ── Preview panel ─────────────────────────────────────── */
+.math-preview {
+    margin-top: 6px;
+    padding: 10px 13px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0c4a6e;
+    min-height: 36px;
+}
+.math-preview-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #7dd3fc;
+    margin-bottom: 5px;
+}

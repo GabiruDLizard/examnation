@@ -1,8 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
-
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+// Smoke test — verify App module loads without throwing.
+// Route-level and component tests live in the individual test files.
+it('App module imports without throwing', () => {
+    expect(() => require('./App')).not.toThrow();
 });
