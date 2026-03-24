@@ -26,7 +26,6 @@ const LandingPageAuth = () => {
             return;
           }
         } catch (error) {
-          console.error(error);
           removeToken();
         }
       }

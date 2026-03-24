@@ -43,7 +43,6 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                     });
                     
                 } catch (error) {
-                    console.error('Error fetching class data:', error);
                     setAssignments([]);
                 } finally {
                     setLoading(false);
@@ -109,7 +108,6 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                 onNavigate('progress');
                 break;
             default:
-                console.log(`Navigate to ${cardId}`);
         }
     };
 

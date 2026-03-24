@@ -122,7 +122,6 @@ const PracticeArea = () => {
         setHint(response);
         setHintload(false);
     } catch (error) {
-        console.error('Error fetching GPT response:', error);
         setHintload(false);
     }
   };
@@ -140,7 +139,6 @@ const PracticeArea = () => {
         setFeedback(response);
         setLoading(false);
     } catch (error) {
-        console.error('Error fetching GPT response:', error);
         setLoading(false);
     }
   };

@@ -47,19 +47,14 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
     // Load assignment data from localStorage immediately during initialization
     const [assignmentData, setAssignmentData] = useState(() => {
         const savedAssignmentData = localStorage.getItem('currentAssignmentData');
-        console.log('📦 Loading assignment data from localStorage:', savedAssignmentData);
         if (savedAssignmentData) {
             try {
                 const parsed = JSON.parse(savedAssignmentData);
-                console.log('✅ Parsed assignment data:', parsed);
-                console.log('🔍 Assignment ID found:', parsed?.assignmentId);
                 return parsed;
             } catch (error) {
-                console.error('❌ Error parsing assignment data from localStorage:', error);
                 return null;
             }
         }
-        console.log('⚠️ No assignment data found in localStorage');
         return null;
     });
     
@@ -86,8 +81,6 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         // Reset form for next question
         handleReset();
         
-        console.log('Question added to array:', newQuestion);
-        console.log('Total questions:', questionsArray.length + 1);
     };
 
     const handleSubmit = async (e) => {
@@ -120,11 +113,9 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                 completedAt: new Date().toISOString()
             };
             
-            console.log('Complete assignment for submission:', completeAssignment);
             
             // Call the real API to create complete assignment with questions
             const result = await createCompleteAssignment(assignmentData, finalQuestionsArray);
-            console.log('✅ Assignment created successfully:', result);
             
             // Clear localStorage
             localStorage.removeItem('currentAssignmentData');
@@ -137,7 +128,6 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             }
             
         } catch (error) {
-            console.error('Error creating complete assignment:', error);
             toast.error('Error creating assignment. Please try again.');
         } finally {
             setIsSubmitting(false);

@@ -51,7 +51,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             
             setQuestions(assignmentQuestions || []);
         } catch (error) {
-            console.error('Error loading questions:', error);
             setError(`Failed to load questions: ${error.message}`);
             setQuestions([]); // Set empty array on error
         } finally {
@@ -77,7 +76,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                 onAssignmentUpdated();
             }
         } catch (error) {
-            console.error('Error updating assignment:', error);
             setError('Failed to update assignment');
         } finally {
             setLoading(false);
@@ -116,7 +114,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             setIsAddingQuestion(false);
             setSuccess('Question added successfully!');
         } catch (error) {
-            console.error('Error adding question:', error);
             setError('Failed to add question');
         } finally {
             setLoading(false);
@@ -138,7 +135,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             setEditingQuestion(null);
             setSuccess('Question updated successfully!');
         } catch (error) {
-            console.error('Error updating question:', error);
             setError('Failed to update question');
         } finally {
             setLoading(false);
@@ -166,7 +162,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             await loadQuestions();
             setSuccess('Question deleted successfully!');
         } catch (error) {
-            console.error('Error deleting question:', error);
             setError('Failed to delete question');
         } finally {
             setLoading(false);

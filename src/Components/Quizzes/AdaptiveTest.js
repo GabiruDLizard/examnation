@@ -332,7 +332,6 @@ const AdaptiveTest = () => {
       setHint(response);
       setHintload(false);
     } catch (error) {
-      console.error('Error fetching GPT response:', error);
       setHintload(false);
     }
   };
@@ -449,7 +448,6 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       
       setLoading(false);
     } catch (error) {
-      console.error('Error processing submission:', error);
       setLoading(false);
     }
   };
@@ -497,7 +495,6 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       // Save to API
       saveTestResults(apiPayload)
         .then(async response => {
-          console.log('✅ Test results saved to database:', response);
 
           if (wrongAnswers.length > 0) {
             try {
@@ -515,12 +512,10 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
                 }
               );
             } catch (error) {
-              console.error('❌ Error analyzing mistakes:', error);
             }
           }
         })
         .catch(error => {
-          console.error('Error saving test results:', error);
         });
       
       const userProgress = {
@@ -534,10 +529,8 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
 
       try {
         const result = await saveUserProgress(userProgress);
-        console.log('Progress saved:', result);
     // result will contain: { message, progress, action }
       } catch (error) {
-        console.error('Failed to save progress:', error.message);
       }
 
       const finalResults = {

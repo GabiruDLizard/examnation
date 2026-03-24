@@ -37,7 +37,6 @@ export default function StudentProfile({ studentId, studentName, classId, onBack
                     setSubmissions(Array.isArray(data) ? data : []);
                 }
             } catch (err) {
-                console.error('Error fetching student profile:', err);
                 setError(err.message);
             } finally {
                 setLoading(false);
