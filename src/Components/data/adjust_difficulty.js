@@ -42,4 +42,3 @@ const adjusted = questions.map(q => ({
 
 const outPath = path.join(__dirname, 'generated_bgcs_questions_200_named_adjusted.json');
 fs.writeFileSync(outPath, JSON.stringify(adjusted, null, 2));
-console.log('Difficulties adjusted and saved as generated_bgcs_questions_200_named_adjusted.json');

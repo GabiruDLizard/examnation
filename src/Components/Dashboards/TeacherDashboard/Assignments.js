@@ -7,13 +7,14 @@ import AssignmentResults from './AssignmentResults';
 import { getAssignmentsByTeacher, getSubmissionStatsForTeacher, getSubmissionsByAssignmentId } from './TeacherDashboardService';
 import '../Assignments-new.css';
 
-const Assignments = ({ 
-    teacherInfo, 
-    actualStudentsData = [], 
-    loadingStudentsData = false, 
-    onNavigate, 
+const Assignments = ({
+    teacherInfo,
+    actualStudentsData = [],
+    loadingStudentsData = false,
+    onNavigate,
     onBack,
-    selectedClass = null // Add this new prop
+    selectedClass = null,
+    onSubmissionApproved
 }) => {
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
     const [assignmentStats, setAssignmentStats] = useState({
@@ -69,10 +70,8 @@ const Assignments = ({
                     });
                     
                     setAssignmentsWithStats(assignmentsWithSubmissionData);
-                    console.log('Fetched assignments with stats:', assignmentsWithSubmissionData);
                     
                 } catch (error) {
-                    console.error('Error fetching assignments:', error);
                     setAssignments([]);
                     setAssignmentsWithStats([]);
                 } finally {
@@ -84,10 +83,6 @@ const Assignments = ({
         fetchAssignments();
     }, [teacherInfo?.id]);
 
-    // Add this useEffect to log when assignments state actually updates
-    useEffect(() => {
-        console.log('Assignments state updated:', assignments);
-    }, [assignments]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -111,7 +106,6 @@ const Assignments = ({
                 setRecentAssignments(assignmentsWithStats.slice(0, 6));
                 
             } catch (error) {
-                console.error('Error fetching assignment data:', error);
             } finally {
                 setLoading(false);
             }
@@ -219,10 +213,11 @@ const Assignments = ({
     if (currentView === 'results') {
         return (
             <div className="assignments-dashboard">
-                <AssignmentResults 
+                <AssignmentResults
                     teacherInfo={teacherInfo}
                     onBack={handleBackToDashboard}
                     selectedClass={selectedClass}
+                    onSubmissionApproved={onSubmissionApproved}
                 />
             </div>
         );

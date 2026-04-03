@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { askGPT } from '../../Worker/chat';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { renderFeedback } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
 import DesmosGraph from '../DesmosGraph/DesmosGraph';
 import { saveTestResults, saveUserProgress } from './Servicing';
-import { updateStudentTopicAbility, getStudentTopicAbility } from '../Dashboards/TeacherDashboard/TeacherDashboardService';
+import { updateStudentTopicAbility, getStudentTopicAbility, recordStudentReadiness } from '../Dashboards/TeacherDashboard/TeacherDashboardService';
 import { abilityEstimate } from '../Dashboards/Charts/ReadinessLogic';
 import { analyzeMistakePatterns } from '../PerformanceEngine/^PerformanceAnalysis';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
@@ -22,6 +23,7 @@ addStyles();
 
 const AdaptiveTest = () => {
   const stepReference = useRef([]);
+  const answerBlockRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -29,6 +31,7 @@ const AdaptiveTest = () => {
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
   // When launched from the TA page, restrict to the curated question IDs
   const curatedIds = location.state?.curatedQuizIds;
+  const classId    = location.state?.classId ?? null;
   const questionPool = curatedIds?.length
     ? questions.filter(q => curatedIds.includes(q['Question ID']))
     : questions;
@@ -77,18 +80,26 @@ const AdaptiveTest = () => {
   // Get authentication token
   const token = localStorage.getItem('token');
 
-  // Initialize test
+  // Block copy / paste / right-click during the test
   useEffect(() => {
-    const block = (e) => e.preventDefault();
-    document.addEventListener('copy', block);
-    document.addEventListener('cut', block);
-    document.addEventListener('paste', block);
-    document.addEventListener('contextmenu', block);
+    const blockPaste = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toast.warn('Pasting is not allowed during a test.', { toastId: 'no-paste', autoClose: 2000 });
+    };
+    const blockCopy = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const blockCtx  = (e) => e.preventDefault();
+
+    // capture: true fires BEFORE MathQuill's hidden textarea handles the event
+    document.addEventListener('paste',       blockPaste, { capture: true });
+    document.addEventListener('copy',        blockCopy,  { capture: true });
+    document.addEventListener('cut',         blockCopy,  { capture: true });
+    document.addEventListener('contextmenu', blockCtx,   { capture: true });
     return () => {
-      document.removeEventListener('copy', block);
-      document.removeEventListener('cut', block);
-      document.removeEventListener('paste', block);
-      document.removeEventListener('contextmenu', block);
+      document.removeEventListener('paste',       blockPaste, { capture: true });
+      document.removeEventListener('copy',        blockCopy,  { capture: true });
+      document.removeEventListener('cut',         blockCopy,  { capture: true });
+      document.removeEventListener('contextmenu', blockCtx,   { capture: true });
     };
   }, []);
 
@@ -540,6 +551,22 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
         console.error('Failed to save progress:', error.message);
       }
 
+      // Record readiness immediately so the dashboard chart updates on return
+      try {
+        const topicValues = Object.values(topicThetas);
+        const avgTheta = topicValues.length > 0
+          ? topicValues.reduce((a, b) => a + b, 0) / topicValues.length
+          : 0;
+        const readinessPercentage = Math.max(0, Math.min(100, ((avgTheta + 4) / 8) * 100));
+        await recordStudentReadiness(userId, classId, {
+          readinessPercentage,
+          questionsAnswered: TOTAL_QUESTIONS,
+          correctAnswers,
+          studyTimeMinutes: Math.round(elapsedTime / 60),
+          abilityEstimate: avgTheta
+        });
+      } catch { /* non-fatal */ }
+
       const finalResults = {
         totalScore: totalScore,
         correctAnswers: correctAnswers,
@@ -550,7 +577,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
         completedAt: new Date().toISOString()
       };
       localStorage.setItem('adaptiveTestResults', JSON.stringify(finalResults));
-      localStorage.setItem('apiPayLoad', JSON.stringify(apiPayload)); 
+      localStorage.setItem('apiPayLoad', JSON.stringify(apiPayload));
     }
   };
 

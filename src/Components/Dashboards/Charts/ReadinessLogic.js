@@ -44,3 +44,51 @@ export function abilityEstimate(difficulty, isCorrect, priorTheta, questionIndex
 export function thetaToReadiness(theta) {
     return Math.max(0, Math.min(100, ((theta + 4) / 8) * 100));
 }
+
+// ─── Difficulty-weighted topic mastery ───────────────────────────────────────
+// Replaces per-topic IRT theta for topic mastery tracking.
+// Correct answers on harder questions earn more mastery.
+// Wrong answers on harder questions penalise more.
+// A decaying learning rate means recent answers matter more than old ones.
+
+const MASTERY_WEIGHTS = {
+    'Very Easy': { correct: 0.5,  wrong: -0.25 },
+    'Easy':      { correct: 1,    wrong: -0.5  },
+    'Medium':    { correct: 2,    wrong: -1    },
+    'Hard':      { correct: 3,    wrong: -2    },
+    'Very Hard': { correct: 4,    wrong: -3    },
+    1: { correct: 0.5, wrong: -0.25 },
+    2: { correct: 1,   wrong: -0.5  },
+    3: { correct: 2,   wrong: -1    },
+    4: { correct: 3,   wrong: -2    },
+    5: { correct: 4,   wrong: -3    },
+};
+
+const MAX_CORRECT_WEIGHT = 4; // Very Hard correct
+const MAX_WRONG_PENALTY  = 3; // Very Hard wrong (abs)
+
+/** Minimum questions answered before topic mastery is considered reliable. */
+export const MASTERY_MIN_QUESTIONS = 3;
+
+/**
+ * Update a topic mastery score (0–100) given one new answer.
+ *
+ * @param {string|number} difficulty      - difficulty label or 1-5
+ * @param {boolean}       isCorrect       - whether the student got it right
+ * @param {number}        currentMastery  - current mastery score 0–100
+ * @param {number}        questionsAnswered - how many questions answered on this topic so far
+ * @returns {number} updated mastery, clamped to [0, 100]
+ */
+export function updateTopicMastery(difficulty, isCorrect, currentMastery, questionsAnswered) {
+    const w = MASTERY_WEIGHTS[difficulty] ?? { correct: 2, wrong: -1 };
+
+    // Target mastery this answer pulls toward
+    const target = isCorrect
+        ? 60 + (w.correct / MAX_CORRECT_WEIGHT) * 40   // 70 (Easy) → 100 (Very Hard)
+        : 40 - (Math.abs(w.wrong) / MAX_WRONG_PENALTY) * 40; // 33 (Easy) → 0 (Very Hard)
+
+    // Learning rate decays as evidence accumulates — recent answers carry more weight
+    const alpha = Math.max(0.05, 1 / (1 + 0.3 * questionsAnswered));
+
+    return Math.max(0, Math.min(100, currentMastery + alpha * (target - currentMastery)));
+}

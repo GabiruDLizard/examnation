@@ -92,3 +92,95 @@ export const createOrganization = async ({ institutionName, country = 'Bahamas',
     }
     return res.json();
 };
+
+export const getLibrary = async () => {
+    const res = await authFetch('/question?source=admin');
+    if (!res.ok) throw new Error('Failed to fetch questions');
+    return res.json();
+};
+
+export const createQuestion = async (questionData) => {
+    let figureBlobUrl = '';
+    if (questionData.imageAssociated instanceof File) {
+        const formData = new FormData();
+        formData.append('file', questionData.imageAssociated);
+        const uploadRes = await authFetch('/File/upload', { method: 'POST', body: formData });
+        if (uploadRes.ok) {
+            const uploaded = await uploadRes.json();
+            figureBlobUrl = uploaded.blobUrl || '';
+        }
+    }
+
+    const payload = {
+        questionText:    questionData.questionText,
+        subject:         questionData.subject         || 'General',
+        correctAnswer:   questionData.correctAnswer,
+        answerBreakdown: questionData.answerBreakdown || '',
+        difficultyLevel: questionData.difficultyLevel || 'Easy',
+        options:         questionData.multipleChoiceOptions || [],
+        solutionSteps:   '',
+        figureDescription: '',
+        figureBlobUrl,
+        subjectId:       null,
+        source:          'admin',
+    };
+
+    const res = await authFetch('/question', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        const err = (() => { try { return JSON.parse(errText); } catch { return {}; } })();
+        throw new Error(err.message || errText || 'Failed to create question');
+    }
+    return res.json();
+};
+
+export const editQuestion = async (questionId, questionData) => {
+    let figureBlobUrl = questionData.figureBlobUrl || '';
+    if (questionData.imageAssociated instanceof File) {
+        const formData = new FormData();
+        formData.append('file', questionData.imageAssociated);
+        const uploadRes = await authFetch('/File/upload', { method: 'POST', body: formData });
+        if (uploadRes.ok) {
+            const uploaded = await uploadRes.json();
+            figureBlobUrl = uploaded.blobUrl || '';
+        }
+    }
+
+    const payload = {
+        id:              questionId,
+        questionText:    questionData.questionText,
+        subject:         questionData.subject         || 'General',
+        correctAnswer:   questionData.correctAnswer,
+        answerBreakdown: questionData.answerBreakdown || '',
+        difficultyLevel: questionData.difficultyLevel || 'Easy',
+        options:         questionData.multipleChoiceOptions || [],
+        solutionSteps:   questionData.solutionSteps   || '',
+        figureDescription: questionData.figureDescription || '',
+        figureBlobUrl,
+        subjectId:       questionData.subjectId       || null,
+        source:          'admin',
+    };
+
+    const res = await authFetch(`/question/${questionId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        const err = (() => { try { return JSON.parse(errText); } catch { return {}; } })();
+        throw new Error(err.message || errText || 'Failed to update question');
+    }
+    return res.json();
+};
+
+export const deleteQuestion = async (questionId) => {
+    const res = await authFetch(`/question/${questionId}`, { method: 'DELETE' });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to delete question');
+    }
+    return res.json();
+};

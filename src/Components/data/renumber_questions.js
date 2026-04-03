@@ -22,4 +22,3 @@ const renumbered = uniqueQuestions.map((q, idx) => ({
 const outPath = path.join(__dirname, 'generated_bgcs_questions_200_named_deduped.json');
 fs.writeFileSync(outPath, JSON.stringify(renumbered, null, 2));
 
-console.log(`Done! ${renumbered.length} unique questions saved as generated_bgcs_questions_200_named_deduped.json`);

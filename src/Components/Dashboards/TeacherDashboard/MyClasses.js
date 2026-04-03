@@ -43,7 +43,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
             const classAssignments = await getAssignmentsForClass(classItem.id);
             return { classId: classItem.id, assignments: classAssignments || [] };
           } catch (error) {
-            console.error(`Error fetching assignments for class ${classItem.id}:`, error);
             return { classId: classItem.id, assignments: [] };
           }
         });
@@ -79,7 +78,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
           studentcount = enrolls ? enrolls.length : 0;
           studentcount = Array.isArray(enrolls) ? enrolls.length : 0;
         } catch (error) {
-          console.error('Error fetching class enrollments:', error);
           studentcount = 0;
         }
 
@@ -106,7 +104,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
       
     } catch (error) {
-      console.error('Error fetching teacher classes:', error);
       setError(error.message);
       
       // Fallback to empty array if API fails
@@ -123,7 +120,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
       setSelectedColor("#3b82f6"); // Reset color picker
       toast.success('Class created successfully!');
     } catch (error) {
-      console.error('Error creating class:', error);
       toast.error('Error creating class: ' + error.message);
     }
   };
@@ -158,7 +154,6 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
         await fetchClasses();
         toast.success(`${classItem.name} deleted successfully!`);
       } catch (error) {
-        console.error('Error deleting class:', error);
         toast.error('Error deleting class: ' + error.message);
       }
     }

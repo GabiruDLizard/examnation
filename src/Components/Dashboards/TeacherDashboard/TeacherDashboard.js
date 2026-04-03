@@ -4,7 +4,7 @@ import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiH
 import "../TeacherDashboard.css";
 
 // Import services
-import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo, getTeacherReadinessChartData, getClassTopicAbility } from "./TeacherDashboardService";
+import { getTeacherInfo, getTeacherClasses, getAllEnrolledStudentInfo, getTeacherReadinessChartData, getClassTopicAbility, getStudentReadinessHistory } from "./TeacherDashboardService";
 import { useAuth } from '../../../contexts/AuthContext';
 import { useDashboardNav } from '../../../hooks/useDashboardNav';
 
@@ -30,22 +30,27 @@ function heatColor(v) {
   return `hsl(${hue}deg 65% ${35 + v * 20}%)`;
 }
 
-// Compute weak spots from flat array of { studentId, topic, theta } rows
+// Compute weak spots from flat array of { studentId, topic, theta, questionsAnswered } rows.
+// theta is now a mastery score (0–100). Students below 50% are considered struggling.
 function computeWeakSpots(rows) {
-  // Deduplicate: keep one row per (studentId, topic) — last wins is fine
+  // Deduplicate: keep one row per (studentId, topic)
   const lookup = {};
   rows.forEach(r => {
     const key = `${r.studentId}::${r.topic}`;
-    lookup[key] = r.theta;
+    lookup[key] = r.theta; // mastery 0–100
   });
 
   const byTopic = {};
-  Object.entries(lookup).forEach(([key, theta]) => {
+  Object.entries(lookup).forEach(([key, raw]) => {
     const topic = key.split('::')[1];
-    if (!byTopic[topic]) byTopic[topic] = { total: 0, struggling: 0, thetaSum: 0 };
+    // Normalize to 0–100 regardless of old IRT or new mastery
+    const mastery = (raw >= -4 && raw <= 4)
+        ? ((raw + 4) / 8) * 100
+        : Math.max(0, Math.min(100, raw));
+    if (!byTopic[topic]) byTopic[topic] = { total: 0, struggling: 0, masterySum: 0 };
     byTopic[topic].total += 1;
-    if (theta < 0) byTopic[topic].struggling += 1;
-    byTopic[topic].thetaSum += theta;
+    if (mastery < 50) byTopic[topic].struggling += 1;
+    byTopic[topic].masterySum += mastery;
   });
 
   return Object.entries(byTopic)
@@ -53,7 +58,7 @@ function computeWeakSpots(rows) {
       topic,
       strugglingCount: d.struggling,
       totalCount: d.total,
-      avgReadiness: Math.round(((d.thetaSum / d.total + 4) / 8) * 100),
+      avgReadiness: Math.round(d.masterySum / d.total),
       pctStruggling: Math.round((d.struggling / d.total) * 100),
     }))
     .filter(s => s.strugglingCount > 0)
@@ -84,43 +89,7 @@ export default function TeacherDashboard() {
   const [teacherStats, setTeacherStats] = useState({});
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
-  const MOCK_HEATMAP = {
-    topics: ['Algebra', 'Fractions', 'Geometry', 'Linear Equations', 'Probability', 'Statistics', 'Trigonometry', 'Quadratics', 'Polynomials', 'Inequalities', 'Ratios & Proportions', 'Number Theory', 'Sequences & Series', 'Matrices', 'Vectors'],
-    students: ['Alice B.', 'Marcus T.', 'Jordan L.', 'Priya K.', 'Dylan R.', 'Sofia M.', 'Ethan W.', 'Chloe N.', 'Isaiah F.', 'Maya R.', 'Lucas G.', 'Zara H.'],
-    grid: [
-      // Algebra
-      [0.82, 0.91, 0.55, 0.73, 0.40, 0.88, 0.67, 0.79, 0.91, 0.44, 0.58, 0.83],
-      // Fractions
-      [0.60, 0.48, 0.79, 0.85, 0.30, 0.67, 0.52, 0.88, 0.41, 0.76, 0.93, 0.35],
-      // Geometry
-      [0.75, 0.83, 0.91, 0.52, 0.88, 0.44, 0.70, 0.61, 0.55, 0.89, 0.38, 0.77],
-      // Linear Equations
-      [0.90, 0.72, 0.38, 0.61, 0.77, 0.95, 0.84, 0.43, 0.68, 0.55, 0.72, 0.60],
-      // Probability
-      [0.45, 0.55, 0.68, null, 0.82, 0.33, 0.91, 0.50, 0.74, null, 0.48, 0.86],
-      // Statistics
-      [0.33, 0.76, 0.50, 0.44, null, 0.71, 0.38, 0.92, 0.60, 0.55, 0.80, null],
-      // Trigonometry
-      [0.20, 0.35, 0.88, 0.59, 0.65, 0.25, 0.44, 0.70, 0.32, 0.81, 0.55, 0.42],
-      // Quadratics
-      [0.78, 0.62, 0.44, 0.91, 0.55, 0.80, 0.35, 0.67, 0.88, 0.50, 0.41, 0.93],
-      // Polynomials
-      [0.55, 0.70, 0.33, 0.48, 0.88, 0.61, 0.77, 0.39, 0.52, 0.83, 0.66, 0.28],
-      // Inequalities
-      [0.88, 0.41, 0.75, 0.60, 0.35, 0.92, 0.53, 0.80, 0.44, 0.68, 0.30, 0.75],
-      // Ratios & Proportions
-      [0.65, 0.88, 0.57, null, 0.72, 0.48, 0.83, 0.61, null, 0.77, 0.52, 0.90],
-      // Number Theory
-      [0.40, 0.55, 0.80, 0.33, 0.91, 0.62, 0.48, 0.75, 0.57, 0.38, 0.84, 0.66],
-      // Sequences & Series
-      [0.30, 0.44, 0.66, 0.78, null, 0.50, 0.62, 0.35, 0.89, 0.47, null, 0.71],
-      // Matrices
-      [0.22, 0.60, 0.48, 0.55, 0.40, 0.35, 0.70, 0.28, 0.63, 0.44, 0.55, 0.38],
-      // Vectors
-      [0.50, 0.38, 0.72, 0.44, 0.60, 0.28, 0.55, 0.83, 0.40, 0.65, 0.35, 0.78],
-    ],
-  };
-  const [heatmapData, setHeatmapData] = useState(MOCK_HEATMAP);
+  const [heatmapData, setHeatmapData] = useState({ topics: [], students: [], grid: [] });
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
   const heatmapRef = useRef(null);
@@ -176,7 +145,6 @@ export default function TeacherDashboard() {
         
       } catch (err) {
         setError('Failed to load teacher information');
-        console.error('Error loading teacher data:', err);
       } finally {
         setLoading(false);
       }
@@ -236,10 +204,8 @@ export default function TeacherDashboard() {
               });
             }
             
-            console.log(`👥 Class "${classItem.name}": ${studentCount} enrollments`);
           });
         } catch (classError) {
-          console.error(`❌ Error getting students for class ${classItem.name}:`, classError);
           // Continue with other classes even if one fails
         }
       }
@@ -256,10 +222,29 @@ export default function TeacherDashboard() {
           return b.averageScore - a.averageScore;
         });
       
-      if (totalEnrollments > uniqueStudentCount) {
-        console.log(`🔄 Found ${totalEnrollments - uniqueStudentCount} duplicate enrollments (students in multiple classes)`);
-      }
       
+      // Compute improvement: delta between latest and previous readiness record
+      const improvementResults = await Promise.all(
+        studentsArray.map(async (student) => {
+          try {
+            const history = await getStudentReadinessHistory(student.id, 2);
+            if (Array.isArray(history) && history.length >= 2) {
+              const sorted = [...history].sort(
+                (a, b) => new Date(b.weekStart ?? b.recordedAt ?? 0) - new Date(a.weekStart ?? a.recordedAt ?? 0)
+              );
+              const latest = sorted[0]?.readinessPercentage ?? 0;
+              const previous = sorted[1]?.readinessPercentage ?? 0;
+              return { id: student.id, improvement: Math.round(latest - previous) };
+            }
+            return { id: student.id, improvement: 0 };
+          } catch {
+            return { id: student.id, improvement: 0 };
+          }
+        })
+      );
+      const improvementMap = Object.fromEntries(improvementResults.map(i => [i.id, i.improvement]));
+      studentsArray.forEach(s => { s.improvement = improvementMap[s.id] ?? 0; });
+
       setTotalStudentsCount(uniqueStudentCount);
       setActualStudentsData(studentsArray);
 
@@ -274,9 +259,28 @@ export default function TeacherDashboard() {
           if (Array.isArray(rows)) allTopicRows.push(...rows);
         }
         setWeakSpots(computeWeakSpots(allTopicRows));
-        console.log('📊 Weak spots computed:', computeWeakSpots(allTopicRows).length, 'topics');
+
+        // Build overview heatmap from all topic rows (aggregated across classes)
+        if (allTopicRows.length > 0) {
+          const topics = [...new Set(allTopicRows.map(r => r.topic))].sort();
+          const studentIds = [...new Set(allTopicRows.map(r => r.studentId))];
+          const lookup = {};
+          allTopicRows.forEach(r => {
+            if (!lookup[r.studentId]) lookup[r.studentId] = {};
+            // Auto-detect old IRT theta (-4 to +4) vs new mastery (0–100)
+            const t = r.theta ?? 0;
+            lookup[r.studentId][r.topic] = (t >= -4 && t <= 4)
+                ? Math.max(0, Math.min(1, (t + 4) / 8))
+                : Math.max(0, Math.min(1, t / 100));
+          });
+          const grid = topics.map(topic => studentIds.map(sid => lookup[sid]?.[topic] ?? null));
+          const students = studentIds.map(sid => {
+            const found = studentsArray.find(s => s.id === sid);
+            return found ? found.name : `Student ${sid}`;
+          });
+          setHeatmapData({ topics, students, grid });
+        }
       } catch (wsErr) {
-        console.error('Error loading weak spots:', wsErr);
         setWeakSpots([]);
       } finally {
         setLoadingWeakSpots(false);
@@ -286,7 +290,6 @@ export default function TeacherDashboard() {
       await generateReadinessChartData(classes);
       
     } catch (error) {
-      console.error('❌ Error calculating unique students:', error);
       setTotalStudentsCount(0);
       setActualStudentsData([]);
     } finally {
@@ -298,20 +301,22 @@ export default function TeacherDashboard() {
   // Function to generate readiness chart data from real API data
   const generateReadinessChartData = async (classes) => {
     try {
+      const resolvedClasses = classes ?? await getTeacherClasses().catch(() => []);
       const chartData = await getTeacherReadinessChartData(userId, 30);
-      const colors = generateClassColors(classes);
+      const colors = generateClassColors(resolvedClasses);
       const stats = calculateTeacherStats(chartData);
 
       setReadinessChartData(chartData);
       setClassColors(colors);
       setTeacherStats(stats);
     } catch (error) {
-      console.error('Error generating chart data:', error);
       setReadinessChartData([]);
       setClassColors({});
       setTeacherStats({});
     }
   };
+
+  const refreshChartData = () => generateReadinessChartData(null);
 
   // Load topic heatmap whenever we have enrolled students and classes
   useEffect(() => {
@@ -334,8 +339,8 @@ export default function TeacherDashboard() {
         const lookup = {};
         rows.forEach(r => {
           if (!lookup[r.studentId]) lookup[r.studentId] = {};
-          // Convert theta (-4 to +4) → 0 to 1
-          lookup[r.studentId][r.topic] = Math.max(0, Math.min(1, (r.theta + 4) / 8));
+          // theta is now mastery (0–100), normalize to 0–1 for heatColor
+          lookup[r.studentId][r.topic] = Math.max(0, Math.min(1, r.theta / 100));
         });
 
         // Grid: rows = topics, columns = students
@@ -444,7 +449,8 @@ export default function TeacherDashboard() {
             loadingStudentsData={loadingStudentsData}
             onNavigate={handlePageChange}
             onBack={() => setActivePage('overview')}
-            selectedClass={selectedClass} // Pass the selected class
+            selectedClass={selectedClass}
+            onSubmissionApproved={refreshChartData}
           />
         );
       case 'classes':
@@ -635,16 +641,16 @@ export default function TeacherDashboard() {
                     </td>
                     <td>
                       <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ 
-                            width: `${Math.min(student.improvement * 6, 100)}%`,
-                            backgroundColor: student.improvement >= 10 ? '#10b981' : 
-                                           student.improvement >= 5 ? '#f59e0b' : '#ef4444'
-                          }} 
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${Math.min(Math.abs(student.improvement ?? 0) * 6, 100)}%`,
+                            backgroundColor: (student.improvement ?? 0) >= 10 ? '#10b981' :
+                                           (student.improvement ?? 0) >= 1 ? '#f59e0b' : '#ef4444'
+                          }}
                         />
                       </div>
-                      <span className="improvement-text">+{student.improvement}%</span>
+                      <span className="improvement-text">{(student.improvement ?? 0) >= 0 ? '+' : ''}{student.improvement ?? 0}%</span>
                     </td>
                     <td className="attempts-cell">{student.attempts}</td>
                   </tr>
@@ -681,7 +687,7 @@ export default function TeacherDashboard() {
               {weakSpots.slice(0, 5).map(s => (
                 <div key={s.topic} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>{s.topic}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>{s.topic}</span>
                     <span style={{
                       fontSize: '12px', fontWeight: 600, padding: '1px 7px', borderRadius: '999px',
                       background: s.pctStruggling > 60 ? '#fef2f2' : s.pctStruggling > 30 ? '#fffbeb' : '#f0fdf4',

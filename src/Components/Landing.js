@@ -13,6 +13,16 @@ export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        email: '',
+        firstName: '',
+        lastName: '',
+        title: '',
+        schoolName: '',
+        request: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
     
     // Add the scrollToSection function
     const scrollToSection = (sectionId) => {
@@ -36,6 +46,39 @@ export default function ExamNationLanding() {
         navigate('/login');
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setSubmitStatus(null);
+        try {
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                schoolName: formData.schoolName,
+                title: formData.title,
+                request: formData.request,
+                submittedAt: new Date().toISOString(),
+            };
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/demo-request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Request failed');
+            setSubmitStatus('success');
+            setFormData({ email: '', firstName: '', lastName: '', title: '', schoolName: '', request: '' });
+        } catch (error) {
+            setSubmitStatus('error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     const handleRegister = () => {
         navigate('/login', { state: { isLogin: false } });
     };
@@ -272,8 +315,93 @@ export default function ExamNationLanding() {
 
             {/* CTA Footer - Add id for contact section */}
             <footer id="contact" className="cta-footer">
-                <h2>Join the Next Generation of Learners</h2>
-                <button className="primary" onClick={handleLogin}>Get Started</button>
+                <div className="cta-content">
+                    <div className="cta-header">
+                        <h2>Ready to Get Started?</h2>
+                        <p>Join schools already using ExamNation to improve learning outcomes.</p>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="demo-form">
+                        <div className="form-row">
+                            <input
+                                type="text"
+                                name="firstName"
+                                placeholder="First Name"
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <input
+                                type="text"
+                                name="lastName"
+                                placeholder="Last Name"
+                                value={formData.lastName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+                        
+                        <input 
+                            type="email"
+                            name="email"
+                            placeholder="Email Address"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                        />
+                        
+                        <div className="form-row">
+                            <input
+                                type="text"
+                                name="schoolName"
+                                placeholder="School Name"
+                                value={formData.schoolName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <input
+                                type="text"
+                                name="title"
+                                placeholder="Job Title (optional)"
+                                value={formData.title}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        
+                        <textarea
+                            name="request"
+                            placeholder="Tell us about your needs (optional)"
+                            value={formData.request}
+                            onChange={handleInputChange}
+                            rows="3"
+                        />
+                        
+                        <button 
+                            type="submit" 
+                            className="submit-btn"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Sending...' : 'Request Demo'}
+                        </button>
+                        
+                        {submitStatus === 'success' && (
+                            <div className="success-message">
+                                ✓ Request sent! We'll contact you within 24 hours.
+                            </div>
+                        )}
+                        
+                        {submitStatus === 'error' && (
+                            <div className="error-message">
+                                ⚠ Something went wrong. Please try again.
+                            </div>
+                        )}
+                    </form>
+                    
+                    <div className="alt-option">
+                        <span>or</span>
+                        <button className="login-btn" onClick={handleLogin}>Login to Explore</button>
+                    </div>
+                </div>
                 <div className="footer-bottom">
                     <p className="footer-copyright">
                         &copy; {new Date().getFullYear()} Lofty Goals Software. All rights reserved.

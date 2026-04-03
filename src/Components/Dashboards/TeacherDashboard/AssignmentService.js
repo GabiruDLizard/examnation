@@ -9,38 +9,25 @@ import { authFetch } from '../../../utils/api';
 // Create a complete assignment with questions
 export const createCompleteAssignment = async (assignmentData, questionsArray) => {
     try {
-        console.log('📝 Creating complete assignment with questions...');
-        console.log('🔍 Assignment data received:', assignmentData);
-        console.log('🔍 Assignment ID in data:', assignmentData?.assignmentId);
 
         let assignmentId = assignmentData?.assignmentId;
         let createdAssignment;
 
         if (assignmentId) {
-            console.log('✅ Using existing assignment ID:', assignmentId);
-            console.log('🚫 SKIPPING assignment creation - using existing assignment');
             createdAssignment = { id: assignmentId, ...assignmentData };
         } else {
-            console.log('⚠️ No assignment ID found - creating new assignment');
-            console.log('Step 1: Creating assignment...');
             createdAssignment = await createAssignmentForClass(assignmentData);
-            console.log('✅ Assignment created:', createdAssignment);
             assignmentId = createdAssignment.id;
         }
 
-        console.log('Step 2: Creating questions...');
         const createdQuestions = [];
 
         for (const questionData of questionsArray) {
             let figureBlobUrl = null;
             if (questionData.imageAssociated) {
                 try {
-                    console.log('📷 Uploading question image...');
                     figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
-                    console.log('✅ Image uploaded:', figureBlobUrl);
-                } catch (uploadError) {
-                    console.warn('⚠️ Image upload failed, continuing without image:', uploadError.message);
-                }
+                } catch { /* non-fatal */ }
             }
 
             const formattedQuestionData = {
@@ -60,13 +47,7 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
             const question = await createQuestion(formattedQuestionData);
             createdQuestions.push(question);
         }
-        console.log('✅ Questions created:', createdQuestions);
-
-        console.log('Step 3: Linking questions to assignment...');
-        console.log('🔍 Assignment ID to link:', assignmentId);
-
         if (!assignmentId) {
-            console.error('❌ No valid assignment ID found:', createdAssignment);
             throw new Error('Assignment was created but returned no valid ID');
         }
 
@@ -74,7 +55,6 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
 
         for (let i = 0; i < createdQuestions.length; i++) {
             const question = createdQuestions[i];
-            console.log(`🔗 Linking question ${question.id} to assignment ${assignmentId}`);
             const assignmentQuestion = await createAssignmentQuestion({
                 assignmentId: assignmentId,
                 questionId: question.id,
@@ -82,8 +62,6 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
             });
             assignmentQuestions.push(assignmentQuestion);
         }
-
-        console.log('✅ Assignment questions linked:', assignmentQuestions);
 
         return {
             assignment: createdAssignment,
@@ -93,7 +71,6 @@ export const createCompleteAssignment = async (assignmentData, questionsArray) =
         };
 
     } catch (error) {
-        console.error('❌ Error creating complete assignment:', error);
         throw error;
     }
 };
@@ -122,7 +99,6 @@ export const getAssignmentWithQuestions = async (assignmentId) => {
         const assignmentWithQuestions = await response.json();
         return assignmentWithQuestions;
     } catch (error) {
-        console.error('Error fetching assignment with questions:', error);
         throw error;
     }
 };

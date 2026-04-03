@@ -1,7 +1,7 @@
 import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { analyzeMistakePatterns } from '../../PerformanceEngine/^PerformanceAnalysis';
-import { abilityEstimate } from '../Charts/ReadinessLogic';
+import { abilityEstimate, updateTopicMastery, thetaToReadiness } from '../Charts/ReadinessLogic';
 import { updateStudentTopicAbility, getStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
 import { evaluate as mjsEval } from 'mathjs';
 
@@ -19,7 +19,6 @@ export const getAllAssignmentQuestions = async () => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching assignment questions:', error);
         throw error;
     }
 };
@@ -34,7 +33,6 @@ export const getAssignmentQuestionById = async (id) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching assignment question:', error);
         throw error;
     }
 };
@@ -65,7 +63,6 @@ export const getQuestionsByAssignmentId = async (assignmentId) => {
                         ...questionDetails
                     };
                 } catch (error) {
-                    console.error(`Error fetching question ${assignmentQuestion.questionId}:`, error);
                     return { ...assignmentQuestion, questionDetails: null };
                 }
             })
@@ -73,7 +70,6 @@ export const getQuestionsByAssignmentId = async (assignmentId) => {
 
         return questionsWithDetails;
     } catch (error) {
-        console.error('Error fetching questions for assignment:', error);
         throw error;
     }
 };
@@ -91,7 +87,6 @@ export const createAssignmentQuestion = async (assignmentQuestion) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error creating assignment question:', error);
         throw error;
     }
 };
@@ -109,7 +104,6 @@ export const updateAssignmentQuestion = async (assignmentQuestion) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error updating assignment question:', error);
         throw error;
     }
 };
@@ -126,7 +120,6 @@ export const deleteAssignmentQuestion = async (id) => {
 
         return true;
     } catch (error) {
-        console.error('Error deleting assignment question:', error);
         throw error;
     }
 };
@@ -148,7 +141,6 @@ export const getStudentInfo = async () => {
         const studentData = await response.json();
         return studentData;
     } catch (error) {
-        console.error('Error fetching student info:', error);
         throw error;
     }
 };
@@ -178,8 +170,7 @@ export const getStudentAnswers = async (userId) => {
 
         const answersData = await response.json();
         return answersData;
-    } catch (error) {
-        console.error('Error fetching student answers:', error);
+    } catch {
         return [];
     }
 };
@@ -194,8 +185,7 @@ export const getStudentEnrollments = async (userId) => {
 
         const enrollmentsData = await response.json();
         return enrollmentsData;
-    } catch (error) {
-        console.error('Error fetching student enrollments:', error);
+    } catch {
         return [];
     }
 };
@@ -210,8 +200,7 @@ export const getClassDetails = async (classId) => {
 
         const classData = await response.json();
         return classData;
-    } catch (error) {
-        console.error(`Error fetching class details for ${classId}:`, error);
+    } catch {
         return null;
     }
 };
@@ -266,8 +255,7 @@ export const getStudentClassesWithDetails = async (userId) => {
         const classesWithDetails = await Promise.all(classDetailsPromises);
         return classesWithDetails.filter(cls => cls !== null);
 
-    } catch (error) {
-        console.error('Error fetching student classes with details:', error);
+    } catch {
         return [];
     }
 };
@@ -287,7 +275,6 @@ export const createAssignmentForClass = async (assignmentData) => {
         const createdAssignment = await response.json();
         return createdAssignment;
     } catch (error) {
-        console.error('Error creating assignment:', error);
         throw error;
     }
 };
@@ -320,8 +307,7 @@ export const getAssignmentsForClass = async (classId, studentId) => {
         );
 
         return assignmentsWithQuestions;
-    } catch (error) {
-        console.error('Error fetching assignments for class:', error);
+    } catch {
         return [];
     }
 };
@@ -344,7 +330,6 @@ export const getSubmissionByAssignmentAndStudent = async (assignmentId, studentI
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching submission:', error);
         throw error;
     }
 };
@@ -358,14 +343,12 @@ export const createSubmission = async (submissionData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Create submission failed:', { status: response.status, error: errorText });
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const result = await response.json();
         return result;
     } catch (error) {
-        console.error('❌ Error creating submission:', error);
         throw error;
     }
 };
@@ -379,14 +362,12 @@ export const updateSubmission = async (submissionData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Update submission failed:', { status: response.status, error: errorText });
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const result = await response.json();
         return result;
     } catch (error) {
-        console.error('❌ Error updating submission:', error);
         throw error;
     }
 };
@@ -405,7 +386,6 @@ export const getAnswersBySubmissionId = async (submissionId) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching answers:', error);
         throw error;
     }
 };
@@ -484,7 +464,6 @@ export const saveAnswerToBackend = async (answerData) => {
             return await createResponse.json();
         }
     } catch (error) {
-        console.error('❌ Error saving answer:', error);
         throw error;
     }
 };
@@ -496,7 +475,7 @@ export const submitAssignmentToBackend = async (assignmentId, studentId) => {
         if (submission) {
             const updatedSubmission = {
                 ...submission,
-                status: 'submitted',
+                status: 'pending_review',
                 submittedAt: new Date().toISOString()
             };
             return await updateSubmission(updatedSubmission);
@@ -504,22 +483,22 @@ export const submitAssignmentToBackend = async (assignmentId, studentId) => {
             const newSubmission = {
                 assignmentId: assignmentId,
                 studentId: studentId,
-                status: 'submitted',
+                status: 'pending_review',
                 submittedAt: new Date().toISOString()
             };
             return await createSubmission(newSubmission);
         }
     } catch (error) {
-        console.error('❌ Error submitting assignment:', error);
         throw error;
     }
 };
 
+// Grades answers and stores the score, but does NOT update topic mastery.
+// Mastery is only applied after teacher approval via applyMasteryAndFinalize.
 export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
     try {
         const questions = await getQuestionsByAssignmentId(assignmentId);
         const submittedAnswers = await getAnswersBySubmissionId(submissionId);
-
         const studentId = getUserIdFromToken();
 
         let totalScore = 0;
@@ -528,40 +507,19 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
         let theta = 0;
         const wrongAnswersForTA = [];
 
-        // Seed per-topic thetas from the student's stored cumulative ability so
-        // estimation continues from their current level rather than starting at 0.
-        const existingThetas = studentId
-            ? await getStudentTopicAbility(studentId).catch(() => [])
-            : [];
-        const topicThetas = {};
-        existingThetas.forEach(row => {
-            topicThetas[row.topic] = { theta: row.theta, count: row.questionsAnswered || 1 };
-        });
-
         for (const submittedAnswer of submittedAnswers) {
             try {
-                // Find the corresponding question - handle both old and new question structures
-                const question = questions.find(q => {
-                    // Try both question.questionDetails.id and question.id
-                    const questionId = q.questionDetails?.id || q.id;
-                    return questionId === submittedAnswer.questionId;
-                });
+                const question = questions.find(q =>
+                    (q.questionDetails?.id ?? q.questionId ?? q.id) === submittedAnswer.questionId
+                );
+                if (!question) continue;
 
-                if (!question) {
-                    continue;
-                }
-
-                // Get the correct answer from either structure
                 const correctAnswer = question.questionDetails?.correctAnswer || question.correctAnswer;
                 const questionPoints = question.points || 1;
-
-                if (!correctAnswer) {
-                    continue;
-                }
+                if (!correctAnswer) continue;
 
                 const studentAnswer = submittedAnswer.answer;
                 const studentFinalAnswer = extractFinalAnswer(studentAnswer);
-
                 const isCorrect = compareAnswers(studentFinalAnswer, correctAnswer);
                 const pointsEarned = isCorrect ? questionPoints : 0;
 
@@ -580,28 +538,100 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                 }
 
                 const difficulty = question.questionDetails?.difficultyLevel || question.difficultyLevel || 'Medium';
-                const subject = question.questionDetails?.subject || question.subject || 'General';
-
-                // Update overall theta
                 theta = abilityEstimate(difficulty, isCorrect, theta, gradedAnswers);
-
-                // Update per-topic theta
-                if (!topicThetas[subject]) topicThetas[subject] = { theta: 0, count: 0 };
-                topicThetas[subject].theta = abilityEstimate(
-                    difficulty, isCorrect, topicThetas[subject].theta, topicThetas[subject].count
-                );
-                topicThetas[subject].count++;
-
                 totalScore += pointsEarned;
                 totalPoints += questionPoints;
                 gradedAnswers++;
-
-            } catch (error) {
-                console.error('❌ Error checking answer:', submittedAnswer.id, error);
-            }
+            } catch { /* ignore */ }
         }
 
-        // Fire-and-forget TA analysis for wrong answers
+        // TA analysis deferred — runs only after teacher approves the submission
+        const percentage = totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0;
+
+        // Save score to submission but keep status as pending_review
+        try {
+            const subResponse = await authFetch(`/assignmentsubmission/${submissionId}`);
+            if (subResponse.ok) {
+                const sub = await subResponse.json();
+                await authFetch(`/assignmentsubmission/${submissionId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        ...sub,
+                        grade: Math.round(percentage * 10) / 10,
+                        status: 'pending_review'
+                    })
+                });
+            }
+        } catch (e) { /* non-fatal */ }
+
+        return { totalScore, totalPoints, percentage, gradedAnswers, abilityEstimate: theta };
+
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Called by teacher approval. Updates topic mastery and records readiness for the student.
+export const applyMasteryAndFinalize = async (assignmentId, submissionId, studentId) => {
+    try {
+        const questions = await getQuestionsByAssignmentId(assignmentId);
+        const submittedAnswers = await getAnswersBySubmissionId(submissionId);
+
+        const existingAbility = studentId
+            ? await getStudentTopicAbility(studentId).catch(() => [])
+            : [];
+        const topicMasteries = {};
+        existingAbility.forEach(row => {
+            const storedValue = row.theta ?? 50;
+            const mastery = (storedValue >= -4 && storedValue <= 4 && row.questionsAnswered <= 200)
+                ? thetaToReadiness(storedValue)
+                : Math.max(0, Math.min(100, storedValue));
+            topicMasteries[row.topic] = { mastery, count: row.questionsAnswered || 1 };
+        });
+
+        let theta = 0;
+        let gradedAnswers = 0;
+        const wrongAnswersForTA = [];
+
+        for (const submittedAnswer of submittedAnswers) {
+            try {
+                const question = questions.find(q =>
+                    (q.questionDetails?.id ?? q.questionId ?? q.id) === submittedAnswer.questionId
+                );
+                if (!question) continue;
+
+                const correctAnswer = question.questionDetails?.correctAnswer || question.correctAnswer;
+                if (!correctAnswer) continue;
+
+                const isCorrect = submittedAnswer.isCorrect ?? compareAnswers(
+                    extractFinalAnswer(submittedAnswer.answer), correctAnswer
+                );
+                const difficulty = question.questionDetails?.difficultyLevel || question.difficultyLevel || 'Medium';
+                const subject = question.questionDetails?.subject || question.subject || 'General';
+
+                if (!isCorrect) {
+                    wrongAnswersForTA.push({
+                        questionId: question.questionDetails?.id || question.id,
+                        questionText: question.questionDetails?.questionText || question.questionText || '',
+                        workingSteps: submittedAnswer.answer,
+                        studentAnswer: extractFinalAnswer(submittedAnswer.answer),
+                        correctAnswer,
+                        topic: subject,
+                        difficulty,
+                    });
+                }
+
+                theta = abilityEstimate(difficulty, isCorrect, theta, gradedAnswers);
+                if (!topicMasteries[subject]) topicMasteries[subject] = { mastery: 50, count: 0 };
+                topicMasteries[subject].mastery = updateTopicMastery(
+                    difficulty, isCorrect, topicMasteries[subject].mastery, topicMasteries[subject].count
+                );
+                topicMasteries[subject].count++;
+                gradedAnswers++;
+            } catch { /* skip */ }
+        }
+
+        // TA analysis now runs on approval — teacher has verified the submission is genuine
         if (wrongAnswersForTA.length > 0) {
             analyzeMistakePatterns(
                 wrongAnswersForTA.map(a => a.workingSteps),
@@ -615,56 +645,43 @@ export const checkAndGradeAnswers = async (assignmentId, submissionId) => {
                     studentAnswers: wrongAnswersForTA.map(a => a.studentAnswer),
                     source: 'assignment'
                 }
-            ).catch(() => { /* non-fatal */ });
+            ).catch(() => {});
         }
 
-        // Compute readiness from the updated cumulative topic thetas (weighted average).
-        // This reflects the student's overall ability trajectory, not just this session.
-        const topicValues = Object.values(topicThetas);
-        let readinessTheta = theta; // fallback: overall session theta if no topics
-        if (topicValues.length > 0) {
-            const totalCount = topicValues.reduce((s, t) => s + t.count, 0);
-            readinessTheta = totalCount > 0
-                ? topicValues.reduce((s, t) => s + t.theta * t.count, 0) / totalCount
-                : topicValues.reduce((s, t) => s + t.theta, 0) / topicValues.length;
-        }
-
-        const finalResults = {
-            totalScore,
-            totalPoints,
-            percentage: totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0,
-            gradedAnswers,
-            abilityEstimate: theta,
-            readinessPercentage: Math.max(0, Math.min(100, ((readinessTheta + 4) / 8) * 100))
-        };
-
-        // Save per-topic theta estimates to DB
-        if (studentId && Object.keys(topicThetas).length > 0) {
-            Object.entries(topicThetas).forEach(([subject, { theta: t, count }]) => {
-                updateStudentTopicAbility(studentId, subject, t, count).catch(() => {});
+        // Save per-topic mastery
+        if (studentId && Object.keys(topicMasteries).length > 0) {
+            Object.entries(topicMasteries).forEach(([subject, { mastery, count }]) => {
+                updateStudentTopicAbility(studentId, subject, mastery, count).catch(() => {});
             });
         }
 
-        // Persist grade to submission record
+        // Compute overall readiness
+        const topicValues = Object.values(topicMasteries);
+        let readinessPercentage;
+        if (topicValues.length > 0) {
+            const totalCount = topicValues.reduce((s, t) => s + t.count, 0);
+            readinessPercentage = totalCount > 0
+                ? topicValues.reduce((s, t) => s + t.mastery * t.count, 0) / totalCount
+                : topicValues.reduce((s, t) => s + t.mastery, 0) / topicValues.length;
+        } else {
+            readinessPercentage = Math.max(0, Math.min(100, ((theta + 4) / 8) * 100));
+        }
+
+        // Mark submission as graded
         try {
             const subResponse = await authFetch(`/assignmentsubmission/${submissionId}`);
             if (subResponse.ok) {
                 const sub = await subResponse.json();
                 await authFetch(`/assignmentsubmission/${submissionId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({
-                        ...sub,
-                        grade: Math.round(finalResults.percentage * 10) / 10,
-                        status: 'graded'
-                    })
+                    body: JSON.stringify({ ...sub, status: 'graded' })
                 });
             }
         } catch (e) { /* non-fatal */ }
 
-        return finalResults;
+        return { readinessPercentage: Math.round(readinessPercentage), abilityEstimate: theta };
 
     } catch (error) {
-        console.error('❌ Error in checkAndGradeAnswers:', error);
         throw error;
     }
 };
@@ -800,11 +817,16 @@ const compareAnswers = (studentAnswer, correctAnswer) => {
 
 const updateAnswerGrading = async (answerId, isCorrect, pointsEarned) => {
     try {
-        // Ensure isCorrect is a proper boolean
-        const isCorrectBoolean = Boolean(isCorrect);
+        // Fetch the full existing record first — ASP.NET PUT requires all fields
+        const fetchResponse = await authFetch(`/assignmentanswer/${answerId}`);
+        if (!fetchResponse.ok) {
+            throw new Error(`Could not fetch answer ${answerId}: status ${fetchResponse.status}`);
+        }
+        const existingAnswer = await fetchResponse.json();
 
         const updateData = {
-            isCorrect: isCorrectBoolean,
+            ...existingAnswer,
+            isCorrect: Boolean(isCorrect),
             pointsEarned: Number(pointsEarned) || 0
         };
 
@@ -815,19 +837,11 @@ const updateAnswerGrading = async (answerId, isCorrect, pointsEarned) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Answer grading update failed:', {
-                status: response.status,
-                error: errorText,
-                answerId,
-                updateData
-            });
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
-        const result = await response.json();
-        return result;
+        return await response.json();
     } catch (error) {
-        console.error('❌ Error updating answer grading:', error);
         throw error;
     }
 };

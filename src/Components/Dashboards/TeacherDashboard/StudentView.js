@@ -62,7 +62,6 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                         profileImage: studentInfo.profileImageUrl || null
                     }));
                 } catch (classError) {
-                    console.error(`❌ Error fetching students for class ${selectedClass.name}:`, classError);
                     allStudents = [];
                 }
             } else {
@@ -91,7 +90,6 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                             profileImage: studentInfo.profileImageUrl || null
                         }));
                     } catch (error) {
-                        console.error(`❌ Error fetching students for class ${classItem.name}:`, error);
                         return [];
                     }
                 });
@@ -104,7 +102,6 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
             setError(null);
             
         } catch (error) {
-            console.error('❌ Error fetching students data:', error);
             setError(error.message);
             setStudentsData([]);
         } finally {
@@ -147,7 +144,6 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
     };
 
     const handleStudentClick = (student) => {
-        console.log('Selected student:', student.name);
         // Add your student detail navigation logic here
     };
 
@@ -456,7 +452,6 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
                                 setSelectedStudent(null);
                                 fetchStudentsData();
                             } catch (error) {
-                                console.error('Error enrolling student:', error);
                                 setEnrollError(`Failed to enroll: ${error.message}`);
                             } finally {
                                 setEnrolling(false);

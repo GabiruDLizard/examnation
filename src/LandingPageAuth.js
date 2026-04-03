@@ -24,6 +24,9 @@ const LandingPageAuth = () => {
           } else if (data?.role === 'Educator') {
             window.location.href = '/teacherdashboard';
             return;
+          } else if (data?.role === 'Admin' || data?.role === 'Superadmin') {
+            window.location.href = '/admindashboard';
+            return;
           }
         } catch (error) {
           console.error(error);

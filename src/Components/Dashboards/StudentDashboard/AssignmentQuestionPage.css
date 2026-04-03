@@ -510,3 +510,29 @@
         flex-wrap: wrap;
     }
 }
+/* ── Math symbol toolbar ─────────────────────────────────────────────────── */
+.math-symbol-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 0 10px;
+}
+
+.math-symbol-btn {
+    padding: 4px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background: #f8fafc;
+    color: #374151;
+    font-size: 13px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    line-height: 1.4;
+}
+
+.math-symbol-btn:hover {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}

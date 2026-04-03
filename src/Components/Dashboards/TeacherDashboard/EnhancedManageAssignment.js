@@ -1,8 +1,161 @@
 import React, { useState, useEffect } from 'react';
+import MathText from '../../Shared/MathText';
 import Swal from 'sweetalert2';
 import { BiPlus, BiEdit, BiTrash, BiSave, BiX, BiArrowBack, BiFile, BiTime, BiBarChart, BiBookOpen, BiTarget } from 'react-icons/bi';
-import { updateAssignment, getAssignmentQuestionsById, saveQuestionToAssignment, deleteQuestionFromAssignment, updateQuestionInAssignment } from './TeacherDashboardService';
+import { updateAssignment, getAssignmentQuestionsById, saveQuestionToAssignment, deleteQuestionFromAssignment, updateQuestionInAssignment, createAssignmentQuestion } from './TeacherDashboardService';
+import MathFieldEditor from './MathFieldEditor';
+import QuestionLibrary from './QuestionLibrary';
+import TopicComboInput, { DEFAULT_TOPICS } from './TopicComboInput';
 import '../Assignments.css';
+import './MathFieldEditor.css';
+import './QuestionLibrary.css';
+
+
+const addMultipleChoiceOption = (questionData, setQuestionData) => {
+    setQuestionData({ ...questionData, multipleChoiceOptions: [...questionData.multipleChoiceOptions, ''] });
+};
+
+const updateMultipleChoiceOption = (questionData, setQuestionData, index, value) => {
+    const newOptions = [...questionData.multipleChoiceOptions];
+    newOptions[index] = value;
+    setQuestionData({ ...questionData, multipleChoiceOptions: newOptions });
+};
+
+const removeMultipleChoiceOption = (questionData, setQuestionData, index) => {
+    setQuestionData({ ...questionData, multipleChoiceOptions: questionData.multipleChoiceOptions.filter((_, i) => i !== index) });
+};
+
+const QuestionForm = ({ questionData, setQuestionData, onSubmit, onCancel, submitLabel, topicList, onTopicCreated, loading }) => (
+    <div className="question-form">
+        <div className="form-group">
+            <label>Question Text *</label>
+            <MathFieldEditor
+                value={questionData.questionText}
+                onChange={(v) => setQuestionData({ ...questionData, questionText: v })}
+                placeholder="Enter the question text…"
+            />
+        </div>
+
+        <div className="form-row">
+            <div className="form-group">
+                <label>Answer Type</label>
+                <select
+                    value={questionData.answerType}
+                    onChange={(e) => setQuestionData({ ...questionData, answerType: e.target.value })}
+                >
+                    <option value="Short Answer">Short Answer</option>
+                    <option value="Multiple Choice">Multiple Choice</option>
+                </select>
+            </div>
+
+            <div className="form-group">
+                <label>Difficulty Level</label>
+                <select
+                    value={questionData.difficultyLevel}
+                    onChange={(e) => setQuestionData({ ...questionData, difficultyLevel: parseInt(e.target.value) })}
+                >
+                    <option value={1}>1 - Easy</option>
+                    <option value={2}>2 - Medium</option>
+                    <option value={3}>3 - Medium-Hard</option>
+                    <option value={4}>4 - Hard</option>
+                    <option value={5}>5 - Very Hard</option>
+                </select>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Used for readiness tracking</small>
+            </div>
+
+            <div className="form-group">
+                <label>Topic / Subject</label>
+                <TopicComboInput
+                    value={questionData.subject || ''}
+                    onChange={(v) => setQuestionData({ ...questionData, subject: v })}
+                    availableTopics={topicList}
+                    onTopicCreated={onTopicCreated}
+                />
+            </div>
+
+            <div className="form-group">
+                <label>Points</label>
+                <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="10"
+                    value={questionData.points}
+                    onChange={(e) => setQuestionData({ ...questionData, points: Math.min(10, parseFloat(e.target.value) || 0.5) })}
+                />
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Counts toward assignment grade (max 10)</small>
+            </div>
+        </div>
+
+        {questionData.answerType === 'Multiple Choice' && (
+            <div className="form-group">
+                <label>Multiple Choice Options</label>
+                <div className="multiple-choice-options">
+                    {questionData.multipleChoiceOptions.map((option, index) => (
+                        <div key={index} className="option-input">
+                            <MathFieldEditor
+                                value={option}
+                                onChange={(v) => updateMultipleChoiceOption(questionData, setQuestionData, index, v)}
+                                placeholder={`Option ${index + 1}`}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeMultipleChoiceOption(questionData, setQuestionData, index)}
+                                className="remove-option-btn"
+                            >
+                                <BiX />
+                            </button>
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => addMultipleChoiceOption(questionData, setQuestionData)}
+                        className="add-option-btn"
+                    >
+                        <BiPlus /> Add Option
+                    </button>
+                </div>
+            </div>
+        )}
+
+        <div className="form-group">
+            <label>Correct Answer *</label>
+            <MathFieldEditor
+                value={questionData.correctAnswer}
+                onChange={(v) => setQuestionData({ ...questionData, correctAnswer: v })}
+                placeholder="Enter the correct answer…"
+            />
+        </div>
+
+        <div className="form-group">
+            <label>Answer Breakdown <span style={{fontWeight:400,color:'#94a3b8'}}>(optional)</span></label>
+            <MathFieldEditor
+                value={questionData.answerBreakdown || ''}
+                onChange={(v) => setQuestionData({ ...questionData, answerBreakdown: v })}
+                placeholder="Provide a detailed explanation for the solution…"
+            />
+        </div>
+
+        <div className="form-group">
+            <label>Image (optional)</label>
+            <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setQuestionData({ ...questionData, imageAssociated: e.target.files[0] })}
+            />
+            <small>Accepted formats: JPG, PNG, GIF. Max size: 5MB</small>
+        </div>
+
+        <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn-secondary">
+                <BiX /> Cancel
+            </button>
+            <button type="button" onClick={onSubmit} className="btn-primary" disabled={loading}>
+                <BiSave /> {submitLabel}
+            </button>
+        </div>
+    </div>
+);
 
 const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) => {
     const [currentTab, setCurrentTab] = useState('details'); // 'details', 'questions'
@@ -27,6 +180,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
         questionText: '',
         answerType: 'Short Answer',
         difficultyLevel: 1,
+        subject: '',
         points: 1.0,
         multipleChoiceOptions: [],
         correctAnswer: '',
@@ -36,6 +190,14 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
     });
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+    const [showLibrary, setShowLibrary] = useState(false);
+    const [availableTopics, setAvailableTopics] = useState(DEFAULT_TOPICS);
+
+    const handleTopicCreated = (newTopic) => {
+        setAvailableTopics((prev) =>
+            prev.includes(newTopic) ? prev : [...prev, newTopic]
+        );
+    };
 
     useEffect(() => {
         if (assignment?.id) {
@@ -51,7 +213,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             
             setQuestions(assignmentQuestions || []);
         } catch (error) {
-            console.error('Error loading questions:', error);
             setError(`Failed to load questions: ${error.message}`);
             setQuestions([]); // Set empty array on error
         } finally {
@@ -77,7 +238,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                 onAssignmentUpdated();
             }
         } catch (error) {
-            console.error('Error updating assignment:', error);
             setError('Failed to update assignment');
         } finally {
             setLoading(false);
@@ -106,6 +266,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                 questionText: '',
                 answerType: 'Short Answer',
                 difficultyLevel: 1,
+                subject: '',
                 points: 1.0,
                 multipleChoiceOptions: [],
                 correctAnswer: '',
@@ -116,7 +277,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             setIsAddingQuestion(false);
             setSuccess('Question added successfully!');
         } catch (error) {
-            console.error('Error adding question:', error);
             setError('Failed to add question');
         } finally {
             setLoading(false);
@@ -138,7 +298,6 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             setEditingQuestion(null);
             setSuccess('Question updated successfully!');
         } catch (error) {
-            console.error('Error updating question:', error);
             setError('Failed to update question');
         } finally {
             setLoading(false);
@@ -166,161 +325,26 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
             await loadQuestions();
             setSuccess('Question deleted successfully!');
         } catch (error) {
-            console.error('Error deleting question:', error);
             setError('Failed to delete question');
         } finally {
             setLoading(false);
         }
     };
 
-    const addMultipleChoiceOption = (questionData, setQuestionData) => {
-        setQuestionData({
-            ...questionData,
-            multipleChoiceOptions: [...questionData.multipleChoiceOptions, '']
-        });
+    const handleLibrarySelect = async (question) => {
+        try {
+            await createAssignmentQuestion({
+                assignmentId: assignment.id,
+                questionId: question.id,
+                points: Math.min(10, question.points || 1.0)
+            });
+            setShowLibrary(false);
+            setSuccess('Question linked successfully!');
+            await loadQuestions();
+        } catch (err) {
+            setError('Failed to link question: ' + err.message);
+        }
     };
-
-    const updateMultipleChoiceOption = (questionData, setQuestionData, index, value) => {
-        const newOptions = [...questionData.multipleChoiceOptions];
-        newOptions[index] = value;
-        setQuestionData({
-            ...questionData,
-            multipleChoiceOptions: newOptions
-        });
-    };
-
-    const removeMultipleChoiceOption = (questionData, setQuestionData, index) => {
-        const newOptions = questionData.multipleChoiceOptions.filter((_, i) => i !== index);
-        setQuestionData({
-            ...questionData,
-            multipleChoiceOptions: newOptions
-        });
-    };
-
-    const QuestionForm = ({ questionData, setQuestionData, onSubmit, onCancel, submitLabel }) => (
-        <div className="question-form">
-            <div className="form-group">
-                <label>Question Text *</label>
-                <textarea
-                    value={questionData.questionText}
-                    onChange={(e) => setQuestionData({ ...questionData, questionText: e.target.value })}
-                    placeholder="Enter the question text..."
-                    rows={4}
-                    required
-                />
-            </div>
-
-            <div className="form-row">
-                <div className="form-group">
-                    <label>Answer Type</label>
-                    <select
-                        value={questionData.answerType}
-                        onChange={(e) => setQuestionData({ ...questionData, answerType: e.target.value })}
-                    >
-                        <option value="Short Answer">Short Answer</option>
-                        <option value="Multiple Choice">Multiple Choice</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label>Difficulty Level</label>
-                    <select
-                        value={questionData.difficultyLevel}
-                        onChange={(e) => setQuestionData({ ...questionData, difficultyLevel: parseInt(e.target.value) })}
-                    >
-                        <option value={1}>1 - Easy</option>
-                        <option value={2}>2 - Medium</option>
-                        <option value={3}>3 - Medium-Hard</option>
-                        <option value={4}>4 - Hard</option>
-                        <option value={5}>5 - Very Hard</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label>Points</label>
-                    <input
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        value={questionData.points}
-                        onChange={(e) => setQuestionData({ ...questionData, points: parseFloat(e.target.value) })}
-                    />
-                </div>
-            </div>
-
-            {questionData.answerType === 'Multiple Choice' && (
-                <div className="form-group">
-                    <label>Multiple Choice Options</label>
-                    <div className="multiple-choice-options">
-                        {questionData.multipleChoiceOptions.map((option, index) => (
-                            <div key={index} className="option-input">
-                                <input
-                                    type="text"
-                                    value={option}
-                                    onChange={(e) => updateMultipleChoiceOption(questionData, setQuestionData, index, e.target.value)}
-                                    placeholder={`Option ${index + 1}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeMultipleChoiceOption(questionData, setQuestionData, index)}
-                                    className="remove-option-btn"
-                                >
-                                    <BiX />
-                                </button>
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={() => addMultipleChoiceOption(questionData, setQuestionData)}
-                            className="add-option-btn"
-                        >
-                            <BiPlus /> Add Option
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <div className="form-group">
-                <label>Correct Answer *</label>
-                <textarea
-                    value={questionData.correctAnswer}
-                    onChange={(e) => setQuestionData({ ...questionData, correctAnswer: e.target.value })}
-                    placeholder="Enter the correct answer..."
-                    rows={3}
-                    required
-                />
-            </div>
-
-            <div className="form-group">
-                <label>Answer Breakdown (optional)</label>
-                <textarea
-                    value={questionData.answerBreakdown || ''}
-                    onChange={(e) => setQuestionData({ ...questionData, answerBreakdown: e.target.value })}
-                    placeholder="Provide detailed explanation for the solution..."
-                    rows={3}
-                />
-            </div>
-
-            <div className="form-group">
-                <label>Image (optional)</label>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setQuestionData({ ...questionData, imageAssociated: e.target.files[0] })}
-                />
-                <small>Accepted formats: JPG, PNG, GIF. Max size: 5MB</small>
-            </div>
-
-            <div className="form-actions">
-                <button type="button" onClick={onCancel} className="btn-secondary">
-                    <BiX /> Cancel
-                </button>
-                <button type="button" onClick={onSubmit} className="btn-primary" disabled={loading}>
-                    <BiSave /> {submitLabel}
-                </button>
-            </div>
-        </div>
-    );
 
     return (
         <div className="enhanced-manage-assignment">
@@ -456,13 +480,22 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                     <div className="questions-tab">
                         <div className="questions-header">
                             <h3>Assignment Questions</h3>
-                            <button
-                                onClick={() => setIsAddingQuestion(true)}
-                                className="btn-primary"
-                                disabled={isAddingQuestion || editingQuestion}
-                            >
-                                <BiPlus /> Add Question
-                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    onClick={() => setShowLibrary(true)}
+                                    className="btn-secondary"
+                                    disabled={isAddingQuestion || !!editingQuestion}
+                                >
+                                    <BiBookOpen /> Browse Library
+                                </button>
+                                <button
+                                    onClick={() => setIsAddingQuestion(true)}
+                                    className="btn-primary"
+                                    disabled={isAddingQuestion || !!editingQuestion}
+                                >
+                                    <BiPlus /> Add Question
+                                </button>
+                            </div>
                         </div>
 
                         {loading && (
@@ -480,6 +513,9 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                     onSubmit={handleAddQuestion}
                                     onCancel={() => setIsAddingQuestion(false)}
                                     submitLabel="Add Question"
+                                    topicList={availableTopics}
+                                    onTopicCreated={handleTopicCreated}
+                                    loading={loading}
                                 />
                             </div>
                         )}
@@ -496,6 +532,9 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                                 onSubmit={handleUpdateQuestion}
                                                 onCancel={() => setEditingQuestion(null)}
                                                 submitLabel="Update Question"
+                                                topicList={availableTopics}
+                                                onTopicCreated={handleTopicCreated}
+                                                loading={loading}
                                             />
                                         </div>
                                     ) : (
@@ -509,7 +548,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                                 <span className="question-points">{question.points} pts</span>
                                                 <div className="question-actions">
                                                     <button
-                                                        onClick={() => setEditingQuestion({ ...question })}
+                                                        onClick={() => setEditingQuestion({ ...question, points: Math.min(10, question.points || 1) })}
                                                         className="edit-btn"
                                                         disabled={editingQuestion || isAddingQuestion}
                                                     >
@@ -526,7 +565,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                             </div>
                                             
                                             <div className="question-content">
-                                                <p className="question-text">{question.questionText}</p>
+                                                <p className="question-text"><MathText>{question.questionText}</MathText></p>
 
                                                 {question.figureBlobUrl && (
                                                     <div className="question-figure" style={{ margin: '8px 0' }}>
@@ -554,7 +593,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                                 )}
                                                 
                                                 <div className="question-solution">
-                                                    <strong>Correct Answer:</strong> {question.correctAnswer}
+                                                    <strong>Correct Answer:</strong> <MathText>{question.correctAnswer}</MathText>
                                                 </div>
                                                 
                                                 {question.answerBreakdown && (
@@ -585,6 +624,14 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                     </div>
                 )}
             </div>
+
+            {showLibrary && (
+                <QuestionLibrary
+                    excludeAssignmentId={assignment.id}
+                    onSelect={handleLibrarySelect}
+                    onClose={() => setShowLibrary(false)}
+                />
+            )}
         </div>
     );
 };

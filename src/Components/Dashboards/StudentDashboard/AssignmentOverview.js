@@ -43,14 +43,11 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
                     if (submission) {
                         submissionsData[assignment.id] = submission;
                     }
-                } catch (error) {
-                    console.warn(`No submission found for assignment ${assignment.id}:`, error);
-                }
+                } catch { /* ignore */ }
             }
             setUserSubmissions(submissionsData);
             
         } catch (error) {
-            console.error('Error fetching assignments:', error);
             setError('Failed to load assignments');
             setAssignments([]);
         } finally {
@@ -63,8 +60,8 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
         const dueDate = new Date(assignment.dueDate);
         const now = new Date();
         
-        // If submitted, it's completed
-        if (submission && submission.status === 'submitted') {
+        // If submitted or graded, it's completed
+        if (submission && (submission.status === 'submitted' || submission.status === 'graded')) {
             return 'completed';
         }
         
@@ -95,8 +92,8 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
         const submission = userSubmissions[assignment.id];
         const status = getAssignmentStatus(assignment);
 
-        // Completed assignments go to the review page
-        if (status === 'completed' && submission) {
+        // Submitted or graded assignments go to the review page
+        if ((status === 'completed' || submission?.status === 'graded') && submission) {
             onNavigate('assignment-review', { assignment, submission });
             return;
         }

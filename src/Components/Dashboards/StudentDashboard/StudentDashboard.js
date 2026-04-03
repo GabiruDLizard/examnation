@@ -107,6 +107,8 @@ function StudentDashboard() {
 
     // Chart view state
     const [activeChartView, setActiveChartView] = useState('progress'); // 'progress' or 'class'
+    const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
+    const [classReadinessRefreshKey, setClassReadinessRefreshKey] = useState(0);
 
     // Stats
     const [qAnswered, setQAnswered] = useState(0);
@@ -126,7 +128,15 @@ function StudentDashboard() {
         setCurrentView(section);
     };
 
-    // Use the EXACT same useEffect pattern that worked in your old code
+    // Re-fetch readiness history whenever the student returns to main overview,
+    // or manually refreshes the class chart tab
+    useEffect(() => {
+        if (!userId || currentView !== 'main') return;
+        getStudentReadinessHistory(userId, 8)
+            .then(history => setClassReadinessHistory(history))
+            .catch(() => {});
+    }, [currentView, userId, readinessRefreshKey, classReadinessRefreshKey]);
+
     useEffect(() => {
         if (authLoading) return;
 
@@ -197,7 +207,6 @@ function StudentDashboard() {
                     const readinessResults = processGroupedAnswers(grouped);
                     setReadinessScores(readinessResults);
                 } catch (readinessError) {
-                    console.error('Error processing readiness:', readinessError);
                     setReadinessScores([]);
                 }
             } else {
@@ -205,7 +214,6 @@ function StudentDashboard() {
             }
 
         } catch (error) {
-            console.error('❌ Critical error fetching data:', error);
             setError(`Failed to load dashboard: ${error.message}`);
         } finally {
             setLoading(false);
@@ -361,6 +369,7 @@ function StudentDashboard() {
                     onComplete={() => {
                         setCurrentView('assignments');
                         setSelectedAssignment(null);
+                        setReadinessRefreshKey(k => k + 1);
                     }}
                 />
             );
@@ -435,9 +444,12 @@ function StudentDashboard() {
                                     <BiTrendingUp size={16} />
                                     Practice & Test Progress
                                 </button>
-                                <button 
+                                <button
                                     className={`chart-tab ${activeChartView === 'class' ? 'active' : ''}`}
-                                    onClick={() => setActiveChartView('class')}
+                                    onClick={() => {
+                                        setActiveChartView('class');
+                                        setClassReadinessRefreshKey(k => k + 1);
+                                    }}
                                 >
                                     <BiBarChart size={16} />
                                     By Class (Weekly)

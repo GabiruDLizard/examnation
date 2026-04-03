@@ -56,7 +56,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setLoading(false);
         } catch (error) {
-            console.error('Error loading initial data:', error);
             setError('Failed to load data');
             setLoading(false);
         }
@@ -69,7 +68,6 @@ const ManageAssignment = ({ onBack }) => {
             const classAssignments = await getAssignmentsForClassWithQuestions(selectedClassId);
             setAssignments(classAssignments);
         } catch (error) {
-            console.error('Error loading assignments:', error);
             setError('Failed to load assignments');
         }
     };
@@ -114,7 +112,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setIsCreating(false);
         } catch (error) {
-            console.error('Error creating assignment:', error);
             setError('Failed to create assignment');
             setIsCreating(false);
         }
@@ -156,7 +153,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setIsCreating(false);
         } catch (error) {
-            console.error('Error updating assignment:', error);
             setError('Failed to update assignment');
             setIsCreating(false);
         }
@@ -173,7 +169,6 @@ const ManageAssignment = ({ onBack }) => {
             setConfirmDeleteId(null);
             await loadAssignments();
         } catch (error) {
-            console.error('Error deleting assignment:', error);
             toast.error('Failed to delete assignment');
             setConfirmDeleteId(null);
         }

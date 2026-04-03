@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './Auth.css';
-import logo from '../../Resources/PHold-logo.png';
+import logo from '../../Resources/ExamNationIcon.svg';
 import { useNavigate } from 'react-router-dom';
 import { login } from './AuthService';
 import { FaUserCircle } from 'react-icons/fa';
@@ -57,9 +57,7 @@ const Auth = () => {
                 if (!response.ok) throw new Error('Failed to fetch user data');
                 const data = await response.json();
                 setUser(data);
-            } catch (error) {
-                console.error(error);
-            }
+            } catch { /* ignore */ }
         };
         if (token) fetchUserData();
     }, [token]);

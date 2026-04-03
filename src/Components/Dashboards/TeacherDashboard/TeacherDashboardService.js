@@ -27,7 +27,6 @@ export const recordStudentReadiness = async (studentId, classId, readinessData) 
 
         return await response.json();
     } catch (error) {
-        console.error('Error recording student readiness:', error);
         throw error;
     }
 };
@@ -45,7 +44,6 @@ export const updateStudentTopicAbility = async (studentId, topic, theta, questio
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     } catch (error) {
-        console.error('Error updating topic ability:', error);
         throw error;
     }
 };
@@ -55,8 +53,7 @@ export const getStudentTopicAbility = async (studentId) => {
         const response = await authFetch(`/studenttopicability/student/${studentId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
-    } catch (error) {
-        console.error('Error fetching student topic ability:', error);
+    } catch {
         return [];
     }
 };
@@ -66,8 +63,7 @@ export const getClassTopicAbility = async (classId) => {
         const response = await authFetch(`/studenttopicability/class/${classId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
-    } catch (error) {
-        console.error('Error fetching class topic ability:', error);
+    } catch {
         return [];
     }
 };
@@ -82,7 +78,6 @@ export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching student readiness history:', error);
         throw error;
     }
 };
@@ -97,7 +92,6 @@ export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching class readiness history:', error);
         throw error;
     }
 };
@@ -112,7 +106,6 @@ export const getTeacherReadinessChartData = async (teacherId, daysBack = 30) => 
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching teacher readiness chart data:', error);
         throw error;
     }
 };
@@ -129,7 +122,6 @@ export const getTeacherInfo = async () => {
         const teacherData = await response.json();
         return teacherData;
     } catch (error) {
-        console.error('Error fetching teacher info:', error);
         throw error;
     }
 };
@@ -147,7 +139,6 @@ export const getTeacherClasses = async () => {
         const classesData = await response.json();
         return classesData;
     } catch (error) {
-        console.error('Error fetching teacher classes:', error);
         throw error;
     }
 };
@@ -196,7 +187,6 @@ export const createTeacherClass = async (classData) => {
         const createdClass = await response.json();
         return createdClass;
     } catch (error) {
-        console.error('Error creating teacher class:', error);
         throw error;
     }
 };
@@ -216,7 +206,6 @@ export const updateTeacherClass = async (classId, classData) => {
         const updatedClass = await response.json();
         return updatedClass;
     } catch (error) {
-        console.error('Error updating teacher class:', error);
         throw error;
     }
 };
@@ -234,7 +223,6 @@ export const deleteTeacherClass = async (classId) => {
 
         return true;
     } catch (error) {
-        console.error('Error deleting teacher class:', error);
         throw error;
     }
 };
@@ -251,7 +239,6 @@ export const getClassEnrollments = async (classId) => {
         const enrollments = await response.json();
         return enrollments;
     } catch (error) {
-        console.error('Error fetching class enrollments:', error);
         throw error;
     }
 };
@@ -275,7 +262,6 @@ export const enrollStudentInClass = async (classId, studentId) => {
         const enrollment = await response.json();
         return enrollment;
     } catch (error) {
-        console.error('Error enrolling student in class:', error);
         throw error;
     }
 };
@@ -288,8 +274,7 @@ export const searchStudents = async (query, institutionId) => {
         const response = await authFetch(`/user/search?${qs}`);
         if (!response.ok) return [];
         return await response.json();
-    } catch (error) {
-        console.error('Error searching students:', error);
+    } catch {
         return [];
     }
 };
@@ -322,7 +307,6 @@ export const enrollStudentByIdentifier = async (classId, userIdentifier) => {
         };
 
     } catch (error) {
-        console.error('Error enrolling student by identifier:', error);
         throw error;
     }
 };
@@ -390,8 +374,14 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
                 let readinessLevel = 0;
                 try {
-                    const rd = await getStudentReadiness(studentId, classId);
-                    readinessLevel = Math.round(rd?.readinessPercentage ?? 0);
+                    const history = await getStudentReadinessHistory(studentId, 4);
+                    if (Array.isArray(history) && history.length > 0) {
+                        const sorted = [...history].sort(
+                            (a, b) => new Date(b.weekDate ?? b.recordedAt ?? 0) - new Date(a.weekDate ?? a.recordedAt ?? 0)
+                        );
+                        const classRecord = sorted.find(r => r.classId === classId) ?? sorted[0];
+                        readinessLevel = Math.round(classRecord?.readinessPercentage ?? 0);
+                    }
                 } catch { /* no readiness recorded yet */ }
 
                 let studentProgress = null;
@@ -407,8 +397,7 @@ export const getAllEnrolledStudentInfo = async (classId) => {
                 }
 
                 return [studentInfo, studentProgress];
-            } catch (error) {
-                console.error(`Error fetching details for enrollment:`, enrollment, error);
+            } catch {
                 return null;
             }
         });
@@ -416,8 +405,7 @@ export const getAllEnrolledStudentInfo = async (classId) => {
         const studentDetails = await Promise.all(studentDetailsPromises);
         return studentDetails.filter(detail => detail !== null);
 
-    } catch (error) {
-        console.error('Error fetching all student details:', error);
+    } catch {
         return [];
     }
 };
@@ -431,19 +419,12 @@ export const createAssignmentForClass = async (assignmentData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Assignment creation failed:', {
-                status: response.status,
-                statusText: response.statusText,
-                errorBody: errorText,
-                sentData: JSON.stringify(assignmentData, null, 2)
-            });
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const createdAssignment = await response.json();
         return createdAssignment;
     } catch (error) {
-        console.error('Error creating assignment:', error);
         throw error;
     }
 };
@@ -457,8 +438,7 @@ export const getAssignmentsForClass = async (classId) => {
 
         const assignments = await response.json();
         return assignments;
-    } catch (error) {
-        console.error('Error fetching assignments for class:', error);
+    } catch {
         return [];
     }
 };
@@ -472,8 +452,7 @@ export const getAssignmentsByTeacher = async (teacherId) => {
 
         const assignments = await response.json();
         return assignments;
-    } catch (error) {
-        console.error('Error fetching assignments for class:', error);
+    } catch {
         return [];
     }
 };
@@ -487,8 +466,7 @@ export const getAssignmentsById = async (assignmentId) => {
 
         const assignment = await response.json();
         return assignment;
-    } catch (error) {
-        console.error('Error fetching assignment by ID:', error);
+    } catch {
         return null;
     }
 };
@@ -506,7 +484,6 @@ export const updateAssignment = async (assignmentId, assignmentData) => {
         const updatedAssignment = await response.json();
         return updatedAssignment;
     } catch (error) {
-        console.error('Error updating assignment:', error);
         throw error;
     }
 };
@@ -521,7 +498,6 @@ export const deleteAssignment = async (assignmentId) => {
         }
         return true;
     } catch (error) {
-        console.error('Error deleting assignment:', error);
         throw error;
     }
 };
@@ -541,14 +517,14 @@ export const uploadQuestionImage = async (imageFile) => {
         const result = await response.json();
         return result.blobUrl;
     } catch (error) {
-        console.error('Error uploading question image:', error);
         throw error;
     }
 };
 
 export const createQuestion = async (questionData) => {
+    const { imageAssociated, imageDescription, ...rest } = questionData;
     const sanitizedData = {
-        ...questionData,
+        ...rest,
         answerBreakdown: questionData.answerBreakdown || "",
         solutionSteps: questionData.solutionSteps || "",
         figureDescription: questionData.figureDescription || "",
@@ -564,20 +540,12 @@ export const createQuestion = async (questionData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Question creation failed:', {
-                status: response.status,
-                statusText: response.statusText,
-                errorBody: errorText,
-                sentData: JSON.stringify(sanitizedData, null, 2)
-            });
-
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const createdQuestion = await response.json();
         return createdQuestion;
     } catch (error) {
-        console.error('Error creating question:', error);
         throw error;
     }
 };
@@ -597,19 +565,12 @@ export const createAssignmentQuestion = async (linkData) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Assignment question link failed:', {
-                status: response.status,
-                statusText: response.statusText,
-                errorBody: errorText,
-                sentData: JSON.stringify(requestBody, null, 2)
-            });
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const createdLink = await response.json();
         return createdLink;
     } catch (error) {
-        console.error('Error creating assignment question link:', error);
         throw error;
     }
 };
@@ -627,8 +588,7 @@ export const getAssignmentQuestions = async (assignmentId) => {
 
         const assignmentQuestions = await response.json();
         return assignmentQuestions;
-    } catch (error) {
-        console.error('Error fetching assignment questions:', error);
+    } catch {
         return [];
     }
 };
@@ -655,8 +615,7 @@ export const getAssignmentWithQuestions = async (assignmentId) => {
                         };
                     }
                     return null;
-                } catch (error) {
-                    console.error(`Error fetching question ${aq.questionId}:`, error);
+                } catch {
                     return null;
                 }
             })
@@ -668,8 +627,7 @@ export const getAssignmentWithQuestions = async (assignmentId) => {
             ...assignment,
             questions: validQuestions
         };
-    } catch (error) {
-        console.error('Error fetching assignment with questions:', error);
+    } catch {
         return null;
     }
 };
@@ -695,8 +653,7 @@ export const getAssignmentsForClassWithQuestions = async (classId) => {
                                 };
                             }
                             return null;
-                        } catch (error) {
-                            console.error(`Error fetching question ${aq.questionId}:`, error);
+                        } catch {
                             return null;
                         }
                     })
@@ -714,8 +671,7 @@ export const getAssignmentsForClassWithQuestions = async (classId) => {
         );
 
         return assignmentsWithQuestions;
-    } catch (error) {
-        console.error('Error fetching assignments with questions:', error);
+    } catch {
         return [];
     }
 };
@@ -729,7 +685,6 @@ export const getStudentReadiness = async (studentId, classId) => {
         const readinessData = await response.json();
         return readinessData;
     } catch (error) {
-        console.error('Error fetching student readiness:', error);
         throw error;
     }
 };
@@ -744,7 +699,6 @@ export const getUserById = async (userId) => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching user:', error);
         throw error;
     }
 };
@@ -762,8 +716,7 @@ export const getSubmissionsByAssignmentId = async (assignmentId) => {
         }
 
         return await response.json();
-    } catch (error) {
-        console.error('Error fetching submissions for assignment:', error);
+    } catch {
         return [];
     }
 };
@@ -811,8 +764,7 @@ export const getSubmissionStatsForTeacher = async (teacherId) => {
             submissionsByAssignment
         };
 
-    } catch (error) {
-        console.error('Error fetching submission stats:', error);
+    } catch {
         return {
             totalSubmissions: 0,
             totalPossibleSubmissions: 0,
@@ -853,7 +805,6 @@ export const getAssignmentWithSubmissionStats = async (assignmentId) => {
         };
 
     } catch (error) {
-        console.error('Error fetching assignment with submission stats:', error);
         throw error;
     }
 };
@@ -867,8 +818,7 @@ export const getAnswersBySubmissionId = async (submissionId) => {
         }
 
         return await response.json();
-    } catch (error) {
-        console.error('Error fetching answers for submission:', error);
+    } catch {
         return [];
     }
 };
@@ -892,7 +842,6 @@ export const getSubmissionDetails = async (submissionId) => {
 
         return submission;
     } catch (error) {
-        console.error('Error fetching submission details:', error);
         throw error;
     }
 };
@@ -914,9 +863,37 @@ export const gradeSubmission = async (submissionId, score, feedback = '') => {
 
         return await response.json();
     } catch (error) {
-        console.error('Error grading submission:', error);
         throw error;
     }
+};
+
+// Approves a pending submission — triggers mastery update and records readiness.
+export const approveSubmission = async (submissionId, assignmentId, studentId, classId) => {
+    const { applyMasteryAndFinalize } = await import('../StudentDashboard/StudentDashboardService');
+    const { readinessPercentage, abilityEstimate } = await applyMasteryAndFinalize(assignmentId, submissionId, studentId);
+    if (classId) {
+        await recordStudentReadiness(studentId, classId, {
+            readinessPercentage,
+            questionsAnswered: 0,
+            correctAnswers: 0,
+            studyTimeMinutes: 0,
+            abilityEstimate
+        }).catch(() => {});
+    }
+    return { readinessPercentage };
+};
+
+// Sends a submission back to the student with an optional comment.
+export const sendBackSubmission = async (submissionId, comment = '') => {
+    const subResponse = await authFetch(`/assignmentsubmission/${submissionId}`);
+    if (!subResponse.ok) throw new Error('Failed to fetch submission');
+    const sub = await subResponse.json();
+    const res = await authFetch(`/assignmentsubmission/${submissionId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...sub, status: 'needs_revision', feedback: comment })
+    });
+    if (!res.ok) throw new Error('Failed to send back submission');
+    return res.json();
 };
 
 export const exportSubmissionData = async (assignmentId, format = 'csv') => {
@@ -941,7 +918,6 @@ export const exportSubmissionData = async (assignmentId, format = 'csv') => {
 
         return true;
     } catch (error) {
-        console.error('Error exporting submission data:', error);
         throw error;
     }
 };
@@ -981,24 +957,30 @@ export const getAssignmentQuestionsById = async (assignmentId) => {
         );
 
         return questionsWithDetails.filter(q => q !== null);
-    } catch (error) {
-        console.error('Error fetching assignment questions:', error);
+    } catch {
         return [];
     }
 };
 
 export const saveQuestionToAssignment = async (assignmentId, questionData) => {
     try {
+        let figureBlobUrl = questionData.figureBlobUrl || '';
+        if (questionData.imageAssociated instanceof File) {
+            figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
+        }
+
         const createdQuestion = await createQuestion({
             questionText: questionData.questionText,
             answerType: questionData.answerType,
-            difficultyLevel: questionData.difficultyLevel,
+            difficultyLevel: String(questionData.difficultyLevel),
+            subject: questionData.subject || 'General',
             points: questionData.points,
             multipleChoiceOptions: questionData.multipleChoiceOptions || [],
             correctAnswer: questionData.correctAnswer,
             answerBreakdown: questionData.answerBreakdown,
-            imageAssociated: questionData.imageAssociated,
-            imageDescription: questionData.imageDescription
+            figureBlobUrl,
+            figureDescription: questionData.imageDescription || '',
+            source: 'teacher'
         });
 
         await createAssignmentQuestion({
@@ -1009,26 +991,31 @@ export const saveQuestionToAssignment = async (assignmentId, questionData) => {
 
         return createdQuestion;
     } catch (error) {
-        console.error('Error saving question to assignment:', error);
         throw error;
     }
 };
 
 export const updateQuestionInAssignment = async (assignmentId, questionId, questionData) => {
     try {
+        let figureBlobUrl = questionData.figureBlobUrl || '';
+        if (questionData.imageAssociated instanceof File) {
+            figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
+        }
+
         const response = await authFetch(`/question/${questionId}`, {
             method: 'PUT',
             body: JSON.stringify({
                 id: questionId,
                 questionText: questionData.questionText,
                 answerType: questionData.answerType,
-                difficultyLevel: questionData.difficultyLevel,
+                difficultyLevel: String(questionData.difficultyLevel),
+                subject: questionData.subject || 'General',
                 points: questionData.points,
                 multipleChoiceOptions: questionData.multipleChoiceOptions || [],
                 correctAnswer: questionData.correctAnswer,
                 answerBreakdown: questionData.answerBreakdown,
-                imageAssociated: questionData.imageAssociated,
-                imageDescription: questionData.imageDescription
+                figureBlobUrl,
+                figureDescription: questionData.imageDescription || ''
             })
         });
 
@@ -1038,7 +1025,6 @@ export const updateQuestionInAssignment = async (assignmentId, questionId, quest
 
         return await response.json();
     } catch (error) {
-        console.error('Error updating question in assignment:', error);
         throw error;
     }
 };
@@ -1058,7 +1044,6 @@ export const deleteQuestionFromAssignment = async (assignmentId, questionId) => 
 
         return response1.ok;
     } catch (error) {
-        console.error('Error deleting question from assignment:', error);
         throw error;
     }
 };
