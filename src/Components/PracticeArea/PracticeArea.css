@@ -578,6 +578,93 @@
     cursor: not-allowed;
 }
 
+/* MQ Toolbar */
+.mq-toolbar-wrap {
+  margin-bottom: 12px;
+}
+
+.mq-toolbar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #f8fafc;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mq-toolbar-toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.mq-toolbar-toggle.open {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.mq-toolbar-toggle-icon {
+  font-size: 15px;
+}
+
+.mq-toolbar-toggle-chevron {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.mq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  background: #f8fafc;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+}
+
+.mq-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.mq-toolbar-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.mq-toolbar-btn {
+  padding: 4px 8px;
+  min-width: 30px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+
+.mq-toolbar-btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     .practiceareagrid {

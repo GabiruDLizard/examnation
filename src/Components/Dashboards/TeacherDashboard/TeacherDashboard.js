@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
-import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiBarChart, BiGroup, BiHome, BiMenu, BiX } from "react-icons/bi";
+import { BiLogOut, BiCog, BiBrain, BiFile, BiClipboard, BiGroup, BiHome, BiMenu, BiX, BiSolidBell } from "react-icons/bi";
 import "../TeacherDashboard.css";
 
 // Import services
@@ -20,8 +20,11 @@ import ClassOverview from "./ClassOverview";
 import StudentView from "./StudentView";
 import Assignments from "./Assignments";
 import MyTA from "../TAPage/TAPageTeacher";
+import TeacherReports from "./TeacherReports";
 import Settings from "../../Settings/Settings";
 import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
+import { useTour } from '../../Tour/useTour';
+import teacherSteps from './TeacherSteps';
 
 
 function heatColor(v) {
@@ -99,6 +102,8 @@ export default function TeacherDashboard() {
 
   const navigate = useNavigate();
 
+  useTour(userId, 'teacher', teacherSteps, !loading);
+
   const handleNavigateFromOverview = (section) => {
     // Special case: if navigating to assignments, switch to main assignments page
     if (section === 'assignments') {
@@ -106,10 +111,6 @@ export default function TeacherDashboard() {
       setCurrentView('main');          // Go to main view
       // Keep the selectedClass instead of clearing it - this will pass the class context
       // setSelectedClass(null);       // Comment out or remove this line
-    } else if(section === 'analytics') {
-      setActivePage('insights');
-      setCurrentView('main');          // Go to analytics view
-      setSelectedClass(null);          // Clear selected class
     } else {
       // For other sections (students), stay in class context
       setCurrentView(section);         // Changes view to 'students', etc.
@@ -455,12 +456,10 @@ export default function TeacherDashboard() {
         );
       case 'classes':
         return <MyClasses teacherInfo={teacherInfo} onClassClick={handleClassClick} />;
-      case 'insights':
-        return <div className="coming-soon">Insights page coming soon</div>;
       case 'ta':
         return <MyTA />;
       case 'reports':
-        return <div className="coming-soon">Reports page coming soon...</div>;
+        return <TeacherReports />;
       case 'settings':
         return <Settings />;
       default:
@@ -750,7 +749,6 @@ export default function TeacherDashboard() {
     
     switch (activePage) {
       case 'classes': return 'My Classes';
-      case 'insights': return 'Insights';
       case 'assignments': return 'Assignments';
       case 'ta': return 'MY TA';
       case 'reports': return 'Reports';
@@ -784,7 +782,6 @@ export default function TeacherDashboard() {
     switch (activePage) {
       case 'classes': return [home, { label: 'My Classes' }];
       case 'assignments': return [home, { label: 'Assignments' }];
-      case 'insights': return [home, { label: 'Insights' }];
       case 'ta': return [home, { label: 'My TA' }];
       case 'reports': return [home, { label: 'Reports' }];
       case 'settings': return [home, { label: 'Settings' }];
@@ -811,14 +808,7 @@ export default function TeacherDashboard() {
             <BiGroup style={{ marginRight: '8px', fontSize: '18px'}} />
             My Classes
           </button>
-          <button 
-            className={`td-nav-item ${activePage === 'insights' ? 'active' : ''}`}
-            onClick={() => handleNavClick('insights')}
-          >
-            <BiBarChart style={{ marginRight: '8px', fontSize: '18px'}} />
-            Insights
-          </button>
-          <button 
+          <button
             className={`td-nav-item ${activePage === 'assignments' ? 'active' : ''}`}
             onClick={() => handleNavClick('assignments')}
           >
@@ -874,6 +864,7 @@ export default function TeacherDashboard() {
 
         <header className="td-header">
           <h1>{getPageTitle()}</h1>
+          <div></div>
           <div className="td-user">{getTeacherDisplayName()}</div>
         </header>
         <Breadcrumb crumbs={getBreadcrumbs()} />

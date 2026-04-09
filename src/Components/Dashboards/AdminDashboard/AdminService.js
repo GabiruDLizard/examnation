@@ -184,3 +184,21 @@ export const deleteQuestion = async (questionId) => {
     }
     return res.json();
 };
+
+export const getInquiries = async () => {
+    const res = await authFetch('/demo-request');
+    if (!res.ok) throw new Error('Failed to fetch inquiries.');
+    return res.json();
+}
+
+export const updateInquiryStatus = async (requestId, status) => {
+    const res = await authFetch(`/demo-request/${requestId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to update inquiry status');
+    }
+    return res.json();
+}

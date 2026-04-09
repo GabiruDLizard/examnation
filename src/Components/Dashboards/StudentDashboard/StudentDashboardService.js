@@ -216,7 +216,7 @@ export const getStudentClassesWithDetails = async (userId) => {
         const classDetailsPromises = enrollments.map(async (enrollment) => {
             const classDetails = await getClassDetails(enrollment.classId);
 
-            let avgReadiness = 0;
+            let avgReadiness = null;
             try {
                 const rdResponse = await authFetch(`/Readiness/student/${userId}/class/${enrollment.classId}`);
                 if (rdResponse.ok) {
@@ -224,6 +224,26 @@ export const getStudentClassesWithDetails = async (userId) => {
                     avgReadiness = Math.round(rdData?.readinessPercentage ?? 0);
                 }
             } catch { /* no readiness recorded yet */ }
+
+            // Fall back to topic ability average if no class-level history exists
+            if (avgReadiness === null) {
+                try {
+                    const taResponse = await authFetch(`/studenttopicability/${userId}`);
+                    if (taResponse.ok) {
+                        const topics = await taResponse.json();
+                        if (topics && topics.length > 0) {
+                            const avg = topics.reduce((sum, t) => {
+                                const theta = t.theta ?? t.Theta ?? 0;
+                                const pct = (theta >= -4 && theta <= 4)
+                                    ? ((theta + 4) / 8) * 100
+                                    : Math.max(0, Math.min(100, theta));
+                                return sum + pct;
+                            }, 0) / topics.length;
+                            avgReadiness = Math.round(avg);
+                        }
+                    }
+                } catch { /* skip */ }
+            }
 
             return {
                 enrollmentId: enrollment.id,
@@ -648,10 +668,12 @@ export const applyMasteryAndFinalize = async (assignmentId, submissionId, studen
             ).catch(() => {});
         }
 
-        // Save per-topic mastery
+        // Save per-topic mastery — convert mastery % (0–100) to IRT theta (-4 to +4)
+        // so StudentProfile.js thetaToPercent() displays it correctly
         if (studentId && Object.keys(topicMasteries).length > 0) {
             Object.entries(topicMasteries).forEach(([subject, { mastery, count }]) => {
-                updateStudentTopicAbility(studentId, subject, mastery, count).catch(() => {});
+                const topicTheta = (mastery / 100) * 8 - 4; // inverse of thetaToPercent
+                updateStudentTopicAbility(studentId, subject, topicTheta, count).catch(() => {});
             });
         }
 

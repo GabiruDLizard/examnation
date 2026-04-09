@@ -638,7 +638,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             {isSubmitted && <span style={{color: '#22C55E'}}>(Submitted)</span>}
                             {isPastDeadline && !isSubmitted && <span style={{color: '#EF4444'}}>(Deadline Passed)</span>}
                         </h3>
-                        {!isEditingDisabled && !currentQuestion?.options?.length && (
+                        {!isEditingDisabled && !currentQuestion?.multipleChoiceOptions?.length && (
                             <div className="math-symbol-toolbar">
                                 {MATH_SYMBOLS.map(({ label, cmd }) => (
                                     <button
@@ -657,29 +657,67 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             </div>
                         )}
                         <div className="answer-input">
-                            {currentQuestion?.options?.length > 0 ? (
-                                <div className="mc-options">
-                                    {currentQuestion.options.map((option, idx) => (
-                                        <label
-                                            key={idx}
-                                            className={`mc-option ${selectedOption === option ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="mc-answer"
-                                                value={option}
-                                                checked={selectedOption === option}
-                                                disabled={isEditingDisabled}
-                                                onChange={() => {
-                                                    setSelectedOption(option);
-                                                    setSteps([option]);
-                                                }}
-                                            />
-                                            {option}
-                                        </label>
-                                    ))}
-                                </div>
-                            ) : (
+                            {currentQuestion?.multipleChoiceOptions?.length > 0 ? (() => {
+                                const opts = currentQuestion.multipleChoiceOptions.map(o => {
+                                    if (typeof o !== 'string') return o;
+                                    try {
+                                        const parsed = JSON.parse(o);
+                                        if (parsed && typeof parsed === 'object' && 'text' in parsed) return parsed;
+                                    } catch {}
+                                    return { text: o, imageUrl: null };
+                                });
+                                const hasImages = opts.some(o => o.imageUrl);
+                                return hasImages ? (
+                                    // Image card layout
+                                    <div className="mc-options mc-options-image">
+                                        {opts.map((opt, idx) => {
+                                            const letter = String.fromCharCode(65 + idx);
+                                            const value = opt.text || letter;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={`mc-option-card ${selectedOption === value ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
+                                                    onClick={() => {
+                                                        if (isEditingDisabled) return;
+                                                        setSelectedOption(value);
+                                                        setSteps([value]);
+                                                    }}
+                                                >
+                                                    <span className="mc-card-letter">{letter}</span>
+                                                    {opt.imageUrl && <img src={opt.imageUrl} alt={`Option ${letter}`} className="mc-card-img" />}
+                                                    {opt.text && <span className="mc-card-text">{opt.text}</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    // Standard text radio layout
+                                    <div className="mc-options">
+                                        {opts.map((opt, idx) => {
+                                            const value = opt.text;
+                                            return (
+                                                <label
+                                                    key={idx}
+                                                    className={`mc-option ${selectedOption === value ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="mc-answer"
+                                                        value={value}
+                                                        checked={selectedOption === value}
+                                                        disabled={isEditingDisabled}
+                                                        onChange={() => {
+                                                            setSelectedOption(value);
+                                                            setSteps([value]);
+                                                        }}
+                                                    />
+                                                    {value}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })() : (
                                 steps.map((step, idx) => (
                                     <div key={idx} className="answer-step">
                                         <span className="step-number">{idx + 1}.</span>

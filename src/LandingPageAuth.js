@@ -28,8 +28,7 @@ const LandingPageAuth = () => {
             window.location.href = '/admindashboard';
             return;
           }
-        } catch (error) {
-          console.error(error);
+        } catch {
           removeToken();
         }
       }

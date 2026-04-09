@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { getUsers, createAccount, editUser, deleteUser, resetPassword, getOrganizations, createOrganization, getResetRequests, completeResetRequest, dismissResetRequest, getLibrary, createQuestion as createQuestionApi, editQuestion as editQuestionApi, deleteQuestion } from './AdminService';
+import { getUsers, createAccount, editUser, deleteUser, resetPassword, getOrganizations, createOrganization, getResetRequests, completeResetRequest, dismissResetRequest, getLibrary, createQuestion as createQuestionApi, editQuestion as editQuestionApi, deleteQuestion, getInquiries, updateInquiryStatus } from './AdminService';
 import { removeToken, getRoleFromToken, getInstitutionIdFromToken } from '../../../utils/tokenUtils';
 import { useNavigate } from 'react-router-dom';
-import { BiGroup, BiLogOut, BiBuildings, BiKey, BiEdit, BiTrash } from 'react-icons/bi';
+import { BiGroup, BiLogOut, BiBuildings, BiKey, BiEdit, BiTrash, BiMessageRoundedDots, BiFile } from 'react-icons/bi';
+import AdminReports from './AdminReports';
 import Swal from 'sweetalert2';
 import './AdminDashboard.css';
 import '../TeacherDashboard/MathFieldEditor.css';
@@ -366,6 +367,50 @@ function EditModal({ user, onClose, onSaved, isSuperAdmin, organizations }) {
     );
 }
 
+// ── Inquiry View Modal ────────────────────────────────────────
+function InquiryViewModal({ inquiry, onClose, onStatusChange }) {
+    const [busy, setBusy] = useState(false);
+    const handleStatusUpdate = async (newStatus) => {
+        setBusy(true);
+        try {
+            await updateInquiryStatus(inquiry.id, newStatus);
+            toast.success(`Inquiry marked as ${newStatus}`);
+            if (onStatusChange) onStatusChange();
+            onClose();
+        } catch (err) { 
+            toast.error(err.message);
+        } finally {
+            setBusy(false);
+        }
+    };
+    return (
+        <div className="adm-overlay" onClick={onClose}>
+            <div className="adm-modal" onClick={e => e.stopPropagation()}>
+                <div className="adm-modal-header">
+                    <span className="adm-modal-title">Inquiry Details</span>
+                    <button className="adm-modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="adm-modal-content">
+                    <p><strong>From:</strong> {inquiry.firstName} {inquiry.lastName} ({inquiry.email})</p>
+                    {inquiry.schoolName && <p><strong>School:</strong> {inquiry.schoolName}</p>}
+                    <p><strong>Title:</strong> {inquiry.title || '—'}</p>
+                    <p><strong>Message:</strong></p>
+                    <div className="adm-inquiry-message">{inquiry.request || '—'}</div>
+                </div>
+                <div className="adm-modal-actions">
+                    <button type="button" className="adm-btn-confirm" onClick={() => handleStatusUpdate('contacted')} disabled={busy}>
+                        Mark as Contacted
+                    </button>
+                    <button type="button" className="adm-btn-cancel" onClick={() => handleStatusUpdate('dismissed')} disabled={busy}>
+                        Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
 // ── Question Form Modal (create + edit) ────────────────────────────────────────
 function QuestionFormModal({ onClose, onSubmit, question }) {
     const isEdit = !!question;
@@ -555,6 +600,8 @@ export default function AdminDashboard() {
     const [libPage, setLibPage] = useState(0);
     const LIB_PAGE_SIZE = 20;
     const [library,         setLibrary]       = useState([]);
+    const [inquiries, setInquiries]           = useState([]);
+    const [selectedInquiry, setSelectedInquiry] = useState(null);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -636,12 +683,25 @@ export default function AdminDashboard() {
         }
     }, []);
 
+    const loadInquiries = useCallback(async () => {
+        setLoading(true);
+        try{
+            const data = await getInquiries();
+            setInquiries(Array.isArray(data) ? data : []);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (view === 'users')          loadUsers();
         else if (view === 'orgs')      loadOrgs();
         else if (view === 'requests')  loadRequests();
         else if (view === 'lib-editor') loadLibrary();
-    }, [view, loadUsers, loadOrgs, loadRequests, loadLibrary]);
+        else if (view === 'inquiries') loadInquiries();
+    }, [view, loadUsers, loadOrgs, loadRequests, loadLibrary, loadInquiries]);
 
     // Load orgs + request count in background on mount
     useEffect(() => { if (isSuperAdmin) loadOrgs(); }, [isSuperAdmin, loadOrgs]);
@@ -658,10 +718,12 @@ export default function AdminDashboard() {
     const getBreadcrumbs = () => {
         const root = { label: 'Admin' };
         switch (view) {
+            case 'reports':  return [root, { label: 'Reports' }];
             case 'users':    return [root, { label: 'Users' }];
             case 'requests': return [root, { label: 'Reset Requests' }];
             case 'orgs':     return [root, { label: 'Organizations' }];
             case 'lib-editor': return [root, { label: 'Library Editor'}];
+            case 'inquiries': return [root, { label: 'Inquiries'}];
             default:         return [root];
         }
     };
@@ -681,6 +743,9 @@ export default function AdminDashboard() {
                     <button className={`adm-nav-item${view === 'users' ? ' active' : ''}`} onClick={() => setView('users')}>
                         <BiGroup size={16} /> Users
                     </button>
+                    <button className={`adm-nav-item${view === 'reports' ? ' active' : ''}`} onClick={() => setView('reports')}>
+                        <BiFile size={16} /> Reports
+                    </button>
                     <button className={`adm-nav-item${view === 'requests' ? ' active' : ''}`} onClick={() => setView('requests')}>
                         <BiKey size={16} /> Reset Requests
                         {resetRequests.length > 0 && (
@@ -694,6 +759,9 @@ export default function AdminDashboard() {
                             </button>
                             <button className={`adm-nav-item${view === 'lib-editor' ? ' active' : ''}`} onClick={() => setView('lib-editor')}>
                                 <BiEdit size={16} /> Library Editor
+                            </button>
+                            <button className={`adm-nav-item${view === 'inquiries' ? ' active' : ''}`} onClick={() => setView('inquiries')}>
+                                <BiMessageRoundedDots size={16} /> Inquiries
                             </button>
                         </>
                     )}
@@ -799,6 +867,9 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 </>)}
+
+                {/* ── Reports View ── */}
+                {view === 'reports' && <AdminReports />}
 
                 {/* ── Users View ── */}
                 {view === 'users' && (<>
@@ -955,6 +1026,78 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 </>)}
+                {/* ── Inquiries View ── */}
+                {view === 'inquiries' && (<>
+                    <div className="adm-header">
+                        <div>
+                            <h1 className="adm-title">Site Inquiries</h1>
+                            <p className="adm-subtitle">Current and potential customers requesting a demo or asking questions.</p>
+                        </div>
+                    </div>
+                    <div className="adm-table-card">
+                        <div className="adm-table-toolbar">
+                            <span className="adm-count">
+                                {inquiries.length} inquir{inquiries.length !== 1 ? 'ies' : 'y'}
+                            </span>
+                        </div>
+                        {loading ? (
+                            <div className="adm-loading">Loading...</div>
+                        ) : inquiries.length === 0 ? (
+                            <div className="adm-empty">No existing inquiries at this time.</div>
+                        ) : (
+                            <table className="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>School</th>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Submitted</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {inquiries.map(r => (
+                                        <tr key={r.id} onClick={() => setSelectedInquiry(r)} style={{ cursor: 'pointer' }}>
+                                            <td className="adm-td-name">{r.firstName || ''} {r.lastName || ''}</td>
+                                            <td className="adm-td-muted">{r.email}</td>
+                                            <td className="adm-td-muted">{r.schoolName || '—'}</td>
+                                            <td className="adm-td-muted">{r.title || '—'}</td>
+                                            <td>
+                                                <span className={`adm-role-pill adm-inq-${r.status}`}>{r.status}</span>
+                                            </td>
+                                            <td className="adm-td-muted">
+                                                {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}
+                                            </td>
+                                            <td className="adm-req-actions" onClick={e => e.stopPropagation()}>
+                                                <select
+                                                    className="adm-select"
+                                                    value={r.status}
+                                                    onChange={async (e) => {
+                                                        const newStatus = e.target.value;
+                                                        try {
+                                                            await updateInquiryStatus(r.id, newStatus);
+                                                            setInquiries(prev => prev.map(x => x.id === r.id ? { ...x, status: newStatus } : x));
+                                                            toast.success('Status updated');
+                                                        } catch (err) { toast.error(err.message); }
+                                                    }}
+                                                    style={{ fontSize: '0.78rem' }}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="contacted">Contacted</option>
+                                                    <option value="converted">Converted</option>
+                                                    <option value="dismissed">Dismissed</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                </>)}
 
                 {/* ── Reset Requests View ── */}
                 {view === 'requests' && (<>
@@ -1050,6 +1193,16 @@ export default function AdminDashboard() {
                     onClose={() => { setResetTarget(null); setResetRequestId(null); }}
                     requestId={resetRequestId}
                     onComplete={() => setResetRequests(prev => prev.filter(r => r.id !== resetRequestId))}
+                />
+            )}
+            {selectedInquiry && (
+                <InquiryViewModal
+                    inquiry={selectedInquiry}
+                    onClose={() => setSelectedInquiry(null)}
+                    onStatusChange={() => {
+                        loadInquiries();
+                        setSelectedInquiry(null);
+                    }}
                 />
             )}
         </div>

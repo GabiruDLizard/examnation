@@ -46,7 +46,11 @@ export default function StudentProfile({ studentId, studentName, classId, onBack
         fetchAll();
     }, [studentId]);
 
-    const thetaToPercent = (theta) => Math.round(Math.max(0, Math.min(100, ((theta + 4) / 8) * 100)));
+    // If theta > 4, it was stored as a mastery % (legacy bug) — use directly; otherwise convert IRT theta
+    const thetaToPercent = (theta) => {
+        if (theta > 4) return Math.round(Math.min(100, theta));
+        return Math.round(Math.max(0, Math.min(100, ((theta + 4) / 8) * 100)));
+    };
 
     const sortedTopics = [...topicAbility]
         .map(t => ({ ...t, percent: thetaToPercent(t.theta) }))

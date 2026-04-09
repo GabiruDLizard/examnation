@@ -522,9 +522,19 @@ export const uploadQuestionImage = async (imageFile) => {
 };
 
 export const createQuestion = async (questionData) => {
-    const { imageAssociated, imageDescription, ...rest } = questionData;
+    const { imageAssociated, imageDescription, options, multipleChoiceOptions, ...rest } = questionData;
+
+    // Normalize MC options — accept either key name, handle plain strings or {text,imageUrl} objects
+    const rawOptions = multipleChoiceOptions || options || [];
+    const normalizedOptions = rawOptions.map(o => {
+        if (typeof o === 'string') return o;
+        if (o?.imageUrl) return JSON.stringify({ text: o.text, imageUrl: o.imageUrl });
+        return o?.text || '';
+    });
+
     const sanitizedData = {
         ...rest,
+        multipleChoiceOptions: normalizedOptions,
         answerBreakdown: questionData.answerBreakdown || "",
         solutionSteps: questionData.solutionSteps || "",
         figureDescription: questionData.figureDescription || "",
@@ -962,6 +972,15 @@ export const getAssignmentQuestionsById = async (assignmentId) => {
     }
 };
 
+// Serialize MC options for the API — backend expects string[].
+// Options with images are stored as JSON strings so no schema change is needed.
+const serializeOptions = (options = []) =>
+    options.map(o => {
+        if (typeof o === 'string') return o;
+        if (o.imageUrl) return JSON.stringify({ text: o.text, imageUrl: o.imageUrl });
+        return o.text || '';
+    });
+
 export const saveQuestionToAssignment = async (assignmentId, questionData) => {
     try {
         let figureBlobUrl = questionData.figureBlobUrl || '';
@@ -975,7 +994,7 @@ export const saveQuestionToAssignment = async (assignmentId, questionData) => {
             difficultyLevel: String(questionData.difficultyLevel),
             subject: questionData.subject || 'General',
             points: questionData.points,
-            multipleChoiceOptions: questionData.multipleChoiceOptions || [],
+            multipleChoiceOptions: serializeOptions(questionData.multipleChoiceOptions),
             correctAnswer: questionData.correctAnswer,
             answerBreakdown: questionData.answerBreakdown,
             figureBlobUrl,
@@ -1011,7 +1030,7 @@ export const updateQuestionInAssignment = async (assignmentId, questionId, quest
                 difficultyLevel: String(questionData.difficultyLevel),
                 subject: questionData.subject || 'General',
                 points: questionData.points,
-                multipleChoiceOptions: questionData.multipleChoiceOptions || [],
+                multipleChoiceOptions: serializeOptions(questionData.multipleChoiceOptions),
                 correctAnswer: questionData.correctAnswer,
                 answerBreakdown: questionData.answerBreakdown,
                 figureBlobUrl,

@@ -6,7 +6,10 @@ import { getRecentMistakes, getMistakePatterns, getCuratedQuiz } from './TAServi
 import { getStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
 import './TAPageStudent.css';
 
-const mathJaxConfig = { loader: { load: ['input/tex', 'output/chtml'] } };
+const mathJaxConfig = {
+    loader: { load: ['input/tex', 'output/chtml'] },
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] }
+};
 
 const BADGE_COLOR = {
     'Sign Error':           { bg: '#fee2e2', color: '#dc2626' },
@@ -48,7 +51,8 @@ function StepsDisplay({ workingSteps, firstErrorStep, errorReason }) {
             <div className="ta-steps-label">Your Working Steps</div>
             {steps.map((step, idx) => {
                 const stepNum = idx + 1;
-                const isError = firstErrorStep != null && stepNum === firstErrorStep;
+                // firstErrorStep is 0-indexed from the backend; compare to idx directly
+                const isError = firstErrorStep != null && firstErrorStep >= 0 && idx === firstErrorStep;
                 return (
                     <div
                         key={idx}
@@ -56,7 +60,7 @@ function StepsDisplay({ workingSteps, firstErrorStep, errorReason }) {
                     >
                         <span className="ta-step-num">{stepNum}</span>
                         <span className="ta-step-text">
-                            <MathJax>{step}</MathJax>
+                            <MathJax>{`\\(${step}\\)`}</MathJax>
                         </span>
                         {isError && (
                             <span className="ta-step-flag">✗</span>
@@ -67,7 +71,7 @@ function StepsDisplay({ workingSteps, firstErrorStep, errorReason }) {
             {errorReason && (
                 <div className="ta-error-reason">
                     <span className="ta-error-reason-label">
-                        {firstErrorStep != null ? `Step ${firstErrorStep} — ` : 'Error: '}
+                        {firstErrorStep != null ? `Step (${firstErrorStep + 1}) — ` : 'Error: '}
                     </span>
                     {errorReason}
                 </div>
@@ -105,13 +109,13 @@ function MistakeRow({ entry }) {
                         <div className="ta-detail-col">
                             <div className="ta-detail-label">Your Answer</div>
                             <div className="ta-detail-value">
-                                <MathJax>{entry.studentAnswer || '—'}</MathJax>
+                                <MathJax>{entry.studentAnswer ? `\\(${entry.studentAnswer}\\)` : '—'}</MathJax>
                             </div>
                         </div>
                         <div className="ta-detail-col">
                             <div className="ta-detail-label">Correct Answer</div>
                             <div className="ta-detail-value correct">
-                                <MathJax>{entry.correctAnswer || '—'}</MathJax>
+                                <MathJax>{entry.correctAnswer ? `\\(${entry.correctAnswer}\\)` : '—'}</MathJax>
                             </div>
                         </div>
                     </div>
@@ -150,7 +154,9 @@ function FocusCard({ rank, topic, mistakeType, count }) {
 function TopicPatternCard({ topic, mistakes, topicAbility }) {
     const total = mistakes.reduce((s, m) => s + m.count, 0);
     const readiness = topicAbility != null
-        ? Math.round(((topicAbility + 4) / 8) * 100)
+        ? (topicAbility >= -4 && topicAbility <= 4
+            ? Math.round(((topicAbility + 4) / 8) * 100)
+            : Math.round(Math.max(0, Math.min(100, topicAbility))))
         : null;
 
     return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MathText from '../../Shared/MathText';
 import Swal from 'sweetalert2';
 import { BiPlus, BiEdit, BiTrash, BiSave, BiX, BiArrowBack, BiFile, BiTime, BiBarChart, BiBookOpen, BiTarget } from 'react-icons/bi';
-import { updateAssignment, getAssignmentQuestionsById, saveQuestionToAssignment, deleteQuestionFromAssignment, updateQuestionInAssignment, createAssignmentQuestion } from './TeacherDashboardService';
+import { updateAssignment, getAssignmentQuestionsById, saveQuestionToAssignment, deleteQuestionFromAssignment, updateQuestionInAssignment, createAssignmentQuestion, uploadQuestionImage } from './TeacherDashboardService';
 import MathFieldEditor from './MathFieldEditor';
 import QuestionLibrary from './QuestionLibrary';
 import TopicComboInput, { DEFAULT_TOPICS } from './TopicComboInput';
@@ -12,17 +12,18 @@ import './QuestionLibrary.css';
 
 
 const addMultipleChoiceOption = (questionData, setQuestionData) => {
-    setQuestionData({ ...questionData, multipleChoiceOptions: [...questionData.multipleChoiceOptions, ''] });
+    setQuestionData({ ...questionData, multipleChoiceOptions: [...(questionData.multipleChoiceOptions || []), { text: '', imageUrl: null }] });
 };
 
 const updateMultipleChoiceOption = (questionData, setQuestionData, index, value) => {
-    const newOptions = [...questionData.multipleChoiceOptions];
-    newOptions[index] = value;
+    const newOptions = [...(questionData.multipleChoiceOptions || [])];
+    const current = typeof newOptions[index] === 'string' ? { text: newOptions[index], imageUrl: null } : newOptions[index];
+    newOptions[index] = { ...current, text: value };
     setQuestionData({ ...questionData, multipleChoiceOptions: newOptions });
 };
 
 const removeMultipleChoiceOption = (questionData, setQuestionData, index) => {
-    setQuestionData({ ...questionData, multipleChoiceOptions: questionData.multipleChoiceOptions.filter((_, i) => i !== index) });
+    setQuestionData({ ...questionData, multipleChoiceOptions: (questionData.multipleChoiceOptions || []).filter((_, i) => i !== index) });
 };
 
 const QuestionForm = ({ questionData, setQuestionData, onSubmit, onCancel, submitLabel, topicList, onTopicCreated, loading }) => (
@@ -91,7 +92,7 @@ const QuestionForm = ({ questionData, setQuestionData, onSubmit, onCancel, submi
             <div className="form-group">
                 <label>Multiple Choice Options</label>
                 <div className="multiple-choice-options">
-                    {questionData.multipleChoiceOptions.map((option, index) => (
+                    {(questionData.multipleChoiceOptions || []).map((option, index) => (
                         <div key={index} className="option-input">
                             <MathFieldEditor
                                 value={option}
@@ -548,7 +549,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                                 <span className="question-points">{question.points} pts</span>
                                                 <div className="question-actions">
                                                     <button
-                                                        onClick={() => setEditingQuestion({ ...question, points: Math.min(10, question.points || 1) })}
+                                                        onClick={() => setEditingQuestion({ ...question, points: Math.min(10, question.points || 1), multipleChoiceOptions: question.multipleChoiceOptions || [] })}
                                                         className="edit-btn"
                                                         disabled={editingQuestion || isAddingQuestion}
                                                     >

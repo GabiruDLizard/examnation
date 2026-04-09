@@ -46,7 +46,21 @@ const ManageAssignment = ({ onBack }) => {
         try {
             setLoading(true);
             const teacherClasses = await getTeacherClasses();
-            setClasses(teacherClasses);
+
+            // Fetch real enrollment counts for each class
+            const classesWithCounts = await Promise.all(
+                teacherClasses.map(async cls => {
+                    try {
+                        const { authFetch } = await import('../../../utils/api');
+                        const res = await authFetch(`/classenrollment/class/${cls.id}`);
+                        const enrollments = res.ok ? await res.json() : [];
+                        return { ...cls, currentEnrollment: enrollments.length };
+                    } catch {
+                        return cls;
+                    }
+                })
+            );
+            setClasses(classesWithCounts);
             
             const teacherId = getUserIdFromToken();
             if (teacherId) {

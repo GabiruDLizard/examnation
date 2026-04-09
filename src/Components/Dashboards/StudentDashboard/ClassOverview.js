@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight, BiPlay, BiCheckCircle, BiTime, BiAward } from 'react-icons/bi';
-import { getAssignmentsForClass, getSubmissionByAssignmentAndStudent } from "./StudentDashboardService";
+import { getAssignmentsForClass } from "./StudentDashboardService";
+import { authFetch } from '../../../utils/api';
+import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import "../ClassOverview.css";
 
 export default function StudentClassOverview({ studentInfo, selectedClass, onBack, onNavigate }) {
@@ -21,23 +23,63 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                     setLoading(true);
                     
                     // Fetch assignments for this class
-                    // Get student ID from localStorage or token
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    const studentId = userData?.id;
+                    const studentId = getUserIdFromToken();
 
                     const classAssignments = await getAssignmentsForClass(selectedClass.classId, studentId);
                     setAssignments(classAssignments);
-                    
-                    // Calculate student's stats for this class
+
                     const totalAssignments = classAssignments.length;
-                    const submittedAssignments = classAssignments.length; // Use total assignments as submitted count
-                    const completedAssignments = submittedAssignments;
-                    const currentReadiness = selectedClass.avgReadiness || 0;
-                    
+
+                    // Count actual submissions for this student
+                    let submittedAssignments = 0;
+                    if (studentId) {
+                        const submissionCounts = await Promise.all(
+                            classAssignments.map(async a => {
+                                try {
+                                    const res = await authFetch(`/assignmentsubmission/assignment/${a.id}/student/${studentId}`);
+                                    return res.ok ? 1 : 0;
+                                } catch { return 0; }
+                            })
+                        );
+                        submittedAssignments = submissionCounts.reduce((s, v) => s + v, 0);
+                    }
+
+                    // Fetch readiness directly — don't trust the prop (may be stale/null)
+                    let currentReadiness = null;
+                    if (studentId && selectedClass.classId) {
+                        try {
+                            const rdRes = await authFetch(`/Readiness/student/${studentId}/class/${selectedClass.classId}`);
+                            if (rdRes.ok) {
+                                const rd = await rdRes.json();
+                                currentReadiness = Math.round(rd?.readinessPercentage ?? 0);
+                            }
+                        } catch { /* skip */ }
+
+                        // Fall back to topic ability average
+                        if (currentReadiness === null) {
+                            try {
+                                const taRes = await authFetch(`/studenttopicability/${studentId}`);
+                                if (taRes.ok) {
+                                    const topics = await taRes.json();
+                                    if (topics && topics.length > 0) {
+                                        const avg = topics.reduce((sum, t) => {
+                                            const theta = t.theta ?? t.Theta ?? 0;
+                                            const pct = (theta >= -4 && theta <= 4)
+                                                ? ((theta + 4) / 8) * 100
+                                                : Math.max(0, Math.min(100, theta));
+                                            return sum + pct;
+                                        }, 0) / topics.length;
+                                        currentReadiness = Math.round(avg);
+                                    }
+                                }
+                            } catch { /* skip */ }
+                        }
+                    }
+
                     setClassStats({
                         totalAssignments,
                         submittedAssignments,
-                        completedAssignments,
+                        completedAssignments: submittedAssignments,
                         currentReadiness,
                         lastActivity: selectedClass.lastActivity ? new Date(selectedClass.lastActivity).toLocaleDateString() : 'Never'
                     });
@@ -87,7 +129,7 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
             icon: <BiBarChart size={22} />,
             color: '#10b981',
             stats: [
-                { label: 'Current Readiness', value: `${classStats.currentReadiness}%` },
+                { label: 'Current Readiness', value: classStats.currentReadiness !== null ? `${classStats.currentReadiness}%` : '—' },
                 { label: 'Class Rank', value: 'N/A' },
                 { label: 'Improvement', value: '+5%' }
             ],
@@ -156,7 +198,9 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                 <div className="stat-card">
                     <BiTrendingUp className="stat-icon" />
                     <div className="stat-info">
-                        <span className="stat-number">{classStats.currentReadiness}%</span>
+                        <span className="stat-number">
+                            {classStats.currentReadiness !== null ? `${classStats.currentReadiness}%` : '—'}
+                        </span>
                         <span className="stat-label">Readiness Level</span>
                     </div>
                 </div>

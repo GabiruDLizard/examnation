@@ -577,3 +577,159 @@
     .adm-sidebar { display: none; }
     .adm-main { margin-left: 0; padding: 16px; }
 }
+
+/* ── Admin Reports ───────────────────────────────────────────── */
+.ar-root {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ar-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px;
+}
+
+.ar-header p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.ar-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    max-width: 380px;
+}
+
+.ar-search-icon { color: #94a3b8; flex-shrink: 0; }
+
+.ar-search-input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #334155;
+    width: 100%;
+    background: transparent;
+}
+
+.ar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.ar-teacher-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.ar-teacher-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+}
+
+.ar-teacher-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.ar-teacher-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.ar-teacher-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ar-teacher-email {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ar-teacher-school {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.ar-teacher-cta {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6366f1;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ar-back-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.ar-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+}
+
+.ar-back-btn:hover { background: #f8fafc; }
+
+.ar-back-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.ar-loading, .ar-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 60px 0;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.ar-empty h3 { color: #64748b; margin: 0; }

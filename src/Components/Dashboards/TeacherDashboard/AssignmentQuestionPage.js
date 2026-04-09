@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { BiPlus, BiSave, BiX, BiBookOpen } from 'react-icons/bi';
 import { createCompleteAssignment } from './AssignmentService';
-import { createAssignmentQuestion } from './TeacherDashboardService';
+import { createAssignmentQuestion, uploadQuestionImage } from './TeacherDashboardService';
 import MathFieldEditor from './MathFieldEditor';
 import QuestionLibrary from './QuestionLibrary';
 import TopicComboInput, { DEFAULT_TOPICS } from './TopicComboInput';
@@ -235,26 +235,73 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                             {formData.answerType === 'Multiple Choice' && (
                                 <div className="form-group">
                                     <label>Answer Options</label>
-                                    {formData.multipleChoiceOptions.map((option, index) => (
-                                        <input
-                                            key={index}
-                                            type="text"
-                                            value={option}
-                                            onChange={(e) => {
-                                                const newOptions = [...formData.multipleChoiceOptions];
-                                                newOptions[index] = e.target.value;
-                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
-                                            }}
-                                            placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                            style={{ marginBottom: 6 }}
-                                        />
-                                    ))}
+                                    {formData.multipleChoiceOptions.map((option, index) => {
+                                        const opt = typeof option === 'string' ? { text: option, imageUrl: null } : option;
+                                        const letter = String.fromCharCode(65 + index);
+                                        return (
+                                            <div key={index} className="mc-option-row">
+                                                <span className="mc-option-letter">{letter}</span>
+                                                <input
+                                                    type="text"
+                                                    value={opt.text}
+                                                    onChange={(e) => {
+                                                        const newOptions = [...formData.multipleChoiceOptions];
+                                                        newOptions[index] = { ...opt, text: e.target.value };
+                                                        setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                    }}
+                                                    placeholder={`Option ${letter} text (optional if image)`}
+                                                />
+                                                <label className="mc-img-upload-btn" title="Add image to this option">
+                                                    ＋ Image
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            try {
+                                                                const url = await uploadQuestionImage(file);
+                                                                const newOptions = [...formData.multipleChoiceOptions];
+                                                                newOptions[index] = { ...opt, imageUrl: url };
+                                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                            } catch {
+                                                                toast.error('Image upload failed');
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                                {opt.imageUrl && (
+                                                    <div className="mc-option-thumb">
+                                                        <img src={opt.imageUrl} alt={`Option ${letter}`} />
+                                                        <button
+                                                            type="button"
+                                                            className="mc-remove-img"
+                                                            onClick={() => {
+                                                                const newOptions = [...formData.multipleChoiceOptions];
+                                                                newOptions[index] = { ...opt, imageUrl: null };
+                                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                            }}
+                                                        >×</button>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="mc-remove-option"
+                                                    onClick={() => {
+                                                        const newOptions = formData.multipleChoiceOptions.filter((_, i) => i !== index);
+                                                        setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                    }}
+                                                >✕</button>
+                                            </div>
+                                        );
+                                    })}
                                     <button
                                         type="button"
                                         className="btn-secondary"
                                         onClick={() => setFormData({
                                             ...formData,
-                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, '']
+                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, { text: '', imageUrl: null }]
                                         })}
                                     >
                                         + Add Option

@@ -19,8 +19,11 @@ import AssignmentOverview from './AssignmentOverview.js';
 import AssignmentQuestionPage from './AssignmentQuestionPage.js';
 import AssignmentReview from './AssignmentReview.js';
 import TAPageStudent from '../TAPage/TAPageStudent.js';
+import StudyHistory from './StudyHistory.js';
 import Settings from '../../Settings/Settings.js';
 import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
+import { useTour } from '../../Tour/useTour';
+import studentSteps from './StudentSteps';
 
 // Helper function for grouping answers by date
 const groupAnswersByDate = (answers) => {
@@ -116,6 +119,8 @@ function StudentDashboard() {
     const [averageCorrectness, setAverageCorrectness] = useState(0);
 
     const navigate = useNavigate();
+
+    useTour(userId, 'student', studentSteps, !loading);
 
     const handleNavigateFromOverview = (section, data = null) => {
         if (section === 'assignment-questions' && data?.assignment) {
@@ -390,6 +395,8 @@ function StudentDashboard() {
             switch (activePage) {
                 case 'classes':
                     return <StudentMyClasses studentInfo={student} onClassClick={handleClassClick} />;
+                case 'history':
+                    return <StudyHistory studentAnswers={studentAnswers} userId={userId} />;
                 case 'ta':
                     return <TAPageStudent />;
                 case 'settings':
@@ -484,13 +491,13 @@ function StudentDashboard() {
                                 <BiBullseye size={20} />
                                 Adaptive Test
                             </button>
-                            <button className="action-btn tertiary" onClick={() => handleNavClick('ta')}>
+                            <button className="action-btn tertiary" onClick={() => handleNavClick('history')}>
                                 <BiClipboard size={20} />
-                                Review Answers
+                                Study History
                             </button>
                             <button className="action-btn quaternary" onClick={() => handleNavClick('ta')}>
                                 <BiBarChart size={20} />
-                                View Analytics
+                                My TA
                             </button>
                         </div>
                     </div>
@@ -534,11 +541,8 @@ function StudentDashboard() {
                         ) : (
                             <div className="no-data">
                                 <BiClipboard size={48} />
-                                <h3>No tests completed yet</h3>
-                                <p>Start with some practice questions!</p>
-                                <button className="start-btn" onClick={() => navigate('/exampage')}>
-                                    Start Practicing
-                                </button>
+                                <h3>No sessions yet</h3>
+                                <p>Complete a practice session or adaptive test to see results here.</p>
                             </div>
                         )}
                     </div>
@@ -555,11 +559,8 @@ function StudentDashboard() {
                             )}
                         </div>
                         <div className="insight-actions">
-                            <button className="insight-btn" onClick={() => navigate('/exampage')}>
-                                Start Practice Session
-                            </button>
                             <button className="insight-btn ghost" onClick={() => handleNavClick('ta')}>
-                                View Detailed Analytics
+                                View My TA
                             </button>
                         </div>
                     </div>
@@ -595,6 +596,7 @@ function StudentDashboard() {
 
         switch (activePage) {
             case 'classes': return [home, { label: 'My Classes' }];
+            case 'history': return [home, { label: 'Study History' }];
             case 'ta': return [home, { label: 'My TA' }];
             case 'settings': return [home, { label: 'Settings' }];
             default: return [home];
@@ -649,7 +651,14 @@ function StudentDashboard() {
                         My Classes
                     </button>
                     <button
-                        className="sd-nav-item"
+                        className={`sd-nav-item ${activePage === 'history' ? 'active' : ''}`}
+                        onClick={() => handleNavClick('history')}
+                    >
+                        <BiTime style={{ marginRight: '8px', fontSize: '18px'}} />
+                        Study History
+                    </button>
+                    <button
+                        className={`sd-nav-item ${activePage === 'ta' ? 'active' : ''}`}
                         onClick={() => handleNavClick('ta')}
                     >
                         <BiBrain style={{ marginRight: '8px', fontSize: '18px'}} />
