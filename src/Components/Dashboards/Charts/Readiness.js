@@ -79,8 +79,8 @@ const ReadinessChart = ({ readinessScores = [], classHistory = [], viewType = 'b
     const totalAbility = scoresUpToNow.reduce((sum, score) => sum + score.abilityEstimate, 0);
     const averageAbility = totalAbility / scoresUpToNow.length;
     
-    // Normalize to percentage (same formula but using cumulative average)
-    const normalized = Math.max(0, Math.min(100, ((averageAbility + 3) / 6) * 100));
+    // Normalize to percentage (IRT theta range -4 to +4)
+    const normalized = Math.max(0, Math.min(100, ((averageAbility + 4) / 8) * 100));
     readinessData.push(Math.round(normalized));
   }
 

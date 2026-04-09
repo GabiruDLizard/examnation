@@ -24,21 +24,14 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
         throw new Error('No authentication token found');
       }
 
-      console.log('Fetching student classes with details for studentId:', studentId);
-
       // Use the combined function to get enrollments + class details
       const classesWithDetails = await getStudentClassesWithDetails(studentId);
-      
-      console.log('Classes with details received:', classesWithDetails);
 
       // Now fetch assignments for each class
       const classesWithAssignments = await Promise.all(
         classesWithDetails.map(async (classItem) => {
           try {
-            console.log(`Fetching assignments for class ${classItem.classId}:`, classItem.name);
             const assignments = await getAssignmentsForClass(classItem.classId, studentId);
-            
-            console.log(`Assignments for class ${classItem.name}:`, assignments);
             
             return {
               ...classItem,
@@ -47,7 +40,6 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
               assignments: assignments
             };
           } catch (error) {
-            console.error(`Error fetching assignments for class ${classItem.classId}:`, error);
             return {
               ...classItem,
               assignmentIds: [],
@@ -58,13 +50,10 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
         })
       );
 
-      console.log('Classes with assignment data:', classesWithAssignments);
-
       setClassesData(classesWithAssignments);
       setError(null);
       
     } catch (error) {
-      console.error('Error fetching student classes:', error);
       setError(error.message);
       setClassesData([]);
     } finally {
@@ -73,7 +62,6 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
   };
 
   const handleClassClick = (classItem) => {
-    console.log('Clicked on class:', classItem.name);
     if (onClassClick) {
       onClassClick(classItem);
     }

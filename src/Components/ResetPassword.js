@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './ResetPassword.css';
-import logo from '../Resources/PHold-logo.png';
+import logo from '../Resources/ExamNationIcon.svg';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../utils/api';
 

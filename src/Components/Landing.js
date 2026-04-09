@@ -13,6 +13,16 @@ export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        email: '',
+        firstName: '',
+        lastName: '',
+        title: '',
+        schoolName: '',
+        request: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
     
     // Add the scrollToSection function
     const scrollToSection = (sectionId) => {
@@ -36,6 +46,39 @@ export default function ExamNationLanding() {
         navigate('/login');
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setSubmitStatus(null);
+        try {
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                schoolName: formData.schoolName,
+                title: formData.title,
+                request: formData.request,
+                submittedAt: new Date().toISOString(),
+            };
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/demo-request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Request failed');
+            setSubmitStatus('success');
+            setFormData({ email: '', firstName: '', lastName: '', title: '', schoolName: '', request: '' });
+        } catch (error) {
+            setSubmitStatus('error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     const handleRegister = () => {
         navigate('/login', { state: { isLogin: false } });
     };
@@ -68,7 +111,7 @@ export default function ExamNationLanding() {
                 <div className="navbar-container">
                     <div className="navbar-brand">
                         <h2>ExamNation</h2>
-                        <span className="brand-tagline">Elevate Your Learning</span>
+                        <span className="brand-tagline">Where Schools and Students Prepare to Win</span>
                     </div>
                     
                     {/* Desktop Navigation */}
@@ -130,10 +173,9 @@ export default function ExamNationLanding() {
                 </div>
 
                 <div className="hero-content">
-                    <h1>Master Your Exams with Confidence</h1>
+                    <h1>One bad exam season doesn't have to define a student.</h1>
                     <p>
-                    Track your readiness, get AI-powered feedback, and practice smarter
-                    with ExamNation — your all-in-one academic companion.
+                    ExamNation gives students the tools to practice smarter, teachers the insight to intervene early, and parents the visibility to stay involved — all in one platform built for the Caribbean.
                     </p>
                     <div className="cta-buttons">
                     <button className="primary" onClick={handleGetStarted}>Get Started</button>
@@ -148,49 +190,46 @@ export default function ExamNationLanding() {
 
             {/* Features Section - Add id for scrolling */}
             <section id="features" className="features">
-                <h2>Why Students Love ExamNation</h2>
+                <h2>Built for the Whole School</h2>
                 <div className="feature-grid">
                     <div className="feature-card">
-                        <h3>Personalized Insights</h3>
+                        <h3>For Teachers</h3>
                         <p>
-                            Get detailed analytics on your strengths, weaknesses, and
-                            readiness per topic.
+                            Know who's struggling before they do. Track readiness by topic across your entire class and focus your lessons where they matter most.
                         </p>
                     </div>
                     <div className="feature-card">
-                        <h3>AI-Driven Assistance</h3>
+                        <h3>For Students</h3>
                         <p>
-                            Your personal Teaching Assistant helps you understand every step
-                            of your progress.
+                            Practice that actually feels like progress. Get instant feedback, AI-guided explanations, and a clear picture of where you stand heading into exam day.
                         </p>
                     </div>
                     <div className="feature-card">
-                        <h3>Practice that Adapts</h3>
+                        <h3>For Parents</h3>
                         <p>
-                            Smart question sets evolve with your learning curve to ensure
-                            mastery of all exam topics.
+                            Stay in the loop without chasing the school. See your child's readiness, topic by topic, and know exactly where they need support.
                         </p>
                     </div>
                 </div>
             </section>
             <section className="practice-preview">
                 <div className="practice-content">
-                    <h2>Smart Practice Engine</h2>
+                    <h2>Practice That Actually Prepares You</h2>
                     <div className="practice-features">
                         <div className="practice-feature">
                             <div className="feature-icon">📚</div>
-                            <h3>Adaptive Questions</h3>
-                            <p>AI selects questions based on your current skill level and learning progress.</p>
+                            <h3>BGCSE-Aligned Questions</h3>
+                            <p>Every question is built around the curriculum you're actually being tested on. No filler, no guessing what's relevant.</p>
                         </div>
                         <div className="practice-feature">
                             <div className="feature-icon">🎯</div>
-                            <h3>Instant Feedback</h3>
-                            <p>Get detailed explanations and step-by-step solutions immediately after each answer.</p>
+                            <h3>Instant, Detailed Feedback</h3>
+                            <p>Don't just see the right answer — understand why. Step-by-step breakdowns help you learn from every mistake.</p>
                         </div>
                         <div className="practice-feature">
                             <div className="feature-icon">📊</div>
-                            <h3>Progress Analytics</h3>
-                            <p>Track your improvement with detailed statistics and performance insights.</p>
+                            <h3>Know Where You Stand</h3>
+                            <p>Your readiness score updates as you practice. You'll always know which topics need more work before exam day.</p>
                         </div>
                     </div>
                     <div className="practice-cta">
@@ -201,14 +240,14 @@ export default function ExamNationLanding() {
 
             <section className="insights-preview">
                 <div className="dashboard-subsection-L">
-                    <h2>Insights Dashboard Preview</h2>
-                    <h3>Understand your strengths <br />and weaknesses instantly <br />with our AI-driven analytics.</h3>
+                    <h2>Know Who Needs Help Before It's Too Late</h2>
+                    <h3>Real-time readiness data <br />across every student, <br />every topic, every week.</h3>
                     <ul>
-                        <li>Track class-wide performance.</li>
-                        <li>Identify at-risk students early.</li>
-                        <li>Personalize learning experiences.</li>
-                        <li>Make data-driven decisions.</li>
-                        <li>Get detailed analytics reports.</li>
+                        <li>See class-wide readiness at a glance.</li>
+                        <li>Spot struggling students before exam season.</li>
+                        <li>Assign targeted practice by topic.</li>
+                        <li>Make data-driven decisions with confidence.</li>
+                        <li>Built around the BGCSE curriculum.</li>
                     </ul>
                 </div>
                 <div className="dashboard-subsection-R">
@@ -218,62 +257,98 @@ export default function ExamNationLanding() {
                 </div>
             </section>
 
-            {/* Testimonials - Add id for about section */}
-            <section id="about" className="testimonials">
-                <h2>Trusted by Students & Schools Across The Caribbean</h2>
-                <div className="testimonial-grid">
-                    <div className="testimonial">
-                        <div className="testimonial-content">
-                            <p>
-                                "ExamNation helped me boost my Math grade from a C to an A in
-                                under 2 months! The adaptive questions really targeted my weak areas."
-                            </p>
-                        </div>
-                        <div className="testimonial-author">
-                            <div className="author-avatar">👨‍🎓</div>
-                            <div className="author-info">
-                                <span className="author-name">Marcus Johnson</span>
-                                <span className="author-role">BGCSE Student, Nassau</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="testimonial">
-                        <div className="testimonial-content">
-                            <p>
-                                "As a teacher, I love how easy it is to track student readiness by
-                                topic. The insights help me focus my lessons where they're needed most."
-                            </p>
-                        </div>
-                        <div className="testimonial-author">
-                            <div className="author-avatar">👩‍🏫</div>
-                            <div className="author-info">
-                                <span className="author-name">Mrs. Thompson</span>
-                                <span className="author-role">Math Teacher, Freeport High</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="testimonial">
-                        <div className="testimonial-content">
-                            <p>
-                                "The step-by-step explanations are incredible. My daughter finally
-                                understands algebra concepts that confused her for months!"
-                            </p>
-                        </div>
-                        <div className="testimonial-author">
-                            <div className="author-avatar">👩‍💼</div>
-                            <div className="author-info">
-                                <span className="author-name">Sarah Williams</span>
-                                <span className="author-role">Parent, Grand Bahama</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            {/* Testimonials placeholder - id kept for nav scroll */}
+            <div id="about"></div>
 
             {/* CTA Footer - Add id for contact section */}
             <footer id="contact" className="cta-footer">
-                <h2>Join the Next Generation of Learners</h2>
-                <button className="primary" onClick={handleLogin}>Get Started</button>
+                <div className="cta-content">
+                    <div className="cta-header">
+                        <h2>Exam season is coming. Is your school ready?</h2>
+                        <p>Join schools across the Caribbean using ExamNation to give every student a real shot at success. Request a demo and we'll reach out within 24 hours.</p>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="demo-form">
+                        <div className="form-row">
+                            <input
+                                type="text"
+                                name="firstName"
+                                placeholder="First Name"
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <input
+                                type="text"
+                                name="lastName"
+                                placeholder="Last Name"
+                                value={formData.lastName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+                        
+                        <input 
+                            type="email"
+                            name="email"
+                            placeholder="Email Address"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                        />
+                        
+                        <div className="form-row">
+                            <input
+                                type="text"
+                                name="schoolName"
+                                placeholder="School Name"
+                                value={formData.schoolName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <input
+                                type="text"
+                                name="title"
+                                placeholder="Job Title (optional)"
+                                value={formData.title}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                        
+                        <textarea
+                            name="request"
+                            placeholder="Tell us about your needs (optional)"
+                            value={formData.request}
+                            onChange={handleInputChange}
+                            rows="3"
+                        />
+                        
+                        <button 
+                            type="submit" 
+                            className="submit-btn"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Sending...' : 'Request Demo'}
+                        </button>
+                        
+                        {submitStatus === 'success' && (
+                            <div className="success-message">
+                                ✓ Request sent! We'll contact you within 24 hours.
+                            </div>
+                        )}
+                        
+                        {submitStatus === 'error' && (
+                            <div className="error-message">
+                                ⚠ Something went wrong. Please try again.
+                            </div>
+                        )}
+                    </form>
+                    
+                    <div className="alt-option">
+                        <span>or</span>
+                        <button className="login-btn" onClick={handleLogin}>Login to Explore</button>
+                    </div>
+                </div>
                 <div className="footer-bottom">
                     <p className="footer-copyright">
                         &copy; {new Date().getFullYear()} Lofty Goals Software. All rights reserved.

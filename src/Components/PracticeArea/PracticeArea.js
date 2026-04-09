@@ -33,8 +33,48 @@ const getAnswerFormatHint = (solution) => {
   return null;
 };
 
+const MQ_TOOLBAR_GROUPS = [
+  {
+    label: 'Math',
+    buttons: [
+      { label: 'x²',  title: 'Exponent',      latex: '^{}' },
+      { label: 'xₙ',  title: 'Subscript',     latex: '_{}'  },
+      { label: '√x',  title: 'Square root',   latex: '\\sqrt{}' },
+      { label: 'ⁿ√x', title: 'Nth root',      latex: '\\sqrt[n]{}' },
+      { label: 'a/b', title: 'Fraction',       latex: '\\frac{}{}' },
+      { label: '|x|', title: 'Absolute value', latex: '\\left|\\right|' },
+    ],
+  },
+  {
+    label: 'Operators',
+    buttons: [
+      { label: '±', title: 'Plus or minus',   latex: '\\pm' },
+      { label: '×', title: 'Multiply',         latex: '\\times' },
+      { label: '÷', title: 'Divide',           latex: '\\div' },
+      { label: '≤', title: 'Less or equal',    latex: '\\leq' },
+      { label: '≥', title: 'Greater or equal', latex: '\\geq' },
+      { label: '≠', title: 'Not equal',        latex: '\\neq' },
+      { label: '≈', title: 'Approximately',    latex: '\\approx' },
+      { label: '∞', title: 'Infinity',         latex: '\\infty' },
+    ],
+  },
+  {
+    label: 'Greek',
+    buttons: [
+      { label: 'π', title: 'Pi',    latex: '\\pi' },
+      { label: 'θ', title: 'Theta', latex: '\\theta' },
+      { label: 'α', title: 'Alpha', latex: '\\alpha' },
+      { label: 'β', title: 'Beta',  latex: '\\beta' },
+      { label: 'Δ', title: 'Delta', latex: '\\Delta' },
+      { label: 'Σ', title: 'Sigma', latex: '\\Sigma' },
+    ],
+  },
+];
+
 const PracticeArea = () => {
   const stepReference = useRef([]);
+  const focusedMQRef = useRef(null);
+  const [toolbarOpen, setToolbarOpen] = useState(false);
   const { id } = useParams();
   const question = questions.find(q => String(q['Question ID']) === String(id));
   const [hint, setHint] = useState('');
@@ -121,8 +161,7 @@ const PracticeArea = () => {
         const response = await needAHint(hintString);
         setHint(response);
         setHintload(false);
-    } catch (error) {
-        console.error('Error fetching GPT response:', error);
+    } catch {
         setHintload(false);
     }
   };
@@ -139,8 +178,7 @@ const PracticeArea = () => {
         const response = await askGPT(submissionString);
         setFeedback(response);
         setLoading(false);
-    } catch (error) {
-        console.error('Error fetching GPT response:', error);
+    } catch {
         setLoading(false);
     }
   };
@@ -179,6 +217,13 @@ const PracticeArea = () => {
     if (nextQuestionId) {
       clearField();
       navigate(`/practice/${nextQuestionId}`);
+    }
+  };
+
+  const insertIntoMQ = (latex) => {
+    if (focusedMQRef.current) {
+        focusedMQRef.current.write(latex);
+        focusedMQRef.current.focus();
     }
   };
 
@@ -272,6 +317,37 @@ const PracticeArea = () => {
                     <div className="work-header">
                       <span className="work-label">Show Your Work</span>
                     </div>
+                    <div className="mq-toolbar-wrap">
+                      <button
+                        type="button"
+                        className={`mq-toolbar-toggle ${toolbarOpen ? 'open' : ''}`}
+                        onMouseDown={e => { e.preventDefault(); setToolbarOpen(o => !o); }}
+                      >
+                        <span className="mq-toolbar-toggle-icon">∑</span>
+                        <span>Math symbols</span>
+                        <span className="mq-toolbar-toggle-chevron">{toolbarOpen ? '▲' : '▼'}</span>
+                      </button>
+                      {toolbarOpen && (
+                        <div className="mq-toolbar">
+                          {MQ_TOOLBAR_GROUPS.map(group => (
+                            <div key={group.label} className="mq-toolbar-group">
+                              <span className="mq-toolbar-group-label">{group.label}</span>
+                              {group.buttons.map(btn => (
+                                <button
+                                  key={btn.label}
+                                  type="button"
+                                  className="mq-toolbar-btn"
+                                  title={btn.title}
+                                  onMouseDown={e => { e.preventDefault(); insertIntoMQ(btn.latex); }}
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="answerText">
                       {steps.map((step, idx) => (
                         <div key={idx} className="step-row">
@@ -282,6 +358,7 @@ const PracticeArea = () => {
                             className="step-input"
                             onKeyDown={e => handleKeyDown(e, idx)}
                             mathquillDidMount={field => (stepReference.current[idx] = field)}
+                            onFocus={() => { focusedMQRef.current = stepReference.current[idx]; }}
                           />
                         </div>
                       ))}
@@ -297,6 +374,8 @@ const PracticeArea = () => {
                       onChange={mf => setFinalAnswer(mf.latex())}
                       className="final-answer-input"
                       placeholder="Enter your final answer here..."
+                      mathquillDidMount={field => (stepReference.current['final'] = field)}
+                      onFocus={() => { focusedMQRef.current = stepReference.current['final']; }}
                     />
                   </div>
                 </div>

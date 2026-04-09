@@ -46,7 +46,21 @@ const ManageAssignment = ({ onBack }) => {
         try {
             setLoading(true);
             const teacherClasses = await getTeacherClasses();
-            setClasses(teacherClasses);
+
+            // Fetch real enrollment counts for each class
+            const classesWithCounts = await Promise.all(
+                teacherClasses.map(async cls => {
+                    try {
+                        const { authFetch } = await import('../../../utils/api');
+                        const res = await authFetch(`/classenrollment/class/${cls.id}`);
+                        const enrollments = res.ok ? await res.json() : [];
+                        return { ...cls, currentEnrollment: enrollments.length };
+                    } catch {
+                        return cls;
+                    }
+                })
+            );
+            setClasses(classesWithCounts);
             
             const teacherId = getUserIdFromToken();
             if (teacherId) {
@@ -56,7 +70,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setLoading(false);
         } catch (error) {
-            console.error('Error loading initial data:', error);
             setError('Failed to load data');
             setLoading(false);
         }
@@ -69,7 +82,6 @@ const ManageAssignment = ({ onBack }) => {
             const classAssignments = await getAssignmentsForClassWithQuestions(selectedClassId);
             setAssignments(classAssignments);
         } catch (error) {
-            console.error('Error loading assignments:', error);
             setError('Failed to load assignments');
         }
     };
@@ -114,7 +126,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setIsCreating(false);
         } catch (error) {
-            console.error('Error creating assignment:', error);
             setError('Failed to create assignment');
             setIsCreating(false);
         }
@@ -156,7 +167,6 @@ const ManageAssignment = ({ onBack }) => {
             
             setIsCreating(false);
         } catch (error) {
-            console.error('Error updating assignment:', error);
             setError('Failed to update assignment');
             setIsCreating(false);
         }
@@ -173,7 +183,6 @@ const ManageAssignment = ({ onBack }) => {
             setConfirmDeleteId(null);
             await loadAssignments();
         } catch (error) {
-            console.error('Error deleting assignment:', error);
             toast.error('Failed to delete assignment');
             setConfirmDeleteId(null);
         }

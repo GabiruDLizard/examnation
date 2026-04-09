@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
 import { BiArrowBack, BiBarChart, BiUser, BiCalendar, BiTime, BiCheckCircle, BiTimer, BiX, BiShow, BiDownload, BiStats, BiTrendingUp, BiTargetLock, BiFilter, BiSearch, BiRefresh, BiSave } from 'react-icons/bi';
 import {
     getAssignmentsByTeacher,
@@ -6,12 +7,22 @@ import {
     getUserById,
     getSubmissionDetails,
     getAnswersBySubmissionId,
-    gradeSubmission
+    gradeSubmission,
+    approveSubmission,
+    sendBackSubmission
 } from './TeacherDashboardService';
 import { authFetch } from '../../../utils/api';
 import '../Assignments.css';
 
-const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
+const mathJaxConfig = {
+    loader: { load: ['input/tex', 'output/chtml'] },
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    },
+};
+
+const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApproved }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     
@@ -44,6 +55,11 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
     const [gradeFeedback, setGradeFeedback] = useState('');
     const [savingGrade, setSavingGrade] = useState(false);
 
+    // Review states
+    const [approvingId, setApprovingId] = useState(null);
+    const [sendBackId, setSendBackId] = useState(null);
+    const [sendBackComment, setSendBackComment] = useState('');
+
     useEffect(() => {
         if (teacherInfo?.id) {
             loadAssignments();
@@ -67,7 +83,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
             setAssignments(teacherAssignments);
         } catch (error) {
-            console.error('Error loading assignments:', error);
             setError('Failed to load assignments');
         } finally {
             setLoading(false);
@@ -78,8 +93,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
         try {
             setLoading(true);
             setError('');
-            
-            console.log('Loading assignment results for assignment ID:', selectedAssignment.id);
             
             // Get detailed assignment data with submission stats
             const assignmentWithStats = await getAssignmentWithSubmissionStats(selectedAssignment.id);
@@ -94,23 +107,18 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             
             for (const submission of submissionData) {
                 try {
-                    console.log('🔄 Processing submission:', submission.id, 'for student:', submission.studentId);
-                    
                     // Get student info
                     const studentInfo = await getUserById(submission.studentId);
                     studentsData.push(studentInfo);
-                    console.log('👤 Student info loaded:', studentInfo.firstName, studentInfo.lastName);
-                    
+
                     // Get answers for this submission
                     const answers = await getAnswersBySubmissionId(submission.id);
-                    console.log('📝 Loaded answers for submission', submission.id, ':', answers);
                     
                     enrichedSubmissions.push({
                         ...submission,
                         answers: answers
                     });
                 } catch (error) {
-                    console.warn(`Failed to load data for submission ${submission.id}:`, error);
                     enrichedSubmissions.push(submission);
                 }
             }
@@ -119,7 +127,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             setStudents(studentsData);
             
         } catch (error) {
-            console.error('Error loading assignment results:', error);
             setError('Failed to load assignment results');
         } finally {
             setLoading(false);
@@ -170,16 +177,24 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
     };
 
     const getSubmissionStatus = (submission) => {
-        if (submission.status === 'submitted') return 'Submitted';
-        if (submission.status === 'in_progress') return 'In Progress';
-        return 'Not Started';
+        switch (submission.status) {
+            case 'submitted':      return 'Submitted';
+            case 'pending_review': return 'Pending Review';
+            case 'graded':         return 'Graded';
+            case 'needs_revision': return 'Needs Revision';
+            case 'in_progress':    return 'In Progress';
+            default:               return 'Not Started';
+        }
     };
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'submitted': return '#10b981';
-            case 'in_progress': return '#f59e0b';
-            default: return '#6b7280';
+            case 'submitted':      return '#10b981';
+            case 'pending_review': return '#f59e0b';
+            case 'graded':         return '#6366f1';
+            case 'needs_revision': return '#ef4444';
+            case 'in_progress':    return '#3b82f6';
+            default:               return '#6b7280';
         }
     };
 
@@ -200,29 +215,21 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                 setQuestionsCache(prev => new Map(prev).set(questionId, questionDetails));
                 return questionDetails;
             }
-        } catch (error) {
-            console.warn('Could not fetch question details for question', questionId, ':', error);
-        }
+        } catch { /* ignore */ }
         return null;
     };
 
     const handleViewSubmission = async (submission) => {
-        console.log('👀 Viewing submission:', submission);
-        console.log('📝 Submission answers:', submission.answers);
-        
         try {
             setLoadingDetails(true);
             setViewingSubmission(submission);
-            
+
             // Use the enriched submission data that already has answers loaded
             let details;
             if (submission.answers && submission.answers.length > 0) {
-                console.log('✅ Using pre-loaded answers:', submission.answers);
                 details = submission;
             } else {
-                console.log('🔄 Loading submission details from API...');
                 details = await getSubmissionDetails(submission.id);
-                console.log('📋 Loaded submission details:', details);
             }
             
             // Fetch question details for each answer
@@ -245,7 +252,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             
             setSubmissionDetails(details);
         } catch (error) {
-            console.error('Error loading submission details:', error);
             setError('Failed to load submission details');
         } finally {
             setLoadingDetails(false);
@@ -279,7 +285,6 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
             setGradeFeedback('');
             
         } catch (error) {
-            console.error('Error saving grade:', error);
             setError('Failed to save grade');
         } finally {
             setSavingGrade(false);
@@ -347,7 +352,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
         if (!assignmentDetails?.submissionStats) return {};
         
         const stats = assignmentDetails.submissionStats;
-        const submittedSubmissions = submissions.filter(s => s.status === 'submitted');
+        const submittedSubmissions = submissions.filter(s => ['submitted', 'pending_review', 'graded', 'needs_revision'].includes(s.status));
         
         const scores = submittedSubmissions
             .map(s => s.grade)
@@ -379,6 +384,7 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                 <div className="submission-detail-content">
                     <div className="submission-detail-header">
                         <h3>Submission Details - {studentName}</h3>
+                        
                         <button 
                             onClick={() => {
                                 setViewingSubmission(null);
@@ -398,7 +404,83 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                     ) : (
                         <>
                             <div className="submission-detail-body">
-                                <div className="submission-info-grid">
+                                {/* Pending Review Actions */}
+                            {details.status === 'pending_review' && (
+                                <div style={{
+                                    background: '#fffbeb', border: '1px solid #f59e0b',
+                                    borderRadius: '8px', padding: '16px', marginBottom: '16px'
+                                }}>
+                                    <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '8px' }}>
+                                        ⏳ Awaiting Your Review
+                                    </div>
+                                    <div style={{ color: '#78350f', fontSize: '0.875rem', marginBottom: '12px' }}>
+                                        Review the student's answers below, then approve or send back.
+                                    </div>
+                                    {sendBackId === submission.id ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <textarea
+                                                placeholder="Comment for student (optional)..."
+                                                value={sendBackComment}
+                                                onChange={e => setSendBackComment(e.target.value)}
+                                                rows={3}
+                                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                                            />
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await sendBackSubmission(submission.id, sendBackComment);
+                                                            setSendBackId(null);
+                                                            setSendBackComment('');
+                                                            setViewingSubmission(null);
+                                                            setSubmissionDetails(null);
+                                                            loadAssignmentResults();
+                                                        } catch { alert('Failed to send back.'); }
+                                                    }}
+                                                    style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
+                                                >
+                                                    Confirm Send Back
+                                                </button>
+                                                <button
+                                                    onClick={() => { setSendBackId(null); setSendBackComment(''); }}
+                                                    style={{ background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                disabled={approvingId === submission.id}
+                                                onClick={async () => {
+                                                    setApprovingId(submission.id);
+                                                    try {
+                                                        const classId = selectedClass?.classId || selectedClass?.id || selectedAssignment?.classId;
+                                                        await approveSubmission(submission.id, selectedAssignment.id, submission.studentId, classId);
+                                                        setViewingSubmission(null);
+                                                        setSubmissionDetails(null);
+                                                        loadAssignmentResults();
+                                                        onSubmissionApproved?.();
+                                                    } catch { alert('Failed to approve.'); }
+                                                    finally { setApprovingId(null); }
+                                                }}
+                                                style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 20px', cursor: 'pointer', fontWeight: 600 }}
+                                            >
+                                                {approvingId === submission.id ? 'Approving...' : '✓ Approve'}
+                                            </button>
+                                            <button
+                                                onClick={() => setSendBackId(submission.id)}
+                                                style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 20px', cursor: 'pointer', fontWeight: 600 }}
+                                            >
+                                                ↩ Send Back
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="submission-info-grid">
                                     <div className="info-item">
                                         <label>Status</label>
                                         <span className={`status-badge status-${details.status}`}>
@@ -456,7 +538,10 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                         
                                                         {answer.questionDetails && (
                                                             <div className="question-text">
-                                                                <strong>Question:</strong> {answer.questionDetails.questionText || answer.questionDetails.text}
+                                                                <strong>Question:</strong>
+                                                                <MathJaxContext version={3} config={mathJaxConfig}>
+                                                                    <MathJax>{answer.questionDetails.questionText || answer.questionDetails.text}</MathJax>
+                                                                </MathJaxContext>
                                                                 {answer.questionDetails.figureBlobUrl && (
                                                                     <div className="question-figure" style={{ margin: '8px 0' }}>
                                                                         <img
@@ -473,16 +558,30 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass }) => {
                                                                 )}
                                                                 {answer.questionDetails.correctAnswer && (
                                                                     <div className="correct-answer">
-                                                                        <strong>Correct Answer:</strong> {answer.questionDetails.correctAnswer}
+                                                                        <strong>Correct Answer: </strong>
+                                                                        <MathJaxContext version={3} config={mathJaxConfig}>
+                                                                            <MathJax inline>{answer.questionDetails.correctAnswer}</MathJax>
+                                                                        </MathJaxContext>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         )}
-                                                        
+
                                                         <div className="student-answer">
-                                                            <strong>Student Answer:</strong>
+                                                            <strong>Student Working:</strong>
                                                             <div className="answer-content">
-                                                                {answer.answer || answer.answerText || answer.selectedOption || 'No answer provided'}
+                                                                {(() => {
+                                                                    const raw = answer.answer || answer.answerText || answer.selectedOption || '';
+                                                                    if (!raw) return <span style={{ color: '#94a3b8' }}>No answer provided</span>;
+                                                                    const steps = raw.split(/\\n|\n/).filter(s => s.trim());
+                                                                    if (steps.length <= 1) return <div style={{ padding: '6px 0' }}>{raw}</div>;
+                                                                    return steps.map((step, i) => (
+                                                                        <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: i < steps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                                                                            <span style={{ color: '#94a3b8', minWidth: '20px', fontSize: '0.8rem' }}>{i + 1}.</span>
+                                                                            <span>{step}</span>
+                                                                        </div>
+                                                                    ));
+                                                                })()}
                                                             </div>
                                                         </div>
                                                         

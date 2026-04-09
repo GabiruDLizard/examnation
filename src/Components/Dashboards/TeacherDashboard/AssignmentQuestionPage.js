@@ -1,41 +1,27 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { BiPlus, BiSave, BiX } from 'react-icons/bi';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import { BiPlus, BiSave, BiX, BiBookOpen } from 'react-icons/bi';
 import { createCompleteAssignment } from './AssignmentService';
-import MathToolbar from './MathToolbar';
-import MathInput from './MathInput';
+import { createAssignmentQuestion, uploadQuestionImage } from './TeacherDashboardService';
+import MathFieldEditor from './MathFieldEditor';
+import QuestionLibrary from './QuestionLibrary';
+import TopicComboInput, { DEFAULT_TOPICS } from './TopicComboInput';
 import '../Assignments.css';
-import './MathToolbar.css';
-import './MathInput.css';
-
-const mathJaxConfig = {
-    loader: { load: ['input/tex', 'output/chtml'] },
-};
-
-// Convert $...$ inline delimiters → \(...\) which MathJax 3 always handles
-const toMJ = (str) => (str || '').replace(/\$([^$\n]+)\$/g, '\\($1\\)');
-
-const TOPICS = [
-    'Number Properties', 'Percentages', 'Ratios & Proportions',
-    'Speed/Distance/Time', 'Algebra (Linear Equations)',
-    'Algebra (Simultaneous Equations)', 'Algebra (Quadratics)',
-    'Algebra (Algebraic Fractions)', 'Sequences', 'Functions',
-    'Coordinate Geometry', 'Graphs', 'Geometry (Angles/Triangles)',
-    'Geometry (Circles/Area)', 'Mensuration (Area/Volume)',
-    'Trigonometry', 'Statistics (Mean/Median/Mode)',
-    'Probability', 'Matrices', 'Vectors'
-];
+import './MathFieldEditor.css';
+import './QuestionLibrary.css';
 
 const AssignmentQuestionCreationPage = ({ onBack }) => {
-    const questionTextRef = useRef(null);
-    const breakdownRef = useRef(null);
+    const [availableTopics, setAvailableTopics] = useState(DEFAULT_TOPICS);
+
+    const handleTopicCreated = (newTopic) => {
+        setAvailableTopics(prev => prev.includes(newTopic) ? prev : [...prev, newTopic]);
+    };
 
     const [formData, setFormData] = useState({
         questionText: '',
         imageAssociated: null,
         difficultyLevel: 'Medium',
-        topic: TOPICS[0],
+        topic: DEFAULT_TOPICS[0],
         answerType: 'Short Answer',
         multipleChoiceOptions: [],
         solution: '',
@@ -47,22 +33,19 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
     // Load assignment data from localStorage immediately during initialization
     const [assignmentData, setAssignmentData] = useState(() => {
         const savedAssignmentData = localStorage.getItem('currentAssignmentData');
-        console.log('📦 Loading assignment data from localStorage:', savedAssignmentData);
         if (savedAssignmentData) {
             try {
                 const parsed = JSON.parse(savedAssignmentData);
-                console.log('✅ Parsed assignment data:', parsed);
-                console.log('🔍 Assignment ID found:', parsed?.assignmentId);
                 return parsed;
-            } catch (error) {
-                console.error('❌ Error parsing assignment data from localStorage:', error);
+            } catch {
                 return null;
             }
         }
-        console.log('⚠️ No assignment data found in localStorage');
         return null;
     });
     
+    const [showLibrary, setShowLibrary] = useState(false);
+    const [linkedCount, setLinkedCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(() => {
         // Set error state based on whether we have assignment data
@@ -77,7 +60,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         const newQuestion = {
             id: Date.now(), // Simple ID generation
             ...formData,
-            subject: assignmentData?.subject || 'General',
+            subject: formData.topic || assignmentData?.subject || 'General',
             createdAt: new Date().toISOString()
         };
         
@@ -86,8 +69,6 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
         // Reset form for next question
         handleReset();
         
-        console.log('Question added to array:', newQuestion);
-        console.log('Total questions:', questionsArray.length + 1);
     };
 
     const handleSubmit = async (e) => {
@@ -101,35 +82,27 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                 finalQuestionsArray.push({
                     id: Date.now(),
                     ...formData,
-                    subject: assignmentData?.subject || 'General',
+                    subject: formData.topic || assignmentData?.subject || 'General',
                     createdAt: new Date().toISOString()
                 });
             }
 
-            if (finalQuestionsArray.length === 0) {
+            if (finalQuestionsArray.length === 0 && linkedCount === 0) {
                 toast.warn('Please add at least one question to the assignment.');
                 setIsSubmitting(false);
                 return;
             }
 
-            // Combine assignment data with questions
-            const completeAssignment = {
-                ...assignmentData,
-                questions: finalQuestionsArray,
-                totalQuestions: finalQuestionsArray.length,
-                completedAt: new Date().toISOString()
-            };
-            
-            console.log('Complete assignment for submission:', completeAssignment);
-            
-            // Call the real API to create complete assignment with questions
-            const result = await createCompleteAssignment(assignmentData, finalQuestionsArray);
-            console.log('✅ Assignment created successfully:', result);
-            
+            // Only call createCompleteAssignment if there are new questions to create
+            if (finalQuestionsArray.length > 0) {
+                const result = await createCompleteAssignment(assignmentData, finalQuestionsArray);
+            }
+
             // Clear localStorage
             localStorage.removeItem('currentAssignmentData');
-            
-            toast.success(`Assignment "${assignmentData?.title}" created successfully with ${finalQuestionsArray.length} questions!`);
+
+            const total = finalQuestionsArray.length + linkedCount;
+            toast.success(`Assignment "${assignmentData?.title}" created successfully with ${total} question${total !== 1 ? 's' : ''}!`);
             
             // Go back using callback
             if (onBack) {
@@ -137,10 +110,23 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             }
             
         } catch (error) {
-            console.error('Error creating complete assignment:', error);
             toast.error('Error creating assignment. Please try again.');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleLibrarySelect = async (question) => {
+        try {
+            await createAssignmentQuestion({
+                assignmentId: assignmentData.assignmentId,
+                questionId: question.id,
+                points: question.points || 1.0
+            });
+            setLinkedCount(prev => prev + 1);
+            toast.success('Question linked to this assignment!');
+        } catch (err) {
+            toast.error('Failed to link question: ' + err.message);
         }
     };
 
@@ -149,7 +135,7 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
             questionText: '',
             imageAssociated: null,
             difficultyLevel: 'Medium',
-            topic: TOPICS[0],
+            topic: DEFAULT_TOPICS[0],
             answerType: 'Short Answer',
             multipleChoiceOptions: [],
             solution: '',
@@ -159,7 +145,6 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
     };
 
     return (
-      <MathJaxContext version={3} config={mathJaxConfig}>
         <div className="assignment-question-page">
             {loading && (
                 <div className="loading-state">
@@ -193,35 +178,23 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                             {/* Question Text */}
                             <div className="form-group">
                                 <label>Question Text *</label>
-                                <textarea
-                                    ref={questionTextRef}
-                                    className="math-textarea-field"
-                                    value={formData.questionText || ''}
-                                    onChange={(e) => setFormData({ ...formData, questionText: e.target.value })}
-                                    required
-                                    rows={4}
+                                <MathFieldEditor
+                                    value={formData.questionText}
+                                    onChange={(v) => setFormData({ ...formData, questionText: v })}
                                     placeholder="Type your question here…"
                                 />
-                                <MathToolbar textareaRef={questionTextRef} />
-                                {formData.questionText && (
-                                    <div className="math-preview">
-                                        <div className="math-preview-label">Preview</div>
-                                        <MathJax dynamic>{toMJ(formData.questionText)}</MathJax>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Topic + Difficulty side by side */}
                             <div className="form-row">
                                 <div className="form-group">
                                     <label>Topic *</label>
-                                    <select
+                                    <TopicComboInput
                                         value={formData.topic}
-                                        onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                                        required
-                                    >
-                                        {TOPICS.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
+                                        onChange={(v) => setFormData({ ...formData, topic: v })}
+                                        availableTopics={availableTopics}
+                                        onTopicCreated={handleTopicCreated}
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label>Difficulty *</label>
@@ -262,26 +235,73 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                             {formData.answerType === 'Multiple Choice' && (
                                 <div className="form-group">
                                     <label>Answer Options</label>
-                                    {formData.multipleChoiceOptions.map((option, index) => (
-                                        <input
-                                            key={index}
-                                            type="text"
-                                            value={option}
-                                            onChange={(e) => {
-                                                const newOptions = [...formData.multipleChoiceOptions];
-                                                newOptions[index] = e.target.value;
-                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
-                                            }}
-                                            placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                            style={{ marginBottom: 6 }}
-                                        />
-                                    ))}
+                                    {formData.multipleChoiceOptions.map((option, index) => {
+                                        const opt = typeof option === 'string' ? { text: option, imageUrl: null } : option;
+                                        const letter = String.fromCharCode(65 + index);
+                                        return (
+                                            <div key={index} className="mc-option-row">
+                                                <span className="mc-option-letter">{letter}</span>
+                                                <input
+                                                    type="text"
+                                                    value={opt.text}
+                                                    onChange={(e) => {
+                                                        const newOptions = [...formData.multipleChoiceOptions];
+                                                        newOptions[index] = { ...opt, text: e.target.value };
+                                                        setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                    }}
+                                                    placeholder={`Option ${letter} text (optional if image)`}
+                                                />
+                                                <label className="mc-img-upload-btn" title="Add image to this option">
+                                                    ＋ Image
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            try {
+                                                                const url = await uploadQuestionImage(file);
+                                                                const newOptions = [...formData.multipleChoiceOptions];
+                                                                newOptions[index] = { ...opt, imageUrl: url };
+                                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                            } catch {
+                                                                toast.error('Image upload failed');
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                                {opt.imageUrl && (
+                                                    <div className="mc-option-thumb">
+                                                        <img src={opt.imageUrl} alt={`Option ${letter}`} />
+                                                        <button
+                                                            type="button"
+                                                            className="mc-remove-img"
+                                                            onClick={() => {
+                                                                const newOptions = [...formData.multipleChoiceOptions];
+                                                                newOptions[index] = { ...opt, imageUrl: null };
+                                                                setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                            }}
+                                                        >×</button>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="mc-remove-option"
+                                                    onClick={() => {
+                                                        const newOptions = formData.multipleChoiceOptions.filter((_, i) => i !== index);
+                                                        setFormData({ ...formData, multipleChoiceOptions: newOptions });
+                                                    }}
+                                                >✕</button>
+                                            </div>
+                                        );
+                                    })}
                                     <button
                                         type="button"
                                         className="btn-secondary"
                                         onClick={() => setFormData({
                                             ...formData,
-                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, '']
+                                            multipleChoiceOptions: [...formData.multipleChoiceOptions, { text: '', imageUrl: null }]
                                         })}
                                     >
                                         + Add Option
@@ -292,32 +312,21 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                             {/* Correct Answer */}
                             <div className="form-group">
                                 <label>Correct Answer *</label>
-                                <MathInput
-                                    mode="math"
+                                <MathFieldEditor
                                     value={formData.solution || ''}
                                     onChange={(v) => setFormData({ ...formData, solution: v })}
-                                    required
+                                    placeholder="Enter the correct answer…"
                                 />
                             </div>
 
                             {/* Solution steps */}
                             <div className="form-group">
                                 <label>Solution Steps <span style={{fontWeight:400,color:'#94a3b8'}}>(shown to student after incorrect answer)</span></label>
-                                <textarea
-                                    ref={breakdownRef}
-                                    className="math-textarea-field"
-                                    value={formData.answerBreakdown || ''}
-                                    onChange={(e) => setFormData({ ...formData, answerBreakdown: e.target.value })}
-                                    rows={5}
-                                    placeholder={'Step 1: …\nStep 2: …\nStep 3: …'}
+                                <MathFieldEditor
+                                    value={formData.answerBreakdown}
+                                    onChange={(v) => setFormData({ ...formData, answerBreakdown: v })}
+                                    placeholder="Step 1: …&#10;Step 2: …&#10;Step 3: …"
                                 />
-                                <MathToolbar textareaRef={breakdownRef} />
-                                {formData.answerBreakdown && (
-                                    <div className="math-preview">
-                                        <div className="math-preview-label">Preview</div>
-                                        <MathJax dynamic>{toMJ(formData.answerBreakdown)}</MathJax>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Image upload */}
@@ -361,13 +370,22 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                         
                         <div className="aqp-sticky-bar">
                             <div className="aqp-bar-left">
-                                {questionsArray.length > 0 && (
+                                {(questionsArray.length > 0 || linkedCount > 0) && (
                                     <span className="aqp-queued-badge">
-                                        {questionsArray.length} question{questionsArray.length !== 1 ? 's' : ''} queued
+                                        {questionsArray.length + linkedCount} question{questionsArray.length + linkedCount !== 1 ? 's' : ''} queued
                                     </span>
                                 )}
                             </div>
                             <div className="aqp-bar-right">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLibrary(true)}
+                                    className="aqp-btn-ghost"
+                                    disabled={isSubmitting}
+                                    title="Browse past questions"
+                                >
+                                    <BiBookOpen /> Browse Library
+                                </button>
                                 <button
                                     type="button"
                                     onClick={handleReset}
@@ -398,8 +416,15 @@ const AssignmentQuestionCreationPage = ({ onBack }) => {
                     </form>
                 </>
             )}
+
+            {showLibrary && (
+                <QuestionLibrary
+                    excludeAssignmentId={assignmentData?.assignmentId}
+                    onSelect={handleLibrarySelect}
+                    onClose={() => setShowLibrary(false)}
+                />
+            )}
         </div>
-      </MathJaxContext>
     );
 }
 

@@ -1,0 +1,82 @@
+.examnation-tour-step {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    max-width: 340px !important;
+}
+
+.examnation-tour-step .shepherd-content {
+    border-radius: 0;
+    box-shadow: none;
+    font-family: inherit;
+    background: #fff;
+}
+
+.examnation-tour-step .shepherd-header {
+    background: #1a0a4f !important;
+    border-radius: 12px 12px 0 0;
+    padding: 14px 18px;
+}
+
+.examnation-tour-step .shepherd-title {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.examnation-tour-step .shepherd-cancel-icon {
+    color: rgba(255,255,255,0.7);
+}
+
+.examnation-tour-step .shepherd-cancel-icon:hover {
+    color: #fff;
+}
+
+.examnation-tour-step .shepherd-text {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.examnation-tour-step .shepherd-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.shepherd-btn-primary {
+    background: #1a0a4f;
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.shepherd-btn-primary:hover {
+    background: #2d1a7a;
+}
+
+.shepherd-btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.shepherd-btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.shepherd-modal-overlay-container {
+    opacity: 0.5 !important;
+}

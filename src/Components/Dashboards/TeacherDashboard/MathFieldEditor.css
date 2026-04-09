@@ -1,0 +1,215 @@
+/* ── MathFieldEditor ─────────────────────────────────────────────────────── */
+
+.mfe-root {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ── Editor surface ──────────────────────────────────────────────────────── */
+
+.mfe-editor-wrap {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: text;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mfe-editor-wrap:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Placeholder */
+.mfe-editor-wrap:has(.mfe-editor-inner:empty)::before {
+    content: attr(data-placeholder);
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    color: #94a3b8;
+    font-size: 14px;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Inner ProseMirror div */
+.mfe-editor-inner {
+    min-height: 80px;
+    padding: 12px 14px;
+    color: #1e293b;
+    font-size: 15px;
+    line-height: 1.7;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.mfe-editor-inner p {
+    margin: 0 0 4px 0;
+}
+
+.mfe-editor-inner p:last-child {
+    margin-bottom: 0;
+}
+
+/* ── Inline KaTeX math nodes ─────────────────────────────────────────────── */
+
+/* Rendered math — click to edit */
+.mfe-editor-inner .tiptap-mathematics-render {
+    display: inline;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 2px;
+    transition: background 0.12s;
+}
+
+.mfe-editor-inner .tiptap-mathematics-render--editable:hover {
+    background: rgba(99, 102, 241, 0.1);
+    outline: 1px dashed #6366f1;
+}
+
+.mfe-editor-inner .katex {
+    font-size: 1em;
+    color: #4f46e5;
+}
+
+/* ── Math edit popover ───────────────────────────────────────────────────── */
+
+.mfe-math-popover {
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.mfe-popover-label {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.mfe-popover-input {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    color: #4f46e5;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    padding: 4px 8px;
+    outline: none;
+    min-width: 160px;
+    transition: border-color 0.15s;
+}
+
+.mfe-popover-input:focus {
+    border-color: #6366f1;
+}
+
+.mfe-popover-confirm {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 5px;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.mfe-popover-confirm:hover {
+    background: #6366f1;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+
+.mfe-toolbar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mfe-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    padding: 4px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.mfe-toggle:hover,
+.mfe-toggle.open {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.mfe-toggle-icon {
+    font-size: 14px;
+}
+
+.mfe-toggle-chevron {
+    font-size: 10px;
+}
+
+.mfe-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.mfe-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.mfe-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 0 4px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.mfe-btn {
+    padding: 3px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 13px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    line-height: 1.4;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.mfe-btn:hover {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}

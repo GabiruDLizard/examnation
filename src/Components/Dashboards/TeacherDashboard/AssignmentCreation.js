@@ -57,8 +57,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             setClassesData(classes);
         }
         catch (error) {
-            console.error('Error fetching class data:', error);
-        }
+            }
     }
 
     const loadStudentReadinessData = async () => {
@@ -98,8 +97,7 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             setStudentsData(allStudentsData);
             setReadinessStats({ averageReadiness, lowReadinessCount, highReadinessCount });
         } catch (error) {
-            console.error('Error loading student readiness data:', error);
-        } finally {
+            } finally {
             setLoadingStudents(false);
         }
     };
@@ -157,13 +155,9 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('🚀 Form submission started');
-        
         if (!validateForm()) {
-            console.log('❌ Form validation failed');
             return;
         }
-        console.log('✅ Form validation passed');
 
         const classId = parseInt(formData.assignedClass, 10);
         if (!classId || isNaN(classId)) {
@@ -203,11 +197,8 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                 }
             };
 
-            console.log('📤 Sending assignment data to API:', assignmentData);
-
             // Create assignment via API
             const createdAssignment = await createAssignmentForClass(assignmentData);
-            console.log('✅ Assignment created successfully:', createdAssignment);
 
             // Save assignment data to localStorage for question creation
             localStorage.setItem('currentAssignmentData', JSON.stringify({
@@ -217,16 +208,13 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             }));
             
             // Go to question creation page using callback
-            console.log('🧭 Calling onGoToQuestions callback');
             if (onGoToQuestions) {
                 onGoToQuestions();
             }
-            console.log('🧭 Callback completed');
             
             // Don't remove localStorage data immediately - let the question page handle it
             
         } catch (error) {
-            console.error('❌ Error creating assignment:', error);
             toast.error('Error creating assignment: ' + (error.message || 'Please try again.'));
         } finally {
             setIsSubmitting(false);

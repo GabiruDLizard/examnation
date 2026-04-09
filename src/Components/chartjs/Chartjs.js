@@ -57,7 +57,7 @@ export default function ClickToPlotChart() {
       chart.data.datasets[0].data.push({ x: xValue, y: yValue });
       chart.update();
 
-      console.log(`Added point: (${xValue.toFixed(2)}, ${yValue.toFixed(2)})`);
+
     },
   };
 

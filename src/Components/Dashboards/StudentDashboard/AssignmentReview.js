@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import MathText from '../../Shared/MathText';
 import { BiCheckCircle, BiXCircle, BiLeftArrow, BiChevronDown, BiChevronUp } from 'react-icons/bi';
 import { getQuestionsByAssignmentId, getAnswersBySubmissionId } from './StudentDashboardService';
 import './AssignmentReview.css';
 
-const mathJaxConfig = { loader: { load: ['input/tex', 'output/chtml'] } };
 
 export default function AssignmentReview({ assignment, submission, onBack }) {
     const [questions, setQuestions] = useState([]);
@@ -26,9 +25,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                 const autoExpand = {};
                 ans.forEach(a => { if (!a.isCorrect) autoExpand[a.questionId] = true; });
                 setExpandedQuestions(autoExpand);
-            } catch (err) {
-                console.error('Error loading review data:', err);
-            } finally {
+            } catch { /* ignore */ } finally {
                 setLoading(false);
             }
         };
@@ -50,9 +47,12 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
         return text.split('\n').map(s => s.trim()).filter(Boolean);
     };
 
-    const grade = submission?.grade;
     const correctCount = answers.filter(a => a.isCorrect).length;
     const totalCount = answers.length;
+    // Use submission.grade if set; otherwise compute from answers directly
+    const grade = submission?.grade != null
+        ? submission.grade
+        : (totalCount > 0 ? (correctCount / totalCount) * 100 : 0);
 
     const letterGrade = grade >= 90 ? 'A' : grade >= 80 ? 'B' : grade >= 70 ? 'C' : grade >= 60 ? 'D' : 'F';
     const gradeClass = grade >= 90 ? 'a' : grade >= 80 ? 'b' : grade >= 70 ? 'c' : grade >= 60 ? 'd' : 'f';
@@ -69,8 +69,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
     }
 
     return (
-        <MathJaxContext version={3} config={mathJaxConfig}>
-            <div className="ar-container">
+        <div className="ar-container">
                 {/* Header */}
                 <div className="ar-header">
                     <button onClick={onBack} className="back-btn">
@@ -151,14 +150,14 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
 
                                 {/* Question text — always visible */}
                                 <div className="ar-question-text">
-                                    <MathJax>{details.questionText || details.text || ''}</MathJax>
+                                    <MathText>{details.questionText || details.text || ''}</MathText>
                                 </div>
 
                                 {/* Correct answer — just show it inline */}
                                 {isCorrect && (
                                     <div className="ar-correct-answer">
                                         <span className="ar-label">Your answer:</span>
-                                        <MathJax>{answer?.answer || '—'}</MathJax>
+                                        <MathText>{answer?.answer ? `$${answer.answer}$` : '—'}</MathText>
                                     </div>
                                 )}
 
@@ -174,7 +173,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                                                 <ol className="ar-steps">
                                                     {studentSteps.map((step, i) => (
                                                         <li key={i} className="ar-step">
-                                                            <MathJax>{step}</MathJax>
+                                                            <MathText>{`$${step}$`}</MathText>
                                                         </li>
                                                     ))}
                                                 </ol>
@@ -183,7 +182,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                                             )}
                                             <div className="ar-final-answer wrong">
                                                 <span className="ar-label">Your answer:</span>
-                                                <MathJax>{studentSteps[studentSteps.length - 1] || '—'}</MathJax>
+                                                <MathText>{studentSteps[studentSteps.length - 1] ? `$${studentSteps[studentSteps.length - 1]}$` : '—'}</MathText>
                                             </div>
                                         </div>
 
@@ -198,7 +197,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                                                 <ol className="ar-steps">
                                                     {solutionSteps.map((step, i) => (
                                                         <li key={i} className="ar-step">
-                                                            <MathJax>{step}</MathJax>
+                                                            <MathText>{step}</MathText>
                                                         </li>
                                                     ))}
                                                 </ol>
@@ -207,7 +206,7 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                                             )}
                                             <div className="ar-final-answer correct">
                                                 <span className="ar-label">Correct answer:</span>
-                                                <MathJax>{details.correctAnswer || '—'}</MathJax>
+                                                <MathText>{details.correctAnswer ? `$${details.correctAnswer}$` : '—'}</MathText>
                                             </div>
                                         </div>
                                     </div>
@@ -216,7 +215,6 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
                         );
                     })}
                 </div>
-            </div>
-        </MathJaxContext>
+        </div>
     );
 }

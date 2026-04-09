@@ -1,13 +1,48 @@
-<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#4f46e5"/>
+    <!-- Background fill -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#f5f3ff"/>
+      <stop offset="100%" stop-color="#ede9fe"/>
     </linearGradient>
+
+    <!-- Per-ellipse gradients (back → front = dark → light) -->
+    <linearGradient id="e1" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+    <linearGradient id="e2" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="e3" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <!-- Clip to the rounded-square boundary -->
+    <clipPath id="bounds">
+      <rect width="100" height="100" rx="22" ry="22"/>
+    </clipPath>
+
+    <!-- Soft shadow under the oval group -->
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#4f46e5" flood-opacity="0.30"/>
+    </filter>
   </defs>
-  <circle cx="16" cy="16" r="15" fill="url(#g)"/>
-  <rect x="9"  y="9"  width="13" height="2.5" rx="1.25" fill="white"/>
-  <rect x="9"  y="14" width="9"  height="2.5" rx="1.25" fill="white"/>
-  <rect x="9"  y="19" width="13" height="2.5" rx="1.25" fill="white"/>
-  <rect x="9"  y="9"  width="2.5" height="12.5" rx="1.25" fill="white"/>
+
+  <!-- Background rounded square -->
+  <rect width="100" height="100" rx="22" ry="22" fill="url(#bg)" stroke="#c4b5fd" stroke-width="2.5"/>
+
+  <!-- Three cascading ovals, tilted -22°, clipped inside the icon -->
+  <g clip-path="url(#bounds)" filter="url(#shadow)">
+    <g transform="rotate(-22, 50, 54)">
+      <!-- Back oval (smallest, darkest) -->
+      <ellipse cx="26" cy="54" rx="16" ry="10" fill="url(#e1)" stroke="white" stroke-width="2.2"/>
+      <!-- Middle oval -->
+      <ellipse cx="50" cy="54" rx="22" ry="13" fill="url(#e2)" stroke="white" stroke-width="2.2"/>
+      <!-- Front oval (largest, lightest) -->
+      <ellipse cx="74" cy="54" rx="29" ry="16" fill="url(#e3)" stroke="white" stroke-width="2.2"/>
+    </g>
+  </g>
 </svg>

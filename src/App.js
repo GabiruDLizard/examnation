@@ -20,6 +20,7 @@ import AssignmentOverview from './Components/Dashboards/StudentDashboard/Assignm
 import AssignmentQuestionPage from './Components/Dashboards/StudentDashboard/AssignmentQuestionPage';
 import Settings from './Components/Settings/Settings';
 import ProtectedRoute from './Components/ProtectedRoute';
+import ScrollToTop from './Components/ScrollToTop';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
     <ErrorBoundary>
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <div className="App">
           <div className="App-body">
             <Routes>

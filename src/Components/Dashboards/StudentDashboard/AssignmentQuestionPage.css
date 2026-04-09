@@ -133,6 +133,147 @@
     flex-shrink: 0;
 }
 
+/* Image-based multiple choice */
+.mc-options-image {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    flex-direction: unset;
+}
+
+.mc-option-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: border-color 0.15s, background 0.15s;
+    background: #fff;
+    user-select: none;
+}
+
+.mc-option-card:hover:not(.disabled) {
+    border-color: var(--primary, #4f46e5);
+    background: #f5f3ff;
+}
+
+.mc-option-card.selected {
+    border-color: var(--primary, #4f46e5);
+    background: #ede9fe;
+}
+
+.mc-option-card.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.mc-card-letter {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6366f1;
+    align-self: flex-start;
+    background: #ede9fe;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.mc-card-img {
+    width: 100%;
+    max-height: 140px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.mc-card-text {
+    font-size: 0.875rem;
+    color: #1e293b;
+    text-align: center;
+}
+
+/* Teacher form — MC option row */
+.mc-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.mc-option-letter {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #6366f1;
+    background: #ede9fe;
+    border-radius: 4px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+}
+
+.mc-img-upload-btn {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4f46e5;
+    border: 1px dashed #a5b4fc;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.mc-img-upload-btn:hover {
+    background: #ede9fe;
+}
+
+.mc-option-thumb {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mc-option-thumb img {
+    height: 44px;
+    width: 60px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+}
+
+.mc-remove-img {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.mc-remove-option {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.mc-remove-option:hover {
+    color: #ef4444;
+}
+
 /* Assignment Question Page Specific Styles */
 .assignment-question-page {
     min-height: 100vh;
@@ -509,4 +650,30 @@
     .question-indicators {
         flex-wrap: wrap;
     }
+}
+/* ── Math symbol toolbar ─────────────────────────────────────────────────── */
+.math-symbol-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 0 10px;
+}
+
+.math-symbol-btn {
+    padding: 4px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background: #f8fafc;
+    color: #374151;
+    font-size: 13px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    line-height: 1.4;
+}
+
+.math-symbol-btn:hover {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
 }

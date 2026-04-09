@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { useNavigate, useParams } from 'react-router-dom';
 import { addStyles, EditableMathField } from 'react-mathquill';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import MathText from '../../Shared/MathText';
 import { BiLeftArrow, BiRightArrow, BiFlag, BiTime, BiCheckCircle, BiSave, BiSend } from 'react-icons/bi';
 import '../../PracticeArea/PracticeArea.css';
 import './AssignmentQuestionPage.css';
@@ -11,9 +11,22 @@ import { getQuestionsByAssignmentId, getSubmissionByAssignmentAndStudent, create
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { recordStudentReadiness } from '../TeacherDashboard/TeacherDashboardService';
 
-const mathJaxConfig = {
-  loader: { load: ["input/tex", "output/chtml"] },
-};
+const MATH_SYMBOLS = [
+    { label: 'x²',  cmd: '^2' },
+    { label: 'xⁿ',  cmd: '^' },
+    { label: '√',   cmd: '\\sqrt' },
+    { label: 'π',   cmd: '\\pi' },
+    { label: '÷',   cmd: '\\div' },
+    { label: '×',   cmd: '\\times' },
+    { label: '≤',   cmd: '\\le' },
+    { label: '≥',   cmd: '\\ge' },
+    { label: '≠',   cmd: '\\ne' },
+    { label: '±',   cmd: '\\pm' },
+    { label: 'a/b', cmd: '\\frac' },
+    { label: '∞',   cmd: '\\infty' },
+    { label: 'θ',   cmd: '\\theta' },
+    { label: 'Σ',   cmd: '\\sum' },
+];
 addStyles();
 
 export default function AssignmentQuestionPage({ assignment, selectedClass, onBack, onComplete, questions: preloadedQuestions }) {
@@ -70,7 +83,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                     const questionData = await getQuestionsByAssignmentId(assignment.id);
                     setQuestions(Array.isArray(questionData) ? questionData : []);
                 } catch (error) {
-                    console.error('Error loading assignment questions:', error);
                     setQuestions([]);
                 } finally {
                     setLoadingQuestions(false);
@@ -106,7 +118,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 }
 
                 setSubmission(existingSubmission);
-                const alreadySubmitted = existingSubmission.status === 'submitted' || existingSubmission.status === 'graded';
+                const alreadySubmitted = ['submitted', 'pending_review', 'graded'].includes(existingSubmission.status);
                 setIsSubmitted(alreadySubmitted);
                 // Re-hydrate results screen from stored grade when re-entering a submitted assignment
                 if (alreadySubmitted && existingSubmission.grade != null) {
@@ -117,9 +129,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         gradedAnswers: null,
                     });
                 }
-            } catch (error) {
-                console.error('Error initializing submission:', error);
-            }
+            } catch { /* ignore */ }
         };
         
         initializeSubmission();
@@ -193,18 +203,17 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             setSavedAnswers(currentSavedAnswers);
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
 
-            // Save to backend
+            // Save to backend — use actual Question ID, not the AssignmentQuestion join-table ID
             try {
                 await saveAnswerToBackend({
                     submissionId: submission.id,
-                    questionId: currentQuestion.id,
+                    questionId: currentQuestion.questionDetails?.id ?? currentQuestion.questionId ?? currentQuestion.id,
                     answer: answerText
                 });
-            } catch (error) {
-                console.error('Error saving to backend:', error);
+            } catch {
                 // Continue with local save even if backend fails
             }
-            
+
             setTimeout(() => setIsAutoSaving(false), 1000);
         }
     }, [currentQuestion, steps, isFlagged, startTime, assignment?.id, submission, isEditingDisabled]);
@@ -310,15 +319,14 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             setSavedAnswers(currentSavedAnswers);
             localStorage.setItem(`assignment-answers-${assignmentId}`, JSON.stringify(currentSavedAnswers));
 
-            // Save to backend
+            // Save to backend — use actual Question ID, not the AssignmentQuestion join-table ID
             try {
                 await saveAnswerToBackend({
                     submissionId: submission.id,
-                    questionId: currentQuestion.id,
+                    questionId: currentQuestion.questionDetails?.id ?? currentQuestion.questionId ?? currentQuestion.id,
                     answer: answerText
                 });
-            } catch (error) {
-                console.error('Error saving to backend:', error);
+            } catch {
                 // Continue with local save even if backend fails
             }
 
@@ -368,39 +376,35 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         });
         if (!isConfirmed) return;
 
-        // Final save of current answer
-        await saveAnswer();
+        // Flush ALL answers to backend before submitting (not just the current question)
+        const flushPromises = questions.map(async (q) => {
+            const saved = savedAnswers[q.id];
+            if (!saved?.steps?.some(s => s.trim())) return;
+            const answerText = saved.steps.filter(s => s.trim()).join('\n');
+            const questionId = q.questionDetails?.id ?? q.questionId ?? q.id;
+            try {
+                await saveAnswerToBackend({ submissionId: submission.id, questionId, answer: answerText });
+            } catch { /* non-fatal */ }
+        });
+        await Promise.all(flushPromises);
 
         try {
-            // Submit assignment to backend
-            const submittedSubmission = await submitAssignmentToBackend(assignment.id, currentUserId);
+            // Mark submission as submitted — use existing submission.id from state for grading
+            await submitAssignmentToBackend(assignment.id, currentUserId);
 
-            setSubmission(submittedSubmission);
             setIsSubmitted(true);
             toast.success('Assignment submitted!');
 
-            // Grade and save readiness
+            // Grade answers (score only) — mastery update deferred until teacher approval
             try {
-                const result = await checkAndGradeAnswers(assignment.id, submittedSubmission.id);
+                const result = await checkAndGradeAnswers(assignment.id, submission.id);
                 setGradingResult(result);
-
-                const classId = selectedClass?.classId || selectedClass?.id || assignment?.classId;
-                if (classId) {
-                    await recordStudentReadiness(currentUserId, classId, {
-                        readinessPercentage: Math.round(result.readinessPercentage * 10) / 10,
-                        questionsAnswered: result.gradedAnswers,
-                        correctAnswers: Math.round((result.percentage / 100) * result.gradedAnswers),
-                        studyTimeMinutes: 0,
-                        abilityEstimate: result.abilityEstimate
-                    });
-                }
             } catch { /* non-fatal */ }
 
             // Clear localStorage since assignment is submitted
             const assignmentId = assignment?.id || 'temp-assignment';
             localStorage.removeItem(`assignment-answers-${assignmentId}`);
         } catch (error) {
-            console.error('❌ Error submitting assignment:', error);
             toast.error('Failed to submit assignment. Please try again.');
         }
     };
@@ -430,59 +434,31 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     };
 
     return (
-        <MathJaxContext version={3} config={mathJaxConfig}>
-            <div className="assignment-question-page">
+        <div className="assignment-question-page">
                 {/* Loading State */}
                 {/* Results screen — shown any time the assignment is submitted */}
                 {isSubmitted ? (
                     <div className="results-screen">
                         <div className="results-header">
-                            <BiCheckCircle className="results-icon" />
+                            <BiCheckCircle className="results-icon" style={{ color: '#f59e0b' }} />
                             <h2>Assignment Submitted</h2>
                             <p>{assignment?.title}</p>
                         </div>
 
-                        {gradingResult && (
-                            <>
-                                <div className="results-score-card">
-                                    <div className="score-percentage">
-                                        {Math.round(gradingResult.percentage)}%
-                                    </div>
-                                    {gradingResult.totalPoints === 100 ? (
-                                        // Re-entry: only grade percentage available
-                                        <div className="score-points">Grade on file</div>
-                                    ) : (
-                                        <div className="score-points">
-                                            {gradingResult.totalScore} / {gradingResult.totalPoints} points
-                                        </div>
-                                    )}
-                                    <div className={`letter-grade grade-${
-                                        gradingResult.percentage >= 90 ? 'a' :
-                                        gradingResult.percentage >= 80 ? 'b' :
-                                        gradingResult.percentage >= 70 ? 'c' :
-                                        gradingResult.percentage >= 60 ? 'd' : 'f'
-                                    }`}>
-                                        {gradingResult.percentage >= 90 ? 'A' :
-                                         gradingResult.percentage >= 80 ? 'B' :
-                                         gradingResult.percentage >= 70 ? 'C' :
-                                         gradingResult.percentage >= 60 ? 'D' : 'F'}
-                                    </div>
+                        <div className="results-score-card" style={{ textAlign: 'center', padding: '24px' }}>
+                            <div style={{ fontSize: '3rem' }}>⏳</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '12px', color: '#1e293b' }}>
+                                Pending Teacher Review
+                            </div>
+                            <div style={{ color: '#64748b', marginTop: '8px', fontSize: '0.9rem' }}>
+                                Your answers have been submitted. Your teacher will review and approve your submission before your progress is recorded.
+                            </div>
+                            {gradingResult && gradingResult.totalPoints > 0 && (
+                                <div style={{ marginTop: '16px', color: '#64748b', fontSize: '0.875rem' }}>
+                                    Auto-score: {gradingResult.totalScore} / {gradingResult.totalPoints} pts — final grade confirmed by teacher
                                 </div>
-
-                                {gradingResult.gradedAnswers != null && (
-                                    <div className="results-stats">
-                                        <div className="results-stat">
-                                            <span className="stat-label">Questions Graded</span>
-                                            <span className="stat-value">{gradingResult.gradedAnswers}</span>
-                                        </div>
-                                        <div className="results-stat">
-                                            <span className="stat-label">Questions Total</span>
-                                            <span className="stat-value">{questions.length}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
+                            )}
+                        </div>
 
                         <button
                             className="btn-primary"
@@ -638,9 +614,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         </div>
                         
                         <div className="question-text">
-                            <MathJax>
-                                {currentQuestion?.questionText || currentQuestion?.text}
-                            </MathJax>
+                            <MathText>{currentQuestion?.questionText || currentQuestion?.text}</MathText>
                             {currentQuestion?.figureDescription && (
                                 <div className="question-figure-description">
                                     <em>{currentQuestion.figureDescription}</em>
@@ -664,30 +638,86 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             {isSubmitted && <span style={{color: '#22C55E'}}>(Submitted)</span>}
                             {isPastDeadline && !isSubmitted && <span style={{color: '#EF4444'}}>(Deadline Passed)</span>}
                         </h3>
+                        {!isEditingDisabled && !currentQuestion?.multipleChoiceOptions?.length && (
+                            <div className="math-symbol-toolbar">
+                                {MATH_SYMBOLS.map(({ label, cmd }) => (
+                                    <button
+                                        key={cmd}
+                                        type="button"
+                                        className="math-symbol-btn"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            const mf = stepReference.current[steps.length - 1];
+                                            if (mf) mf.cmd(cmd);
+                                        }}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="answer-input">
-                            {currentQuestion?.options?.length > 0 ? (
-                                <div className="mc-options">
-                                    {currentQuestion.options.map((option, idx) => (
-                                        <label
-                                            key={idx}
-                                            className={`mc-option ${selectedOption === option ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="mc-answer"
-                                                value={option}
-                                                checked={selectedOption === option}
-                                                disabled={isEditingDisabled}
-                                                onChange={() => {
-                                                    setSelectedOption(option);
-                                                    setSteps([option]);
-                                                }}
-                                            />
-                                            {option}
-                                        </label>
-                                    ))}
-                                </div>
-                            ) : (
+                            {currentQuestion?.multipleChoiceOptions?.length > 0 ? (() => {
+                                const opts = currentQuestion.multipleChoiceOptions.map(o => {
+                                    if (typeof o !== 'string') return o;
+                                    try {
+                                        const parsed = JSON.parse(o);
+                                        if (parsed && typeof parsed === 'object' && 'text' in parsed) return parsed;
+                                    } catch {}
+                                    return { text: o, imageUrl: null };
+                                });
+                                const hasImages = opts.some(o => o.imageUrl);
+                                return hasImages ? (
+                                    // Image card layout
+                                    <div className="mc-options mc-options-image">
+                                        {opts.map((opt, idx) => {
+                                            const letter = String.fromCharCode(65 + idx);
+                                            const value = opt.text || letter;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={`mc-option-card ${selectedOption === value ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
+                                                    onClick={() => {
+                                                        if (isEditingDisabled) return;
+                                                        setSelectedOption(value);
+                                                        setSteps([value]);
+                                                    }}
+                                                >
+                                                    <span className="mc-card-letter">{letter}</span>
+                                                    {opt.imageUrl && <img src={opt.imageUrl} alt={`Option ${letter}`} className="mc-card-img" />}
+                                                    {opt.text && <span className="mc-card-text">{opt.text}</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    // Standard text radio layout
+                                    <div className="mc-options">
+                                        {opts.map((opt, idx) => {
+                                            const value = opt.text;
+                                            return (
+                                                <label
+                                                    key={idx}
+                                                    className={`mc-option ${selectedOption === value ? 'selected' : ''} ${isEditingDisabled ? 'disabled' : ''}`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="mc-answer"
+                                                        value={value}
+                                                        checked={selectedOption === value}
+                                                        disabled={isEditingDisabled}
+                                                        onChange={() => {
+                                                            setSelectedOption(value);
+                                                            setSteps([value]);
+                                                        }}
+                                                    />
+                                                    {value}
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })() : (
                                 steps.map((step, idx) => (
                                     <div key={idx} className="answer-step">
                                         <span className="step-number">{idx + 1}.</span>
@@ -725,7 +755,6 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 </div>
                 </>
                 )}
-            </div>
-        </MathJaxContext>
+        </div>
     );
 }

@@ -21,9 +21,7 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                 try {
                     const classAssignments = await getAssignmentsForClass(selectedClass.id);
                     setAssignments(classAssignments);
-                    console.log('Selected class assignments:', classAssignments.length);
                 } catch (error) {
-                    console.error('Error fetching assignments for class:', error);
                     setAssignments([]);
                 }
             }
@@ -63,7 +61,6 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                         const submissions = await getSubmissionsByAssignmentId(assignment.id);
                         totalSubmissions += submissions.length;
                     } catch (error) {
-                        console.error(`Error fetching submissions for assignment ${assignment.id}:`, error);
                     }
                 }
                 
@@ -81,7 +78,6 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
             });
             
         } catch (error) {
-            console.error('Error fetching class stats:', error);
         } finally {
             setLoading(false);
         }
@@ -141,7 +137,6 @@ export default function ClassOverview({ teacherInfo, selectedClass, onBack, onNa
                 onNavigate('assignments');
                 break;
             default:
-                console.log(`Navigate to ${cardId}`);
         }
     };
 
