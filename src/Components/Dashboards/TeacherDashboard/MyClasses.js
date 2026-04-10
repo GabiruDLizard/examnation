@@ -3,11 +3,14 @@ import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
-import { getTeacherClasses, createTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
+import { getTeacherClasses, createTeacherClass, updateTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 
 export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingClass, setEditingClass] = useState(null);
+  const [editColor, setEditColor] = useState("#3b82f6");
   const [classesData, setClassesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -133,7 +136,21 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
   const handleEditClass = (e, classItem) => {
     e.stopPropagation();
-    toast.info(`Editing ${classItem.name}...`);
+    setEditingClass(classItem);
+    setEditColor(classItem.color || "#3b82f6");
+    setShowEditForm(true);
+  };
+
+  const handleUpdateClass = async (formData) => {
+    try {
+      await updateTeacherClass(editingClass.id, formData);
+      await fetchClasses();
+      setShowEditForm(false);
+      setEditingClass(null);
+      toast.success('Class updated successfully!');
+    } catch (error) {
+      toast.error('Error updating class: ' + error.message);
+    }
   };
 
   const handleDeleteClass = async (e, classItem) => {
@@ -394,6 +411,79 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
           </div>
         )}
       </div>
+
+      {/* Edit Form Modal */}
+      {showEditForm && editingClass && (
+        <div className="modal-overlay" onClick={() => setShowEditForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Class</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const classData = {
+                name: formData.get('name'),
+                subject: formData.get('subject'),
+                gradeLevel: formData.get('gradeLevel'),
+                schedule: formData.get('schedule'),
+                roomNumber: formData.get('roomNumber'),
+                maxStudents: parseInt(formData.get('maxStudents')) || 30,
+                color: editColor,
+              };
+              if (!classData.name || !classData.subject || !classData.gradeLevel || !classData.schedule) {
+                toast.warn('Please fill in all required fields');
+                return;
+              }
+              handleUpdateClass(classData);
+            }}>
+              <input type="text" name="name" placeholder="Class Name" required defaultValue={editingClass.name} />
+              <select name="gradeLevel" required defaultValue={editingClass.grade}>
+                <option value="">Select Grade Level</option>
+                <option value="7th Grade">7th Grade</option>
+                <option value="8th Grade">8th Grade</option>
+                <option value="9th Grade">9th Grade</option>
+                <option value="10th Grade">10th Grade</option>
+                <option value="11th Grade">11th Grade</option>
+                <option value="12th Grade">12th Grade</option>
+              </select>
+              <select name="subject" required defaultValue={editingClass.subject}>
+                <option value="">Select Subject</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="English">English</option>
+                <option value="Science">Science</option>
+                <option value="History">History</option>
+                <option value="Geography">Geography</option>
+                <option value="Biology">Biology</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option>
+              </select>
+              <input type="text" name="schedule" placeholder="Schedule (e.g., Mon, Wed, Fri - 8:00 AM)" required defaultValue={editingClass.schedule} />
+              <input type="text" name="roomNumber" placeholder="Room Number" defaultValue={editingClass.roomNumber} />
+              <input type="number" name="maxStudents" placeholder="Max Students" min="1" max="50" defaultValue={editingClass.maxStudents || 30} />
+              <div className="color-picker-section">
+                <label>Choose Class Color:</label>
+                <div className="color-picker-preview">
+                  <div className="selected-color-preview" style={{ backgroundColor: editColor }}></div>
+                  <span>Selected: {editColor}</span>
+                </div>
+                <div className="color-options">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`color-option ${editColor === color ? 'selected' : ''}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setEditColor(color)}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+              <button type="submit">Save Changes</button>
+              <button type="button" onClick={() => { setShowEditForm(false); setEditingClass(null); }}>Cancel</button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Create Form Modal with Color Picker */}
       {showCreateForm && (
