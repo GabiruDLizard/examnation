@@ -11,6 +11,7 @@ export function isTourDone(userId, role) {
 
 export function markTourDone(userId, role) {
     localStorage.setItem(TOUR_KEY(userId, role), '1');
+    localStorage.removeItem('examnation_first_login');
 }
 
 /**
@@ -19,7 +20,8 @@ export function markTourDone(userId, role) {
  */
 export function useTour(userId, role, steps, ready = true) {
     useEffect(() => {
-        if (!userId || !ready || isTourDone(userId, role)) return;
+        const isFirstLogin = !!localStorage.getItem('examnation_first_login');
+        if (!userId || !ready || !isFirstLogin || isTourDone(userId, role)) return;
 
         const tour = new Shepherd.Tour({
             useModalOverlay: true,

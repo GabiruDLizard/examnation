@@ -30,6 +30,11 @@ const Auth = () => {
             const data = await login(username, password);
             if (data.token) {
                 setToken(data.token);
+                if (data.isFirstLogin) {
+                    localStorage.setItem('examnation_first_login', '1');
+                } else {
+                    localStorage.removeItem('examnation_first_login');
+                }
                 refreshAuth();
                 const role = getRoleFromToken()?.toLowerCase();
                 if (role === 'admin' || role === 'superadmin') {

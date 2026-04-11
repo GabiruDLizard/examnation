@@ -367,6 +367,55 @@ function EditModal({ user, onClose, onSaved, isSuperAdmin, organizations }) {
     );
 }
 
+// ── View User Modal ────────────────────────────────────────────
+function ViewUserModal({ user, onClose, orgMap }) {
+    const formatDate = (d) => d ? new Date(d).toLocaleString() : '—';
+    const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.username?.[0]?.toUpperCase() || '?';
+
+    return (
+        <div className="adm-overlay" onClick={onClose}>
+            <div className="adm-modal" onClick={e => e.stopPropagation()}>
+                <div className="adm-modal-header">
+                    <span className="adm-modal-title">User Details</span>
+                    <button className="adm-modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="adm-modal-content">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#1a0a4f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, flexShrink: 0 }}>
+                            {initials}
+                        </div>
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: 16 }}>{user.firstName || ''} {user.lastName || ''}</div>
+                            <div style={{ color: '#64748b', fontSize: 13 }}>@{user.username}</div>
+                        </div>
+                        <RolePill role={user.role} />
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                        <tbody>
+                            {[
+                                ['Email', user.email],
+                                ['Username', user.username],
+                                ['Role', user.role],
+                                ['School', user.institutionId ? (orgMap?.[user.institutionId] || `Org #${user.institutionId}`) : '—'],
+                                ['Account Created', formatDate(user.createdAt)],
+                                ['Last Login', formatDate(user.lastLoginAt)],
+                            ].map(([label, value]) => (
+                                <tr key={label} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '8px 4px', color: '#64748b', fontWeight: 600, width: '40%' }}>{label}</td>
+                                    <td style={{ padding: '8px 4px', color: '#1e293b' }}>{value}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="adm-modal-actions">
+                    <button type="button" className="adm-btn-cancel" onClick={onClose}>Close</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ── Inquiry View Modal ────────────────────────────────────────
 function InquiryViewModal({ inquiry, onClose, onStatusChange }) {
     const [busy, setBusy] = useState(false);
@@ -594,6 +643,7 @@ export default function AdminDashboard() {
     const [resetTarget,    setResetTarget]    = useState(null);
     const [resetRequestId, setResetRequestId] = useState(null);
     const [editTarget,     setEditTarget]     = useState(null);
+    const [viewUser,       setViewUser]       = useState(null);
     const [questionModalOpen, setQuestionModalOpen] = useState(false);
     const [editQuestionTarget, setEditQuestionTarget] = useState(null);
     const [questionSearch, setQuestionSearch] = useState('');
@@ -930,7 +980,7 @@ export default function AdminDashboard() {
                                 </thead>
                                 <tbody>
                                     {users.map(u => (
-                                        <tr key={u.id}>
+                                        <tr key={u.id} style={{ cursor: 'pointer' }} onClick={() => setViewUser(u)}>
                                             <td className="adm-td-name">{u.firstName || ''} {u.lastName || ''}</td>
                                             <td className="adm-td-muted">{u.username}</td>
                                             <td className="adm-td-muted">{u.email}</td>
@@ -943,7 +993,7 @@ export default function AdminDashboard() {
                                             <td className="adm-td-muted">
                                                 {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
                                             </td>
-                                            <td>
+                                            <td onClick={e => e.stopPropagation()}>
                                                 <div className="adm-row-actions">
                                                     <button className="adm-icon-btn" title="Edit" aria-label="Edit user" onClick={() => setEditTarget(u)}>
                                                         <BiEdit size={15} />
@@ -1182,6 +1232,7 @@ export default function AdminDashboard() {
 
             </div>{/* adm-main */}
 
+            {viewUser    && <ViewUserModal user={viewUser} onClose={() => setViewUser(null)} orgMap={orgMap} />}
             {questionModalOpen   && <QuestionFormModal onClose={() => setQuestionModalOpen(false)}    onSubmit={handleCreateQuestion} />}
             {editQuestionTarget && <QuestionFormModal onClose={() => setEditQuestionTarget(null)} onSubmit={handleEditQuestion}    question={editQuestionTarget} />}
             {createOpen  && <CreateModal onClose={() => setCreateOpen(false)} onCreated={loadUsers} isSuperAdmin={isSuperAdmin} organizations={orgs} />}
