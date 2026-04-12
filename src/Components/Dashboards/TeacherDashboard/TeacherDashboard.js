@@ -25,6 +25,8 @@ import Settings from "../../Settings/Settings";
 import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
 import { useTour } from '../../Tour/useTour';
 import teacherSteps from './TeacherSteps';
+import { DEMO_MODE, DEMO_TEACHER_INFO, DEMO_TEACHER_STATS, DEMO_STUDENT_RANKING, DEMO_READINESS_CHART, DEMO_HEATMAP, DEMO_WEAK_SPOTS } from '../../../demo/dummyData';
+import NotificationBell from '../../Notifications/NotificationBell';
 
 
 function heatColor(v) {
@@ -132,18 +134,33 @@ export default function TeacherDashboard() {
       return;
     }
 
+    if (DEMO_MODE) {
+      setTeacherInfo(DEMO_TEACHER_INFO);
+      setTeacherStats(DEMO_TEACHER_STATS);
+      setTotalStudentsCount(DEMO_TEACHER_STATS.totalStudents);
+      setActualStudentsData(DEMO_STUDENT_RANKING);
+      setReadinessChartData(DEMO_READINESS_CHART);
+      setClassColors({ 'Form 5A Mathematics': '#3b82f6', 'Form 4B Mathematics': '#10b981', 'Form 3 Science': '#8b5cf6' });
+      setHeatmapData(DEMO_HEATMAP);
+      setWeakSpots(DEMO_WEAK_SPOTS);
+      setLoading(false);
+      setLoadingStudentCount(false);
+      setLoadingStudentsData(false);
+      return;
+    }
+
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
-        
+
         const data = await getTeacherInfo();
-        
+
         setTeacherInfo(data);
         setError(null);
 
         // Calculate total students after getting teacher info
         await calculateTotalStudents();
-        
+
       } catch (err) {
         setError('Failed to load teacher information');
       } finally {
@@ -864,8 +881,10 @@ export default function TeacherDashboard() {
 
         <header className="td-header">
           <h1>{getPageTitle()}</h1>
-          <div></div>
-          <div className="td-user">{getTeacherDisplayName()}</div>
+          <div className="td-header-right">
+            <NotificationBell />
+            <div className="td-user">{getTeacherDisplayName()}</div>
+          </div>
         </header>
         <Breadcrumb crumbs={getBreadcrumbs()} />
 

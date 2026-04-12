@@ -7,7 +7,7 @@ import { MathJaxContext } from 'better-react-mathjax';
 import './PracticeArea.css';
 import { renderFeedback, renderQuestionText } from '../../Worker/feedbackRender';
 import { needAHint } from '../../Worker/chat';
-import DesmosGraph from '../DesmosGraph/DesmosGraph';
+import GraphCanvas from '../GraphCanvas/GraphCanvas';
 
 const mathJaxConfig = {
   loader: { load: ["input/tex", "output/chtml"] },
@@ -87,6 +87,7 @@ const PracticeArea = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [graphState, setGraphState] = useState(null);
+  const [graphTab, setGraphTab] = useState('graph'); // 'graph' | 'working'
   const [, setPointsInput] = useState("");
   const navigate = useNavigate();
 
@@ -292,24 +293,92 @@ const PracticeArea = () => {
             <div className="solution-content">
               {question?.Topic === "Graphs" ? (
                 <div className="workingBlock">
-                  <div className="graph-submission">
-                    <div className="graph-instructions">
-                      <strong>Interactive Graph:</strong>
-                      <p>Use the graphing calculator below to plot your answer.</p>
-                    </div>
-                    <DesmosGraph
-                      expressions={[]}
-                      options={{
-                        keypad: true,
-                        expressions: false,
-                        settingsMenu: true,
-                        zoomButtons: true,
-                        expressionsTopbar: true
-                      }}
-                      onStateChange={handleGraphStateChange}
-                      onInputChange={setPointsInput}
-                    />
+                  {/* Graph/Working tabs */}
+                  <div className="graph-tabs">
+                    <button
+                      className={`graph-tab ${graphTab === 'graph' ? 'active' : ''}`}
+                      onClick={() => setGraphTab('graph')}
+                    >
+                      Graph
+                    </button>
+                    <button
+                      className={`graph-tab ${graphTab === 'working' ? 'active' : ''}`}
+                      onClick={() => setGraphTab('working')}
+                    >
+                      Working
+                    </button>
                   </div>
+
+                  {graphTab === 'graph' ? (
+                    <div className="graph-submission">
+                      <GraphCanvas onStateChange={handleGraphStateChange} />
+                    </div>
+                  ) : (
+                    <div className="work-area">
+                      <div className="work-header">
+                        <span className="work-label">Show Your Work</span>
+                      </div>
+                      <div className="mq-toolbar-wrap">
+                        <button
+                          type="button"
+                          className={`mq-toolbar-toggle ${toolbarOpen ? 'open' : ''}`}
+                          onMouseDown={e => { e.preventDefault(); setToolbarOpen(o => !o); }}
+                        >
+                          <span className="mq-toolbar-toggle-icon">∑</span>
+                          <span>Math symbols</span>
+                          <span className="mq-toolbar-toggle-chevron">{toolbarOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {toolbarOpen && (
+                          <div className="mq-toolbar">
+                            {MQ_TOOLBAR_GROUPS.map(group => (
+                              <div key={group.label} className="mq-toolbar-group">
+                                <span className="mq-toolbar-group-label">{group.label}</span>
+                                {group.buttons.map(btn => (
+                                  <button
+                                    key={btn.label}
+                                    type="button"
+                                    className="mq-toolbar-btn"
+                                    title={btn.title}
+                                    onMouseDown={e => { e.preventDefault(); insertIntoMQ(btn.latex); }}
+                                  >
+                                    {btn.label}
+                                  </button>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="answerText">
+                        {steps.map((step, idx) => (
+                          <div key={idx} className="step-row">
+                            <span className="step-number">{idx + 1}.</span>
+                            <EditableMathField
+                              latex={step}
+                              onChange={mf => handleStepChange(idx, mf.latex())}
+                              className="step-input"
+                              onKeyDown={e => handleKeyDown(e, idx)}
+                              mathquillDidMount={field => (stepReference.current[idx] = field)}
+                              onFocus={() => { focusedMQRef.current = stepReference.current[idx]; }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="final-answer-container">
+                        <div className="final-answer-header">
+                          <span className="final-answer-label">Final Answer</span>
+                        </div>
+                        <EditableMathField
+                          latex={finalAnswer}
+                          onChange={mf => setFinalAnswer(mf.latex())}
+                          className="final-answer-input"
+                          placeholder="Enter your final answer here..."
+                          mathquillDidMount={field => (stepReference.current['final'] = field)}
+                          onFocus={() => { focusedMQRef.current = stepReference.current['final']; }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="workingBlock">

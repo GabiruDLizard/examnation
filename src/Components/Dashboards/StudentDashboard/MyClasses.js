@@ -3,6 +3,7 @@ import { BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl, BiTrendingUp, BiBullse
 import "../MyClasses.css";
 import { getStudentClassesWithDetails, getAssignmentsForClass } from './StudentDashboardService.js';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { DEMO_MODE, DEMO_STUDENT_CLASSES } from '../../../demo/dummyData';
 
 export default function StudentMyClasses({ studentInfo, onClassClick }) {
   const [classesData, setClassesData] = useState([]);
@@ -16,6 +17,11 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
   }, []);
 
   const fetchStudentClasses = async () => {
+    if (DEMO_MODE) {
+      setClassesData(DEMO_STUDENT_CLASSES);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const studentId = getUserIdFromToken();

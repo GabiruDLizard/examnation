@@ -24,6 +24,8 @@ import Settings from '../../Settings/Settings.js';
 import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
 import { useTour } from '../../Tour/useTour';
 import studentSteps from './StudentSteps';
+import { DEMO_MODE, DEMO_STUDENT_INFO, DEMO_STUDENT_STATS, DEMO_READINESS_SCORES, DEMO_CLASS_READINESS_HISTORY } from '../../../demo/dummyData';
+import NotificationBell from '../../Notifications/NotificationBell';
 
 // Helper function for grouping answers by date
 const groupAnswersByDate = (answers) => {
@@ -149,6 +151,17 @@ function StudentDashboard() {
 
         if (!id) {
             navigate('/login');
+            return;
+        }
+
+        if (DEMO_MODE) {
+            setStudent(DEMO_STUDENT_INFO);
+            setQAnswered(DEMO_STUDENT_STATS.qAnswered);
+            setCorrectAns(DEMO_STUDENT_STATS.correctAns);
+            setAverageCorrectness(DEMO_STUDENT_STATS.averageCorrectness);
+            setReadinessScores(DEMO_READINESS_SCORES);
+            setClassReadinessHistory(DEMO_CLASS_READINESS_HISTORY);
+            setLoading(false);
             return;
         }
 
@@ -691,7 +704,10 @@ function StudentDashboard() {
             <main className="sd-main">
                 <header className="sd-header">
                     <h1>{getPageTitle()}</h1>
-                    <div className="sd-user">{getStudentDisplayName()}</div>
+                    <div className="sd-header-right">
+                        <NotificationBell />
+                        <div className="sd-user">{getStudentDisplayName()}</div>
+                    </div>
                 </header>
                 <Breadcrumb crumbs={getBreadcrumbs()} />
 

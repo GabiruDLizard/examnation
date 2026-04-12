@@ -5,6 +5,7 @@ import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { getRecentMistakes, getMistakePatterns, getCuratedQuiz } from './TAService';
 import { getStudentTopicAbility } from '../TeacherDashboard/TeacherDashboardService';
 import './TAPageStudent.css';
+import { DEMO_MODE, DEMO_STUDENT_MISTAKES, DEMO_STUDENT_PATTERNS, DEMO_TOPIC_ABILITY, DEMO_CURATED } from '../../../demo/dummyData';
 
 const mathJaxConfig = {
     loader: { load: ['input/tex', 'output/chtml'] },
@@ -216,6 +217,21 @@ export default function MyTA() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (DEMO_MODE) {
+            const grouped = {};
+            DEMO_STUDENT_PATTERNS.forEach(row => {
+                if (!grouped[row.topic]) grouped[row.topic] = [];
+                grouped[row.topic].push({ mistakeType: row.mistakeType, count: row.count });
+            });
+            setMistakes(DEMO_STUDENT_MISTAKES);
+            setPatterns(grouped);
+            setCurated(DEMO_CURATED);
+            const taLookup = {};
+            DEMO_TOPIC_ABILITY.forEach(row => { taLookup[row.topic] = row.theta; });
+            setTopicAbility(taLookup);
+            setLoading(false);
+            return;
+        }
         if (!studentId) return;
 
         Promise.all([
