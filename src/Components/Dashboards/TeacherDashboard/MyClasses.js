@@ -5,6 +5,7 @@ import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListU
 import "../MyClasses.css";
 import { getTeacherClasses, createTeacherClass, updateTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
+import { DEMO_MODE, DEMO_TEACHER_CLASSES, DEMO_TEACHER_ASSIGNMENTS } from '../../../demo/dummyData';
 
 export default function MyClasses({ teacherInfo, onClassClick }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -36,9 +37,16 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
 
   // Fetch teacher classes on component mount
   useEffect(() => {
+    if (DEMO_MODE) {
+      setClassesData(DEMO_TEACHER_CLASSES);
+      setAssignments(DEMO_TEACHER_ASSIGNMENTS);
+      setLoading(false);
+      return;
+    }
     fetchClasses();
   }, []);
   useEffect(() => {
+    if (DEMO_MODE) return;
     const fetchAllAssignments = async () => {
       if (classesData.length > 0) {
         const assignmentPromises = classesData.map(async (classItem) => {

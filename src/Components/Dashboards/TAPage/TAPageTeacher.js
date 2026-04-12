@@ -5,6 +5,7 @@ import { getTeacherClasses } from '../TeacherDashboard/TeacherDashboardService';
 import StudentMistakePatterns from './StudentMistakePatterns';
 import { toast } from 'react-toastify';
 import './TAPageTeacher.css';
+import { DEMO_MODE, DEMO_TA_PATTERNS, DEMO_TA_STRUGGLING, DEMO_TEACHER_CLASSES } from '../../../demo/dummyData';
 
 const BADGE_COLOR = {
     'Sign Error':           { bg: '#fee2e2', color: '#dc2626' },
@@ -210,6 +211,13 @@ export default function TAPageTeacher() {
     const [modal, setModal] = useState(null);
 
     useEffect(() => {
+        if (DEMO_MODE) {
+            setPatterns(DEMO_TA_PATTERNS);
+            setStruggling(DEMO_TA_STRUGGLING);
+            setClasses(DEMO_TEACHER_CLASSES);
+            setLoading(false);
+            return;
+        }
         if (!teacherId) return;
         Promise.all([
             getTeacherPatterns(teacherId),

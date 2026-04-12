@@ -12,6 +12,7 @@ import {
 } from './TeacherDashboardService';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { authFetch } from '../../../utils/api';
+import { DEMO_MODE, DEMO_REPORT_CHART, DEMO_REPORT_STUDENTS, DEMO_REPORT_TOPICS, DEMO_REPORT_KPIS, DEMO_TEACHER_CLASSES } from '../../../demo/dummyData';
 
 // ── helpers ───────────────────────────────────────────────────────
 
@@ -61,6 +62,15 @@ export default function TeacherReports({ overrideTeacherId } = {}) {
     // ── fetch ─────────────────────────────────────────────────────
 
     useEffect(() => {
+        if (DEMO_MODE) {
+            setClasses(DEMO_TEACHER_CLASSES.map(c => ({ id: c.id, classId: c.id, name: c.name })));
+            setChartData(DEMO_REPORT_CHART);
+            setStudentRows(DEMO_REPORT_STUDENTS);
+            setTopicRows(DEMO_REPORT_TOPICS);
+            setKpis(DEMO_REPORT_KPIS);
+            setLoading(false);
+            return;
+        }
         async function load() {
             setLoading(true);
             try {
@@ -74,7 +84,7 @@ export default function TeacherReports({ overrideTeacherId } = {}) {
     }, [teacherId]);
 
     useEffect(() => {
-        if (!classes.length) return;
+        if (DEMO_MODE || !classes.length) return;
         fetchReportData();
     }, [classes, selectedClassId, teacherId]);
 
