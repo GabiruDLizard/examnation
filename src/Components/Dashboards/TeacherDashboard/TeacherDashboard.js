@@ -108,23 +108,19 @@ export default function TeacherDashboard() {
   useTour(userId, 'teacher', teacherSteps, !loading);
 
   const handleNavigateFromOverview = (section) => {
-    // Special case: if navigating to assignments, switch to main assignments page
     if (section === 'assignments') {
-      setActivePage('assignments');     // Switch to assignments page
-      setCurrentView('main');          // Go to main view
-      // Keep the selectedClass instead of clearing it - this will pass the class context
-      // setSelectedClass(null);       // Comment out or remove this line
+      // setActivePage already produces ?page=assignments with no view/classId
+      // so currentView defaults to 'main' — don't call setCurrentView after
+      setActivePage('assignments');
     } else {
-      // For other sections (students), stay in class context
-      setCurrentView(section);         // Changes view to 'students', etc.
+      setCurrentView(section);
     }
   };
 
-  // Clean up page navigation
   const handlePageChange = (page) => {
+    // setActivePage navigates to ?page=X with no view/classId, so
+    // currentView defaults to 'main' and selectedClassId becomes null (clearing selectedClass via useEffect)
     setActivePage(page);
-    setCurrentView('main');
-    setSelectedClass(null);
     setNotifTarget({view: null, assignmentId: null});
   };
    
