@@ -51,7 +51,21 @@ export default function NotificationBell({ onNavigate }) {
         if (!userId) return;
         try {
             const res = await authFetch(`/notifications/${userId}`);
-            if (res.ok) setNotifications(await res.json());
+            if (res.ok) {
+                const raw = await res.json();
+                // Normalise to camelCase regardless of what the API returns
+                const normalised = raw.map(n => ({
+                    id:        n.id        ?? n.Id,
+                    userId:    n.userId    ?? n.UserId,
+                    type:      n.type      ?? n.Type,
+                    message:   n.message   ?? n.Message,
+                    isRead:    n.isRead    ?? n.IsRead    ?? false,
+                    createdAt: n.createdAt ?? n.CreatedAt,
+                    metadata:  n.metadata  ?? n.Metadata,
+                }));
+                console.log('[NotificationBell] notifications:', normalised);
+                setNotifications(normalised);
+            }
         } catch { /* ignore */ }
     }, [userId]);
 
