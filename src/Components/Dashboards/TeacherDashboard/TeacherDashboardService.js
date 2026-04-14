@@ -742,7 +742,7 @@ export const getSubmissionStatsForTeacher = async (teacherId) => {
         for (const assignment of assignments) {
             try {
                 const submissions = await getSubmissionsByAssignmentId(assignment.id);
-                const submittedCount = submissions.filter(sub => sub.status === 'submitted').length;
+                const submittedCount = submissions.filter(sub => ['submitted', 'pending_review', 'graded', 'needs_revision'].includes(sub.status)).length;
 
                 const enrolledStudents = await getAllEnrolledStudentInfo(assignment.classId);
                 const totalStudents = enrolledStudents.length;
@@ -797,7 +797,8 @@ export const getAssignmentWithSubmissionStats = async (assignmentId) => {
         const submissions = await getSubmissionsByAssignmentId(assignmentId);
         const enrolledStudents = await getAllEnrolledStudentInfo(assignment.classId);
 
-        const submittedCount = submissions.filter(sub => sub.status === 'submitted').length;
+        const SUBMITTED_STATUSES = ['submitted', 'pending_review', 'graded', 'needs_revision'];
+        const submittedCount = submissions.filter(sub => SUBMITTED_STATUSES.includes(sub.status)).length;
         const inProgressCount = submissions.filter(sub => sub.status === 'in_progress').length;
         const notStartedCount = enrolledStudents.length - submissions.length;
         const totalStudents = enrolledStudents.length;
