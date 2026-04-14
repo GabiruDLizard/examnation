@@ -705,7 +705,7 @@ function StudentDashboard() {
                 <header className="sd-header">
                     <h1>{getPageTitle()}</h1>
                     <div className="sd-header-right">
-                        <NotificationBell />
+                        <NotificationBell onNavigate={(page) => handleNavClick(page)} />
                         <div className="sd-user">{getStudentDisplayName()}</div>
                     </div>
                 </header>

@@ -16,11 +16,20 @@ const TYPE_ICON = {
     assignment_created:   '📋',
     assignment_submitted: '✅',
     assignment_graded:    '🎯',
+    submission_received:  '✅',
     quiz_assigned:        '📝',
     default:              '🔔',
 };
 
-export default function NotificationBell() {
+// Maps notification type → dashboard page key
+const TYPE_PAGE = {
+    assignment_created:  'classes',
+    assignment_graded:   'classes',
+    quiz_assigned:       'classes',
+    submission_received: 'classes',
+};
+
+export default function NotificationBell({ onNavigate }) {
     const userId = getUserIdFromToken();
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
@@ -115,7 +124,14 @@ export default function NotificationBell() {
                                 <div
                                     key={n.id}
                                     className={`nb-item ${n.isRead ? 'read' : 'unread'}`}
-                                    onClick={() => !n.isRead && markRead(n.id)}
+                                    onClick={() => {
+                                        if (!n.isRead) markRead(n.id);
+                                        const page = TYPE_PAGE[n.type];
+                                        if (page && onNavigate) {
+                                            onNavigate(page, n);
+                                            setOpen(false);
+                                        }
+                                    }}
                                 >
                                     <span className="nb-icon">
                                         {TYPE_ICON[n.type] ?? TYPE_ICON.default}

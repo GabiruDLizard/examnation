@@ -882,7 +882,7 @@ export default function TeacherDashboard() {
         <header className="td-header">
           <h1>{getPageTitle()}</h1>
           <div className="td-header-right">
-            <NotificationBell />
+            <NotificationBell onNavigate={(page) => handlePageChange(page)} />
             <div className="td-user">{getTeacherDisplayName()}</div>
           </div>
         </header>
