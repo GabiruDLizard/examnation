@@ -91,7 +91,7 @@ function StudentDashboard() {
     const {
         activePage,
         currentView, setCurrentView,
-        selectedClass,
+        selectedClass, setSelectedClass,
         mobileMenuOpen,
         handleNavClick,
         handleClassClick,
