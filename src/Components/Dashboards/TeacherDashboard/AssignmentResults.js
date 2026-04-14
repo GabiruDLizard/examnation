@@ -22,7 +22,7 @@ const mathJaxConfig = {
     },
 };
 
-const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApproved }) => {
+const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApproved, initialAssignmentId }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     
@@ -65,6 +65,13 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
             loadAssignments();
         }
     }, [teacherInfo?.id]);
+
+    useEffect(() => {
+        if(initialAssignmentId && assignments.length > 0) {
+            const initial = assignments.find(a => a.id === initialAssignmentId);
+            if(initial) setSelectedAssignment(initial);
+        }
+    }, [initialAssignmentId, assignments]);
 
     useEffect(() => {
         if (selectedAssignment) {

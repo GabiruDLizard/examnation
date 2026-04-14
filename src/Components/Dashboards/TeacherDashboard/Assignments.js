@@ -14,9 +14,11 @@ const Assignments = ({
     onNavigate,
     onBack,
     selectedClass = null,
-    onSubmissionApproved
+    onSubmissionApproved,
+    initialView,
+    initialAssignmentId
 }) => {
-    const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
+    const [currentView, setCurrentView] = useState(initialView); // 'dashboard', 'create', 'questions', 'results', 'manage', 'analytics'
     const [assignmentStats, setAssignmentStats] = useState({
         totalAssignments: 0, 
         activeAssignments: 0,
@@ -218,6 +220,7 @@ const Assignments = ({
                     onBack={handleBackToDashboard}
                     selectedClass={selectedClass}
                     onSubmissionApproved={onSubmissionApproved}
+                    initialAssignmentId={initialAssignmentId}
                 />
             </div>
         );

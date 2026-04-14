@@ -101,6 +101,7 @@ export default function TeacherDashboard() {
   const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
   const [weakSpots, setWeakSpots] = useState([]);
   const [loadingWeakSpots, setLoadingWeakSpots] = useState(false);
+  const [notifTarget, setNotifTarget] = useState({view: null, assignmentId: null});
 
   const navigate = useNavigate();
 
@@ -124,6 +125,7 @@ export default function TeacherDashboard() {
     setActivePage(page);
     setCurrentView('main');
     setSelectedClass(null);
+    setNotifTarget({view: null, assignmentId: null});
   };
    
   useEffect(() => {
@@ -469,6 +471,8 @@ export default function TeacherDashboard() {
             onBack={() => setActivePage('overview')}
             selectedClass={selectedClass}
             onSubmissionApproved={refreshChartData}
+            initialView={notifTarget.view ?? 'dashboard'}
+            initialAssignmentId={notifTarget.assignmentId}
           />
         );
       case 'classes':
@@ -882,7 +886,20 @@ export default function TeacherDashboard() {
         <header className="td-header">
           <h1>{getPageTitle()}</h1>
           <div className="td-header-right">
-            <NotificationBell onNavigate={(page) => handlePageChange(page)} />
+            <NotificationBell 
+              onNavigate={(page, notif) => {
+                if (notif?.type === 'submission_received') {
+                  const meta = notif.metadata ? JSON.parse(notif.metadata) : {};
+                  setNotifTarget({view: 'results', assignmentId: meta.assignmentId ?? null});
+                  setActivePage('assignments');
+                  setCurrentView('main');
+                }
+                else{
+                  handlePageChange(page);
+                }
+              }}
+
+            />
             <div className="td-user">{getTeacherDisplayName()}</div>
           </div>
         </header>

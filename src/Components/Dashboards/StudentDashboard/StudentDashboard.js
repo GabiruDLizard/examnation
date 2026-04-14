@@ -135,6 +135,30 @@ function StudentDashboard() {
         setCurrentView(section);
     };
 
+    const handleNotificationNavigate = async (page, notif) => {
+        if (notif?.type === 'assignment_graded' && notif.metadata) {
+            try {
+                const meta = JSON.parse(notif.metadata);
+                const [assignmentRes, submissionRes] = await Promise.all([
+                    authFetch(`/assignment/${meta.assignmentId}`),
+                    authFetch(`/assignmentsubmission/${meta.submissionId}`),
+                ]);
+                if (!assignmentRes.ok || !submissionRes.ok) throw new Error();
+                const assignment = await assignmentRes.json();
+                const submission = await submissionRes.json();
+
+                const classRes = await authFetch(`/class/${assignment.classId}`);
+                const classData = classRes.ok ? await classRes.json() : { id: assignment.classId };
+                setSelectedClass(classData);
+                handleNavigateFromOverview('assignment-review', { assignment, submission });
+            } catch {
+                handleNavClick(page); // fallback to classes tab
+            }
+        } else {
+            handleNavClick(page);
+        }
+    };
+
     // Re-fetch readiness history whenever the student returns to main overview,
     // or manually refreshes the class chart tab
     useEffect(() => {
@@ -705,7 +729,7 @@ function StudentDashboard() {
                 <header className="sd-header">
                     <h1>{getPageTitle()}</h1>
                     <div className="sd-header-right">
-                        <NotificationBell onNavigate={(page) => handleNavClick(page)} />
+                        <NotificationBell onNavigate={handleNotificationNavigate} />
                         <div className="sd-user">{getStudentDisplayName()}</div>
                     </div>
                 </header>
