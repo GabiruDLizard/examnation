@@ -92,6 +92,7 @@ function StudentDashboard() {
         activePage,
         currentView, setCurrentView,
         selectedClass, setSelectedClass,
+        navigateToView,
         mobileMenuOpen,
         handleNavClick,
         handleClassClick,
@@ -127,12 +128,19 @@ function StudentDashboard() {
     const handleNavigateFromOverview = (section, data = null) => {
         if (section === 'assignment-questions' && data?.assignment) {
             setSelectedAssignment(data.assignment);
-        }
-        if (section === 'assignment-review' && data?.assignment) {
+            navigateToView(section, {
+                assignmentId: data.assignment.id ?? data.assignment.assignmentId,
+            });
+        } else if (section === 'assignment-review' && data?.assignment) {
             setSelectedAssignment(data.assignment);
             setSelectedSubmission(data.submission);
+            navigateToView(section, {
+                assignmentId: data.assignment.id ?? data.assignment.assignmentId,
+                submissionId: data.submission?.id ?? data.submission?.submissionId,
+            });
+        } else {
+            setCurrentView(section);
         }
-        setCurrentView(section);
     };
 
     const handleNotificationNavigate = async (page, notif) => {
@@ -149,8 +157,13 @@ function StudentDashboard() {
 
                 const classRes = await authFetch(`/class/${assignment.classId}`);
                 const classData = classRes.ok ? await classRes.json() : { id: assignment.classId };
+
+                // Set all state first, then navigate ONCE with the complete URL
+                // (two sequential navigate calls fight each other via stale location.search)
                 setSelectedClass(classData);
-                handleNavigateFromOverview('assignment-review', { assignment, submission });
+                setSelectedAssignment(assignment);
+                setSelectedSubmission(submission);
+                navigate(`?page=classes&classId=${classData.id ?? assignment.classId}&view=assignment-review&assignmentId=${assignment.id ?? assignment.assignmentId}&submissionId=${submission.id ?? submission.submissionId}`);
             } catch {
                 handleNavClick(page); // fallback to classes tab
             }
@@ -396,18 +409,18 @@ function StudentDashboard() {
                 <AssignmentReview
                     assignment={selectedAssignment}
                     submission={selectedSubmission}
-                    onBack={() => setCurrentView('assignments')}
+                    onBack={() => navigate(-1)}
                 />
             );
         }
 
         if (selectedClass && currentView === 'assignment-questions' && selectedAssignment) {
             return (
-                <AssignmentQuestionPage 
+                <AssignmentQuestionPage
                     assignment={selectedAssignment}
-                    selectedClass={selectedClass} 
+                    selectedClass={selectedClass}
                     questions={selectedAssignment.questions} // Pass preloaded questions
-                    onBack={() => setCurrentView('assignments')}
+                    onBack={() => navigate(-1)}
                     onComplete={() => {
                         setCurrentView('assignments');
                         setSelectedAssignment(null);
@@ -621,10 +634,10 @@ function StudentDashboard() {
                 return [home, classesCrumb, classCrumb, { label: 'Assignments' }];
             }
             if (currentView === 'assignment-questions' && selectedAssignment) {
-                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => setCurrentView('assignments') }, { label: selectedAssignment.title }];
+                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => navigate(-1) }, { label: selectedAssignment.title }];
             }
             if (currentView === 'assignment-review') {
-                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => setCurrentView('assignments') }, { label: selectedAssignment?.title || 'Review' }];
+                return [home, classesCrumb, classCrumb, { label: 'Assignments', onClick: () => navigate(-1) }, { label: selectedAssignment?.title || 'Review' }];
             }
             if (currentView === 'progress') {
                 return [home, classesCrumb, classCrumb, { label: 'Progress' }];

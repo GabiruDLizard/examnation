@@ -355,8 +355,11 @@ export default function TeacherDashboard() {
         const lookup = {};
         rows.forEach(r => {
           if (!lookup[r.studentId]) lookup[r.studentId] = {};
-          // theta is now mastery (0–100), normalize to 0–1 for heatColor
-          lookup[r.studentId][r.topic] = Math.max(0, Math.min(1, r.theta / 100));
+          // Auto-detect old IRT theta (-4 to +4) vs new mastery (0–100)
+          const t = r.theta ?? 0;
+          lookup[r.studentId][r.topic] = (t >= -4 && t <= 4)
+            ? Math.max(0, Math.min(1, (t + 4) / 8))
+            : Math.max(0, Math.min(1, t / 100));
         });
 
         // Grid: rows = topics, columns = students
@@ -888,7 +891,6 @@ export default function TeacherDashboard() {
                   const meta = notif.metadata ? JSON.parse(notif.metadata) : {};
                   setNotifTarget({view: 'results', assignmentId: meta.assignmentId ?? null});
                   setActivePage('assignments');
-                  setCurrentView('main');
                 }
                 else{
                   handlePageChange(page);

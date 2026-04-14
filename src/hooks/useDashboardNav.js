@@ -14,7 +14,9 @@ export function useDashboardNav(initialPage = 'overview') {
     const params = new URLSearchParams(location.search);
     const activePage   = params.get('page')    || initialPage;
     const currentView  = params.get('view')    || 'main';
-    const selectedClassId = params.get('classId') ? Number(params.get('classId')) : null;
+    const selectedClassId    = params.get('classId')    ? Number(params.get('classId'))    : null;
+    const selectedAssignmentId = params.get('assignmentId') ? Number(params.get('assignmentId')) : null;
+    const selectedSubmissionId = params.get('submissionId') ? Number(params.get('submissionId')) : null;
 
     // When the URL loses classId (e.g. user pressed back), clear the class object
     useEffect(() => {
@@ -74,6 +76,15 @@ export function useDashboardNav(initialPage = 'overview') {
         }));
     };
 
+    // navigateToView PUSHES so deep views (assignment-questions, assignment-review)
+    // create their own back-button entries
+    const navigateToView = (view, { assignmentId, submissionId } = {}) => {
+        const overrides = { view };
+        overrides.assignmentId = assignmentId ?? null;
+        overrides.submissionId = submissionId ?? null;
+        navigate(buildSearch(overrides));
+    };
+
     // Back handlers use navigate(-1) so the browser history is the source of truth
     const handleBackToClasses = () => navigate(-1);
     const handleBackToOverview = () => navigate(-1);
@@ -85,6 +96,9 @@ export function useDashboardNav(initialPage = 'overview') {
         currentView,   setCurrentView,
         selectedClass, setSelectedClass,
         selectedClassId,
+        selectedAssignmentId,
+        selectedSubmissionId,
+        navigateToView,
         mobileMenuOpen,
         handleNavClick,
         handleClassClick,
