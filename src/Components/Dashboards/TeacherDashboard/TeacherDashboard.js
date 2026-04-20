@@ -122,8 +122,14 @@ export default function TeacherDashboard() {
     // currentView defaults to 'main' and selectedClassId becomes null (clearing selectedClass via useEffect)
     setActivePage(page);
     setNotifTarget({view: null, assignmentId: null});
+    setSelectedStudentProfile(null);
   };
    
+  // Clear student profile whenever the active page changes
+  useEffect(() => {
+    setSelectedStudentProfile(null);
+  }, [activePage]);
+
   useEffect(() => {
     if (authLoading) return;
 

@@ -52,12 +52,15 @@ const TeacherReadinessChart = ({ classReadinessData = [], classColors = {} }) =>
     );
   }
 
-  // Extract class names from the data structure
-  const classNames = Object.keys(classReadinessData[0] || {}).filter(key => key !== 'week');
-  
+  // Extract class names from ALL data points (a class may start appearing mid-dataset)
+  const classNames = [...new Set(
+    classReadinessData.flatMap(weekData => Object.keys(weekData).filter(key => key !== 'week'))
+  )];
+
   // Create datasets for each class
   const datasets = classNames.map(className => {
-    const classData = classReadinessData.map(weekData => weekData[className] || 0);
+    // Use null for weeks where the class has no data yet (avoids a false 0 line)
+    const classData = classReadinessData.map(weekData => weekData[className] ?? null);
     
     return {
       label: className,
@@ -147,7 +150,7 @@ const TeacherReadinessChart = ({ classReadinessData = [], classColors = {} }) =>
           },
           afterBody: function(context) {
             const weekData = classReadinessData[context[0].dataIndex];
-            const activeClasses = classNames.filter(name => weekData[name] > 0);
+            const activeClasses = classNames.filter(name => weekData[name] != null);
             if (activeClasses.length > 0) {
               const avgReadiness = activeClasses.reduce((sum, name) => sum + weekData[name], 0) / activeClasses.length;
               return [``, `Average across ${activeClasses.length} classes: ${Math.round(avgReadiness)}%`];
@@ -204,7 +207,7 @@ const TeacherReadinessChart = ({ classReadinessData = [], classColors = {} }) =>
   const latestWeekData = classReadinessData[classReadinessData.length - 1] || {};
   const firstWeekData = classReadinessData[0] || {};
   
-  const activeClasses = classNames.filter(name => latestWeekData[name] > 0);
+  const activeClasses = classNames.filter(name => latestWeekData[name] != null);
   const currentAverage = activeClasses.length > 0 
     ? Math.round(activeClasses.reduce((sum, name) => sum + latestWeekData[name], 0) / activeClasses.length)
     : 0;
