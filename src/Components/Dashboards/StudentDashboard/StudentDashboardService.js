@@ -642,7 +642,8 @@ export const applyMasteryAndFinalize = async (assignmentId, submissionId, studen
                 }
 
                 theta = abilityEstimate(difficulty, isCorrect, theta, gradedAnswers);
-                if (!topicMasteries[subject]) topicMasteries[subject] = { mastery: 50, count: 0 };
+                // Seed new topics from current Rasch theta instead of a cold 50
+                if (!topicMasteries[subject]) topicMasteries[subject] = { mastery: thetaToReadiness(theta), count: 0 };
                 topicMasteries[subject].mastery = updateTopicMastery(
                     difficulty, isCorrect, topicMasteries[subject].mastery, topicMasteries[subject].count
                 );
@@ -677,17 +678,8 @@ export const applyMasteryAndFinalize = async (assignmentId, submissionId, studen
             });
         }
 
-        // Compute overall readiness
-        const topicValues = Object.values(topicMasteries);
-        let readinessPercentage;
-        if (topicValues.length > 0) {
-            const totalCount = topicValues.reduce((s, t) => s + t.count, 0);
-            readinessPercentage = totalCount > 0
-                ? topicValues.reduce((s, t) => s + t.mastery * t.count, 0) / totalCount
-                : topicValues.reduce((s, t) => s + t.mastery, 0) / topicValues.length;
-        } else {
-            readinessPercentage = Math.max(0, Math.min(100, ((theta + 4) / 8) * 100));
-        }
+        // Overall readiness driven by Rasch theta — AT-PFA handles per-topic detail
+        const readinessPercentage = thetaToReadiness(theta);
 
         // Mark submission as graded
         try {

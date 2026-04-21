@@ -430,7 +430,12 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       // Update per-topic IRT theta
       const topic = currentQuestion.Topic;
       if (topic) {
-          const priorTopicTheta = topicThetas[topic] ?? 0;
+          // Seed new topics from current average Rasch theta instead of cold 0
+          const existingThetas = Object.values(topicThetas);
+          const currentAvgTheta = existingThetas.length > 0
+              ? existingThetas.reduce((a, b) => a + b, 0) / existingThetas.length
+              : 0;
+          const priorTopicTheta = topicThetas[topic] ?? currentAvgTheta;
           const topicQCount = Object.values(testAnswers).filter(
               a => a && a.topic === topic
           ).length;

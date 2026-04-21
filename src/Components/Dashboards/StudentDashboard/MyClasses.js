@@ -149,10 +149,10 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
             <div className="metric-bar">
               <div 
                 className="metric-fill" 
-                style={{ width: `${classItem.avgReadiness}%`, backgroundColor: classItem.color }}
+                style={{ width: `${classItem.avgReadiness ?? 0}%`, backgroundColor: classItem.color }}
               ></div>
             </div>
-            <span className="metric-value">{classItem.avgReadiness}%</span>
+            <span className="metric-value">{classItem.avgReadiness ?? 0}%</span>
           </div>
           
           <div className="metric" style={{ marginTop: '0.75rem' }}>
@@ -202,10 +202,10 @@ export default function StudentMyClasses({ studentInfo, onClassClick }) {
           <div className="metric-bar small">
             <div 
               className="metric-fill" 
-              style={{ width: `${classItem.avgReadiness}%`, backgroundColor: classItem.color }}
+              style={{ width: `${classItem.avgReadiness ?? 0}%`, backgroundColor: classItem.color }}
             ></div>
           </div>
-          <span className="metric-value">{classItem.avgReadiness}%</span>
+          <span className="metric-value">{classItem.avgReadiness ?? 0}%</span>
         </div>
       </td>
       <td>{classItem.completedAssignments}/{classItem.actualTotalAssignments}</td>
