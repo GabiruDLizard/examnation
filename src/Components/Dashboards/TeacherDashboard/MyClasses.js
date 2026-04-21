@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 import { BiPlus, BiEdit, BiTrash, BiUser, BiCalendar, BiBook, BiGridAlt, BiListUl } from "react-icons/bi";
 import "../MyClasses.css";
-import { getTeacherClasses, createTeacherClass, updateTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass } from "./TeacherDashboardService";
+import { getTeacherClasses, createTeacherClass, updateTeacherClass, deleteTeacherClass, getClassEnrollments, getAssignmentsForClass, getClassReadinessHistory } from "./TeacherDashboardService";
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { DEMO_MODE, DEMO_TEACHER_CLASSES, DEMO_TEACHER_ASSIGNMENTS } from '../../../demo/dummyData';
 
@@ -86,10 +86,24 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
         let studentcount = 0;
         try {
           const enrolls = await getClassEnrollments(classItem.id);
-          studentcount = enrolls ? enrolls.length : 0;
           studentcount = Array.isArray(enrolls) ? enrolls.length : 0;
         } catch (error) {
           studentcount = 0;
+        }
+
+        let avgReadiness = 0;
+        try {
+          const history = await getClassReadinessHistory(classItem.id, 8);
+          if (Array.isArray(history) && history.length > 0) {
+            const sortedDates = [...new Set(history.map(r => r.weekDate))].sort().reverse();
+            const latestWeek = sortedDates[0];
+            const latestRecords = history.filter(r => r.weekDate === latestWeek);
+            avgReadiness = Math.round(
+              latestRecords.reduce((sum, r) => sum + r.readinessPercentage, 0) / latestRecords.length
+            );
+          }
+        } catch (e) {
+          avgReadiness = Math.round(classItem.avgReadiness || 0);
         }
 
         return {
@@ -99,7 +113,7 @@ export default function MyClasses({ teacherInfo, onClassClick }) {
           grade: classItem.gradeLevel,
           students: Number(studentcount) || 0,
           schedule: classItem.schedule,
-          avgReadiness: Math.round(classItem.avgReadiness || 0),
+          avgReadiness,
           activeAssignments: classItem.activeAssignments || 0,
           color: classItem.color || "#3b82f6",
           roomNumber: classItem.roomNumber,

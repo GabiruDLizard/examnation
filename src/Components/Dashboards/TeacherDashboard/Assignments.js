@@ -42,16 +42,21 @@ const Assignments = ({
             if (teacherInfo?.id) {
                 try {
                     setLoading(true);
-                    
-                    // Fetch assignments
+
+                    // Fetch assignments first — populate counts immediately
                     const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
                     setAssignments(teacherAssignments);
-                    
-                    // Fetch submission statistics
+                    setAssignmentStats(prev => ({
+                        ...prev,
+                        totalAssignments: teacherAssignments.length,
+                        activeAssignments: teacherAssignments.filter(a => a.status === 'active').length,
+                    }));
+                    setLoading(false);
+
+                    // Fetch submission stats in background — updates KPIs when ready
                     const stats = await getSubmissionStatsForTeacher(teacherInfo.id);
                     setSubmissionStats(stats);
-                    
-                    // Create assignments with submission data
+
                     const assignmentsWithSubmissionData = teacherAssignments.map(assignment => {
                         const submissionData = stats.submissionsByAssignment[assignment.id] || {
                             submitted: 0,
@@ -59,64 +64,35 @@ const Assignments = ({
                             pending: 0,
                             submissionRate: 0
                         };
-                        
                         return {
                             ...assignment,
                             submissions: submissionData.submitted,
                             totalStudents: submissionData.total,
                             pendingSubmissions: submissionData.pending,
                             submissionRate: submissionData.submissionRate,
-                            avgScore: 0, // Will be calculated later when we have grading
-                            status: assignment.isActive ? 'active' : 'inactive'
+                            avgScore: 0,
                         };
                     });
-                    
                     setAssignmentsWithStats(assignmentsWithSubmissionData);
-                    
+                    setRecentAssignments(assignmentsWithSubmissionData.slice(0, 6));
+                    setAssignmentStats({
+                        totalAssignments: teacherAssignments.length,
+                        activeAssignments: teacherAssignments.filter(a => a.status === 'active').length,
+                        totalSubmissions: stats.totalSubmissions,
+                        avgScore: 0,
+                        pendingGrading: stats.totalSubmissions - Math.floor(stats.totalSubmissions * 0.7)
+                    });
+
                 } catch (error) {
                     setAssignments([]);
                     setAssignmentsWithStats([]);
-                } finally {
                     setLoading(false);
                 }
             }
         };
-        
+
         fetchAssignments();
     }, [teacherInfo?.id]);
-
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                
-                // Use real context data when available
-                const totalStudents = actualStudentsData.length;
-                
-                // Calculate realistic stats using submission data
-                setAssignmentStats({
-                    totalAssignments: assignments.length, 
-                    activeAssignments: assignments.filter(a => a.isActive).length,
-                    totalSubmissions: submissionStats.totalSubmissions,
-                    avgScore: actualStudentsData.length > 0 ? 
-                        Math.round(actualStudentsData.reduce((sum, s) => sum + s.readiness, 0) / actualStudentsData.length) : 82,
-                    pendingGrading: submissionStats.totalSubmissions - Math.floor(submissionStats.totalSubmissions * 0.7) // Assume 70% are graded
-                });
-
-                // Use assignments with submission stats
-                setRecentAssignments(assignmentsWithStats.slice(0, 6));
-                
-            } catch (error) {
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (assignments.length > 0) {
-            fetchData();
-        }
-    }, [teacherInfo?.id, assignments, submissionStats, assignmentsWithStats, actualStudentsData]);
 
     const handleCardClick = (cardId) => {
         setCurrentView(cardId);

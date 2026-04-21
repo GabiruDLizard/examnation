@@ -735,36 +735,35 @@ export const getSubmissionStatsForTeacher = async (teacherId) => {
     try {
         const assignments = await getAssignmentsByTeacher(teacherId);
 
+        const results = await Promise.all(assignments.map(async (assignment) => {
+            try {
+                const [submissions, enrollments] = await Promise.all([
+                    getSubmissionsByAssignmentId(assignment.id),
+                    getClassEnrollments(assignment.classId)
+                ]);
+                const submittedCount = submissions.filter(sub =>
+                    ['submitted', 'pending_review', 'graded', 'needs_revision'].includes(sub.status)
+                ).length;
+                const totalStudents = Array.isArray(enrollments) ? enrollments.length : 0;
+                return { assignmentId: assignment.id, submittedCount, totalStudents };
+            } catch {
+                return { assignmentId: assignment.id, submittedCount: 0, totalStudents: 0 };
+            }
+        }));
+
         let totalSubmissions = 0;
         let totalPossibleSubmissions = 0;
-        let submissionsByAssignment = {};
+        const submissionsByAssignment = {};
 
-        for (const assignment of assignments) {
-            try {
-                const submissions = await getSubmissionsByAssignmentId(assignment.id);
-                const submittedCount = submissions.filter(sub => ['submitted', 'pending_review', 'graded', 'needs_revision'].includes(sub.status)).length;
-
-                const enrolledStudents = await getAllEnrolledStudentInfo(assignment.classId);
-                const totalStudents = enrolledStudents.length;
-
-                submissionsByAssignment[assignment.id] = {
-                    submitted: submittedCount,
-                    total: totalStudents,
-                    pending: totalStudents - submittedCount,
-                    submissionRate: totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0
-                };
-
-                totalSubmissions += submittedCount;
-                totalPossibleSubmissions += totalStudents;
-
-            } catch (error) {
-                submissionsByAssignment[assignment.id] = {
-                    submitted: 0,
-                    total: 0,
-                    pending: 0,
-                    submissionRate: 0
-                };
-            }
+        for (const { assignmentId, submittedCount, totalStudents } of results) {
+            submissionsByAssignment[assignmentId] = {
+                submitted: submittedCount,
+                total: totalStudents,
+                pending: totalStudents - submittedCount,
+                submissionRate: totalStudents > 0 ? (submittedCount / totalStudents) * 100 : 0
+            };
+            totalSubmissions += submittedCount;
+            totalPossibleSubmissions += totalStudents;
         }
 
         return {

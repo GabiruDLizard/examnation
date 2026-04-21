@@ -580,14 +580,23 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
                                                                 {(() => {
                                                                     const raw = answer.answer || answer.answerText || answer.selectedOption || '';
                                                                     if (!raw) return <span style={{ color: '#94a3b8' }}>No answer provided</span>;
+                                                                    const wrapMath = (s) => /[\\^_{}&]/.test(s) && !s.startsWith('$') ? `$${s}$` : s;
                                                                     const steps = raw.split(/\\n|\n/).filter(s => s.trim());
-                                                                    if (steps.length <= 1) return <div style={{ padding: '6px 0' }}>{raw}</div>;
-                                                                    return steps.map((step, i) => (
-                                                                        <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: i < steps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                                                                            <span style={{ color: '#94a3b8', minWidth: '20px', fontSize: '0.8rem' }}>{i + 1}.</span>
-                                                                            <span>{step}</span>
-                                                                        </div>
-                                                                    ));
+                                                                    if (steps.length <= 1) return (
+                                                                        <MathJaxContext version={3} config={mathJaxConfig}>
+                                                                            <div style={{ padding: '6px 0' }}><MathJax inline>{wrapMath(raw)}</MathJax></div>
+                                                                        </MathJaxContext>
+                                                                    );
+                                                                    return (
+                                                                        <MathJaxContext version={3} config={mathJaxConfig}>
+                                                                            {steps.map((step, i) => (
+                                                                                <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: i < steps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                                                                                    <span style={{ color: '#94a3b8', minWidth: '20px', fontSize: '0.8rem' }}>{i + 1}.</span>
+                                                                                    <MathJax inline>{wrapMath(step)}</MathJax>
+                                                                                </div>
+                                                                            ))}
+                                                                        </MathJaxContext>
+                                                                    );
                                                                 })()}
                                                             </div>
                                                         </div>
