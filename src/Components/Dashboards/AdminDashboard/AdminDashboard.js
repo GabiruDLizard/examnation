@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { getUsers, createAccount, editUser, deleteUser, resetPassword, getOrganizations, createOrganization, getResetRequests, completeResetRequest, dismissResetRequest, getLibrary, createQuestion as createQuestionApi, editQuestion as editQuestionApi, deleteQuestion, getInquiries, updateInquiryStatus } from './AdminService';
+import { getUsers, createAccount, editUser, deleteUser, resetPassword, getOrganizations, createOrganization, getResetRequests, completeResetRequest, dismissResetRequest, getLibrary, createQuestion as createQuestionApi, editQuestion as editQuestionApi, deleteQuestion, getInquiries, updateInquiryStatus, getAdminClasses, createClass, editClass, deleteClass } from './AdminService';
 import { removeToken, getRoleFromToken, getInstitutionIdFromToken } from '../../../utils/tokenUtils';
 import { useNavigate } from 'react-router-dom';
-import { BiGroup, BiLogOut, BiBuildings, BiKey, BiEdit, BiTrash, BiMessageRoundedDots, BiFile } from 'react-icons/bi';
+import { BiGroup, BiLogOut, BiBuildings, BiKey, BiEdit, BiTrash, BiMessageRoundedDots, BiFile, BiBook } from 'react-icons/bi';
 import AdminReports from './AdminReports';
+import BulkImportModal from './BulkImportModal';
 import Swal from 'sweetalert2';
 import './AdminDashboard.css';
 import '../TeacherDashboard/MathFieldEditor.css';
@@ -626,6 +627,82 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
     );
 }
 
+// ── Create / Edit Class Modal ───────────────────────────────────────────────────
+function ClassFormModal({ onClose, onSaved, classObj, teachers }) {
+    const isEdit = !!classObj;
+    const [form, setForm] = useState({
+        name:        classObj?.name        || '',
+        subject:     classObj?.subject     || '',
+        gradeLevel:  classObj?.gradeLevel  || '',
+        teacherId:   classObj?.teacherId   ? String(classObj.teacherId) : '',
+    });
+    const [busy, setBusy] = useState(false);
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!form.teacherId) { toast.warn('Please select a teacher'); return; }
+        setBusy(true);
+        try {
+            if (isEdit) {
+                await editClass(classObj.id, { ...form, teacherId: parseInt(form.teacherId, 10) });
+                toast.success(`"${form.name}" updated`);
+            } else {
+                await createClass({ ...form, teacherId: parseInt(form.teacherId, 10) });
+                toast.success(`"${form.name}" created`);
+            }
+            onSaved();
+            onClose();
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="adm-overlay" onClick={onClose}>
+            <div className="adm-modal" onClick={e => e.stopPropagation()}>
+                <div className="adm-modal-header">
+                    <span className="adm-modal-title">{isEdit ? 'Edit Class' : 'Create Class'}</span>
+                    <button className="adm-modal-close" onClick={onClose}>✕</button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="adm-field">
+                        <label>Class Name</label>
+                        <input value={form.name} onChange={e => set('name', e.target.value)} required placeholder="e.g. Algebra II — Period 3" />
+                    </div>
+                    <div className="adm-modal-row">
+                        <div className="adm-field">
+                            <label>Subject</label>
+                            <input value={form.subject} onChange={e => set('subject', e.target.value)} required placeholder="e.g. Mathematics" />
+                        </div>
+                        <div className="adm-field">
+                            <label>Grade Level</label>
+                            <input value={form.gradeLevel} onChange={e => set('gradeLevel', e.target.value)} required placeholder="e.g. Grade 10" />
+                        </div>
+                    </div>
+                    <div className="adm-field">
+                        <label>Teacher</label>
+                        <select className="adm-select" value={form.teacherId} onChange={e => set('teacherId', e.target.value)} required>
+                            <option value="">— Select teacher —</option>
+                            {teachers.map(t => (
+                                <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="adm-modal-actions">
+                        <button type="button" className="adm-btn-cancel" onClick={onClose} disabled={busy}>Cancel</button>
+                        <button type="submit" className="adm-btn-confirm" disabled={busy}>
+                            {busy ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Class'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // ── Main Dashboard ──────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -652,6 +729,10 @@ export default function AdminDashboard() {
     const [library,         setLibrary]       = useState([]);
     const [inquiries, setInquiries]           = useState([]);
     const [selectedInquiry, setSelectedInquiry] = useState(null);
+    const [bulkImportOpen,  setBulkImportOpen]  = useState(false);
+    const [classes,         setClasses]         = useState([]);
+    const [classFormOpen,   setClassFormOpen]   = useState(false);
+    const [editClassTarget, setEditClassTarget] = useState(null);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -733,6 +814,18 @@ export default function AdminDashboard() {
         }
     }, []);
 
+    const loadClasses = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getAdminClasses();
+            setClasses(Array.isArray(data) ? data : []);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const loadInquiries = useCallback(async () => {
         setLoading(true);
         try{
@@ -751,7 +844,8 @@ export default function AdminDashboard() {
         else if (view === 'requests')  loadRequests();
         else if (view === 'lib-editor') loadLibrary();
         else if (view === 'inquiries') loadInquiries();
-    }, [view, loadUsers, loadOrgs, loadRequests, loadLibrary, loadInquiries]);
+        else if (view === 'classes')   { loadClasses(); loadUsers(); }
+    }, [view, loadUsers, loadOrgs, loadRequests, loadLibrary, loadInquiries, loadClasses]);
 
     // Load orgs + request count in background on mount
     useEffect(() => { if (isSuperAdmin) loadOrgs(); }, [isSuperAdmin, loadOrgs]);
@@ -774,6 +868,7 @@ export default function AdminDashboard() {
             case 'orgs':     return [root, { label: 'Organizations' }];
             case 'lib-editor': return [root, { label: 'Library Editor'}];
             case 'inquiries': return [root, { label: 'Inquiries'}];
+            case 'classes':  return [root, { label: 'Classes'}];
             default:         return [root];
         }
     };
@@ -792,6 +887,9 @@ export default function AdminDashboard() {
                 <nav className="adm-nav">
                     <button className={`adm-nav-item${view === 'users' ? ' active' : ''}`} onClick={() => setView('users')}>
                         <BiGroup size={16} /> Users
+                    </button>
+                    <button className={`adm-nav-item${view === 'classes' ? ' active' : ''}`} onClick={() => setView('classes')}>
+                        <BiBook size={16} /> Classes
                     </button>
                     <button className={`adm-nav-item${view === 'reports' ? ' active' : ''}`} onClick={() => setView('reports')}>
                         <BiFile size={16} /> Reports
@@ -918,6 +1016,91 @@ export default function AdminDashboard() {
                     </div>
                 </>)}
 
+                {/* ── Classes View ── */}
+                {view === 'classes' && (<>
+                    <div className="adm-header">
+                        <div>
+                            <h1 className="adm-title">Classes</h1>
+                            <p className="adm-subtitle">Manage classes across your organization</p>
+                        </div>
+                        <div className="adm-header-actions">
+                            <button className="adm-create-btn" style={{ background: '#fff', color: '#6366f1', border: '1px solid #6366f1' }} onClick={() => setBulkImportOpen(true)}>
+                                ↑ Bulk Import
+                            </button>
+                            <button className="adm-create-btn" onClick={() => setClassFormOpen(true)}>
+                                + Create Class
+                            </button>
+                        </div>
+                    </div>
+                    <div className="adm-table-card">
+                        <div className="adm-table-toolbar">
+                            <span className="adm-count">{classes.length} class{classes.length !== 1 ? 'es' : ''}</span>
+                        </div>
+                        {loading ? (
+                            <div className="adm-loading">Loading...</div>
+                        ) : classes.length === 0 ? (
+                            <div className="adm-empty">No classes yet. Create one or use Bulk Import.</div>
+                        ) : (
+                            <table className="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Class Name</th>
+                                        <th>Subject</th>
+                                        <th>Grade Level</th>
+                                        <th>Teacher</th>
+                                        <th>Enrollment</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {classes.map(c => {
+                                        const teacher = users.find(u => u.id === c.teacherId);
+                                        return (
+                                            <tr key={c.id}>
+                                                <td className="adm-td-name">{c.name}</td>
+                                                <td className="adm-td-muted">{c.subject}</td>
+                                                <td className="adm-td-muted">{c.gradeLevel}</td>
+                                                <td className="adm-td-muted">
+                                                    {teacher ? `${teacher.firstName} ${teacher.lastName}` : `Teacher #${c.teacherId}`}
+                                                </td>
+                                                <td className="adm-td-muted">{c.currentEnrollment ?? 0}</td>
+                                                <td>
+                                                    <div className="adm-row-actions">
+                                                        <button className="adm-icon-btn" title="Edit" onClick={() => setEditClassTarget(c)}>
+                                                            <BiEdit size={15} />
+                                                        </button>
+                                                        <button className="adm-icon-btn adm-icon-btn--danger" title="Delete"
+                                                            onClick={async () => {
+                                                                const result = await Swal.fire({
+                                                                    title: 'Delete class?',
+                                                                    text: `"${c.name}" and all its data will be permanently removed.`,
+                                                                    icon: 'warning',
+                                                                    showCancelButton: true,
+                                                                    confirmButtonColor: '#ef4444',
+                                                                    cancelButtonColor: '#e2e8f0',
+                                                                    confirmButtonText: 'Yes, delete',
+                                                                    cancelButtonText: 'Cancel',
+                                                                });
+                                                                if (!result.isConfirmed) return;
+                                                                try {
+                                                                    await deleteClass(c.id);
+                                                                    toast.success(`"${c.name}" deleted`);
+                                                                    loadClasses();
+                                                                } catch (err) { toast.error(err.message); }
+                                                            }}>
+                                                            <BiTrash size={15} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </>)}
+
                 {/* ── Reports View ── */}
                 {view === 'reports' && <AdminReports />}
 
@@ -929,6 +1112,9 @@ export default function AdminDashboard() {
                             <p className="adm-subtitle">Manage accounts and passwords</p>
                         </div>
                         <div className="adm-header-actions">
+                            <button className="adm-create-btn" style={{ background: '#fff', color: '#6366f1', border: '1px solid #6366f1' }} onClick={() => setBulkImportOpen(true)}>
+                                ↑ Bulk Import
+                            </button>
                             <button className="adm-create-btn" onClick={() => setCreateOpen(true)}>
                                 + Create Account
                             </button>
@@ -1244,6 +1430,28 @@ export default function AdminDashboard() {
                     onClose={() => { setResetTarget(null); setResetRequestId(null); }}
                     requestId={resetRequestId}
                     onComplete={() => setResetRequests(prev => prev.filter(r => r.id !== resetRequestId))}
+                />
+            )}
+            {bulkImportOpen && (
+                <BulkImportModal
+                    onClose={() => setBulkImportOpen(false)}
+                    onComplete={() => { loadUsers(); loadClasses(); }}
+                    initialType={view === 'classes' ? 'class' : 'student'}
+                />
+            )}
+            {classFormOpen && (
+                <ClassFormModal
+                    onClose={() => setClassFormOpen(false)}
+                    onSaved={loadClasses}
+                    teachers={users.filter(u => u.role === 'educator')}
+                />
+            )}
+            {editClassTarget && (
+                <ClassFormModal
+                    onClose={() => setEditClassTarget(null)}
+                    onSaved={loadClasses}
+                    classObj={editClassTarget}
+                    teachers={users.filter(u => u.role === 'educator')}
                 />
             )}
             {selectedInquiry && (

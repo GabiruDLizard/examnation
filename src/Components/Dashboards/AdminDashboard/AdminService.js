@@ -191,6 +191,52 @@ export const getInquiries = async () => {
     return res.json();
 }
 
+export const getAdminClasses = async () => {
+    const res = await authFetch('/admin/classes');
+    if (!res.ok) throw new Error('Failed to fetch classes');
+    return res.json();
+};
+
+export const createClass = async ({ name, subject, gradeLevel, teacherId }) => {
+    const res = await authFetch('/class', {
+        method: 'POST',
+        body: JSON.stringify({
+            name, subject, gradeLevel,
+            teacherId,
+            schedule: 'TBD',
+            status: 'active',
+            currentEnrollment: 0,
+        }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to create class');
+    }
+    return res.json();
+};
+
+export const editClass = async (classId, { name, subject, gradeLevel, teacherId }) => {
+    // Fetch current class first to preserve all fields
+    const cur = await authFetch(`/class/${classId}`).then(r => r.json());
+    const res = await authFetch(`/class/${classId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...cur, name, subject, gradeLevel, teacherId }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to update class');
+    }
+    return res.json();
+};
+
+export const deleteClass = async (classId) => {
+    const res = await authFetch(`/class/${classId}`, { method: 'DELETE' });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to delete class');
+    }
+};
+
 export const updateInquiryStatus = async (requestId, status) => {
     const res = await authFetch(`/demo-request/${requestId}/status`, {
         method: 'PATCH',
