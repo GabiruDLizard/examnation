@@ -13,7 +13,10 @@ function timeAgo(dateStr) {
 }
 
 const TYPE_ICON = {
+    new_assignment:       '📋',
     assignment_created:   '📋',
+    assignment_updated:   '✏️',
+    assignment_started:   '▶️',
     assignment_submitted: '✅',
     assignment_graded:    '🎯',
     submission_received:  '✅',
@@ -23,10 +26,13 @@ const TYPE_ICON = {
 
 // Maps notification type → dashboard page key
 const TYPE_PAGE = {
-    assignment_created:  'classes',
-    assignment_graded:   'classes',
-    quiz_assigned:       'classes',
-    submission_received: 'classes',
+    new_assignment:       'classes',
+    assignment_created:   'classes',
+    assignment_updated:   'classes',
+    assignment_graded:    'classes',
+    assignment_started:   'assignments',
+    submission_received:  'assignments',
+    quiz_assigned:        'classes',
 };
 
 export default function NotificationBell({ onNavigate }) {

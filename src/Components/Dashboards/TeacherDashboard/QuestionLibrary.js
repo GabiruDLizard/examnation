@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BiSearch, BiChevronDown, BiChevronRight, BiPlus, BiX } from 'react-icons/bi';
 import { getAssignmentsByTeacher, getAssignmentQuestionsById, getTeacherInfo } from './TeacherDashboardService';
+import MathText from '../../Shared/MathText';
 import './QuestionLibrary.css';
 
 export default function QuestionLibrary({ onSelect, onClose, excludeAssignmentId }) {
@@ -99,7 +100,7 @@ export default function QuestionLibrary({ onSelect, onClose, excludeAssignmentId
                                         <div key={q.id} className="ql-question-row">
                                             <div className="ql-question-info">
                                                 <span className="ql-question-text">
-                                                    {q.questionText || q.text || '(no text)'}
+                                                    <MathText>{q.questionText || q.text || '(no text)'}</MathText>
                                                 </span>
                                                 <div className="ql-question-tags">
                                                     {q.topic && <span className="ql-tag">{q.topic}</span>}

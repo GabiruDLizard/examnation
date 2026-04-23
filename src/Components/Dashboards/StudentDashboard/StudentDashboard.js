@@ -155,17 +155,27 @@ function StudentDashboard() {
                 const assignment = await assignmentRes.json();
                 const submission = await submissionRes.json();
 
-                const classRes = await authFetch(`/class/${assignment.classId}`);
-                const classData = classRes.ok ? await classRes.json() : { id: assignment.classId };
-
-                // Set all state first, then navigate ONCE with the complete URL
-                // (two sequential navigate calls fight each other via stale location.search)
-                setSelectedClass(classData);
                 setSelectedAssignment(assignment);
                 setSelectedSubmission(submission);
-                navigate(`?page=classes&classId=${classData.id ?? assignment.classId}&view=assignment-review&assignmentId=${assignment.id ?? assignment.assignmentId}&submissionId=${submission.id ?? submission.submissionId}`);
+                navigate(`?page=classes&classId=${assignment.classId}&view=assignment-review&assignmentId=${assignment.id}&submissionId=${submission.id}`);
             } catch {
-                handleNavClick(page); // fallback to classes tab
+                handleNavClick(page);
+            }
+        } else if ((notif?.type === 'new_assignment' || notif?.type === 'assignment_updated') && notif.metadata) {
+            try {
+                const meta = JSON.parse(notif.metadata);
+                const assignmentRes = await authFetch(`/assignment/${meta.assignmentId}`);
+                if (!assignmentRes.ok) throw new Error();
+                const assignment = await assignmentRes.json();
+
+                const classId = meta.classId ?? assignment.classId;
+                const classRes = await authFetch(`/class/${classId}`);
+                const classData = classRes.ok ? await classRes.json() : { id: classId };
+
+                setSelectedClass(classData);
+                navigate(`?page=classes&classId=${classId}&view=assignments`);
+            } catch {
+                handleNavClick('classes');
             }
         } else {
             handleNavClick(page);
@@ -404,7 +414,7 @@ function StudentDashboard() {
             );
         }
 
-        if (selectedClass && currentView === 'assignment-review' && selectedAssignment && selectedSubmission) {
+        if (currentView === 'assignment-review' && selectedAssignment && selectedSubmission) {
             return (
                 <AssignmentReview
                     assignment={selectedAssignment}

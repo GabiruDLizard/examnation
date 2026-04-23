@@ -32,8 +32,9 @@ export default function AssignmentOverview({ selectedClass, onBack, onNavigate }
         }
         try {
             setLoading(true);
-            const assignmentData = await getAssignmentsForClass(selectedClass.classId, currentUserId);
-            setAssignments(assignmentData);
+            const assignmentData = await getAssignmentsForClass(selectedClass.classId ?? selectedClass.id, currentUserId);
+            const sorted = [...assignmentData].sort((a, b) => new Date(b.createdAt ?? b.dueDate ?? 0) - new Date(a.createdAt ?? a.dueDate ?? 0));
+            setAssignments(sorted);
             
             // Fetch submission data for each assignment
             const submissionsData = {};

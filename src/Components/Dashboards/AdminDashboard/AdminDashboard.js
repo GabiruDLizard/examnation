@@ -1332,7 +1332,6 @@ export default function AdminDashboard() {
                             </table>
                         )}
                     </div>
-
                 </>)}
 
                 {/* ── Reset Requests View ── */}

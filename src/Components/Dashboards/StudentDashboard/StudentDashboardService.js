@@ -354,6 +354,24 @@ export const getSubmissionByAssignmentAndStudent = async (assignmentId, studentI
     }
 };
 
+export const startAssignmentTimer = async (submissionId, timeRemainingSeconds) => {
+    try {
+        await authFetch(`/assignmentsubmission/${submissionId}/timer/start`, {
+            method: 'POST',
+            body: JSON.stringify({ timeRemainingSeconds })
+        });
+    } catch { /* non-critical */ }
+};
+
+export const pauseAssignmentTimer = async (submissionId, timeRemainingSeconds) => {
+    try {
+        await authFetch(`/assignmentsubmission/${submissionId}/timer/pause`, {
+            method: 'POST',
+            body: JSON.stringify({ timeRemainingSeconds })
+        });
+    } catch { /* non-critical */ }
+};
+
 export const createSubmission = async (submissionData) => {
     try {
         const response = await authFetch(`/assignmentsubmission`, {

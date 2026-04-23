@@ -247,4 +247,5 @@ export const updateInquiryStatus = async (requestId, status) => {
         throw new Error(err.message || 'Failed to update inquiry status');
     }
     return res.json();
-}
+};
+

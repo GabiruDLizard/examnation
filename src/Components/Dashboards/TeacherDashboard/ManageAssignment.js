@@ -65,7 +65,7 @@ const ManageAssignment = ({ onBack }) => {
             const teacherId = getUserIdFromToken();
             if (teacherId) {
                 const teacherAssignments = await getAssignmentsByTeacher(teacherId);
-                setAssignments(teacherAssignments);
+                setAssignments([...teacherAssignments].sort((a, b) => new Date(b.createdAt ?? b.dueDate ?? 0) - new Date(a.createdAt ?? a.dueDate ?? 0)));
             }
             
             setLoading(false);
@@ -80,7 +80,7 @@ const ManageAssignment = ({ onBack }) => {
             if (!selectedClassId) return;
             
             const classAssignments = await getAssignmentsForClassWithQuestions(selectedClassId);
-            setAssignments(classAssignments);
+            setAssignments([...classAssignments].sort((a, b) => new Date(b.createdAt ?? b.dueDate ?? 0) - new Date(a.createdAt ?? a.dueDate ?? 0)));
         } catch (error) {
             setError('Failed to load assignments');
         }

@@ -7,7 +7,7 @@ import MathText from '../../Shared/MathText';
 import { BiLeftArrow, BiRightArrow, BiFlag, BiTime, BiCheckCircle, BiSave, BiSend } from 'react-icons/bi';
 import '../../PracticeArea/PracticeArea.css';
 import './AssignmentQuestionPage.css';
-import { getQuestionsByAssignmentId, getSubmissionByAssignmentAndStudent, createSubmission, updateSubmission, saveAnswerToBackend, submitAssignmentToBackend, checkAndGradeAnswers } from '../StudentDashboard/StudentDashboardService';
+import { getQuestionsByAssignmentId, getSubmissionByAssignmentAndStudent, createSubmission, updateSubmission, saveAnswerToBackend, submitAssignmentToBackend, checkAndGradeAnswers, startAssignmentTimer, pauseAssignmentTimer } from '../StudentDashboard/StudentDashboardService';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { recordStudentReadiness } from '../TeacherDashboard/TeacherDashboardService';
 
@@ -51,7 +51,31 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     // Use preloaded questions if available, otherwise fetch them
     const [questions, setQuestions] = useState(preloadedQuestions || []);
     const [loadingQuestions, setLoadingQuestions] = useState(!preloadedQuestions);
-    
+
+    // ── All state declarations up-front (before any useEffect) ────────────────
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+        questionIndex ? parseInt(questionIndex) - 1 : 0
+    );
+    const [steps, setSteps] = useState(['']);
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [isFlagged, setIsFlagged] = useState(false);
+    const [savedAnswers, setSavedAnswers] = useState(() => {
+        const assignmentId = assignment?.id || 'temp-assignment';
+        const saved = localStorage.getItem(`assignment-answers-${assignmentId}`);
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [startTime, setStartTime] = useState(Date.now());
+    const [isAutoSaving, setIsAutoSaving] = useState(false);
+    const [submission, setSubmission] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isPastDeadline, setIsPastDeadline] = useState(false);
+    const [gradingResult, setGradingResult] = useState(null);
+    const [timerSeconds, setTimerSeconds] = useState(null);
+    const timerSecondsRef = useRef(null);
+    const timerActiveRef  = useRef(false);
+    const submissionIdRef = useRef(null);
+    const countdownRef    = useRef(null);
+
     // Only load questions if not preloaded
     useEffect(() => {
         const block = (e) => e.preventDefault();
@@ -155,27 +179,124 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         return () => clearInterval(interval);
     }, [assignment?.dueDate]);
     
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
-        questionIndex ? parseInt(questionIndex) - 1 : 0
-    );
-    const [steps, setSteps] = useState(['']);
-    const [selectedOption, setSelectedOption] = useState(null);
-    const [isFlagged, setIsFlagged] = useState(false);
-    
-    // Initialize savedAnswers from localStorage
-    const [savedAnswers, setSavedAnswers] = useState(() => {
-        const assignmentId = assignment?.id || 'temp-assignment';
-        const saved = localStorage.getItem(`assignment-answers-${assignmentId}`);
-        return saved ? JSON.parse(saved) : {};
-    });
-    
-    const [timeSpent, setTimeSpent] = useState(0);
-    const [startTime, setStartTime] = useState(Date.now());
-    const [isAutoSaving, setIsAutoSaving] = useState(false);
-    const [submission, setSubmission] = useState(null);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isPastDeadline, setIsPastDeadline] = useState(false);
-    const [gradingResult, setGradingResult] = useState(null);
+    // ── Timer: initialise once submission is loaded ────────────────────────────
+    useEffect(() => {
+        if (!submission || isSubmitted) return;
+
+        const durationMins = assignment?.durationMinutes;
+        if (!durationMins) return; // no duration set for this assignment
+
+        const durationSecs = parseInt(durationMins) * 60;
+
+        let initialSeconds;
+
+        if (submission.timerStartedAt) {
+            // Timer was running when they last left — deduct elapsed time
+            const elapsed = Math.floor(
+                (Date.now() - new Date(submission.timerStartedAt).getTime()) / 1000
+            );
+            const base = submission.timeRemainingSeconds ?? durationSecs;
+            initialSeconds = Math.max(0, base - elapsed);
+        } else if (submission.timeRemainingSeconds != null) {
+            // Timer was explicitly paused
+            initialSeconds = submission.timeRemainingSeconds;
+        } else {
+            // First time opening this assignment
+            initialSeconds = durationSecs;
+        }
+
+        setTimerSeconds(initialSeconds);
+
+        if (initialSeconds > 0) {
+            // Tell the server the timer is running from now
+            startAssignmentTimer(submission.id, initialSeconds);
+            timerActiveRef.current = true;
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [submission?.id]);
+
+    // ── Timer: countdown tick ─────────────────────────────────────────────────
+    useEffect(() => {
+        if (timerSeconds === null || timerSeconds <= 0 || isSubmitted) return;
+
+        timerActiveRef.current = true;
+        countdownRef.current = setInterval(() => {
+            setTimerSeconds(prev => {
+                const next = prev - 1;
+                timerSecondsRef.current = next;
+                if (next <= 0) {
+                    clearInterval(countdownRef.current);
+                    timerActiveRef.current = false;
+                    // Auto-submit when time runs out
+                    handleTimerExpired();
+                }
+                return next;
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(countdownRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timerSeconds !== null && timerSeconds > 0 && !isSubmitted]);
+
+    // ── Timer: pause on unmount (navigating away within the app) ─────────────
+    useEffect(() => {
+        return () => {
+            if (timerActiveRef.current && timerSecondsRef.current > 0 && submissionIdRef.current) {
+                clearInterval(countdownRef.current);
+                timerActiveRef.current = false;
+                pauseAssignmentTimer(submissionIdRef.current, timerSecondsRef.current);
+            }
+        };
+    }, []);
+
+    // ── Timer: pause on browser close / tab refresh ───────────────────────────
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (timerActiveRef.current && timerSecondsRef.current > 0 && submissionIdRef.current) {
+                // sendBeacon is fire-and-forget — survives page unload
+                const url = `/api/assignmentsubmission/${submissionIdRef.current}/timer/pause`;
+                const body = JSON.stringify({ timeRemainingSeconds: timerSecondsRef.current });
+                navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, []);
+
+    const handleTimerExpired = useCallback(async () => {
+        toast.error('Time is up! Your assignment is being submitted automatically.');
+        try {
+            const flushPromises = (questions || []).map(async (q) => {
+                const saved = savedAnswers[q.id];
+                if (!saved?.steps?.some(s => s.trim())) return;
+                const answerText = saved.steps.filter(s => s.trim()).join('\n');
+                const questionId = q.questionDetails?.id ?? q.questionId ?? q.id;
+                try { await saveAnswerToBackend({ submissionId: submission.id, questionId, answer: answerText }); } catch { /* non-fatal */ }
+            });
+            await Promise.all(flushPromises);
+            await submitAssignmentToBackend(assignment.id, currentUserId);
+            setIsSubmitted(true);
+            const assignmentId = assignment?.id || 'temp-assignment';
+            localStorage.removeItem(`assignment-answers-${assignmentId}`);
+        } catch { /* ignore — deadline enforcement is the safety net */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [submission?.id, assignment?.id, currentUserId, savedAnswers, questions]);
+
+    // Pause the timer and navigate back
+    const handleBack = useCallback(async () => {
+        if (timerActiveRef.current && timerSecondsRef.current > 0 && submissionIdRef.current) {
+            clearInterval(countdownRef.current);
+            timerActiveRef.current = false;
+            await pauseAssignmentTimer(submissionIdRef.current, timerSecondsRef.current);
+        }
+        if (onBack) onBack();
+    }, [onBack]);
+
+    // Keep refs in sync with state
+    useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
+    useEffect(() => { submissionIdRef.current = submission?.id ?? null; }, [submission?.id]);
 
     const currentQuestion = questions[currentQuestionIndex];
     const isFirstQuestion = currentQuestionIndex === 0;
@@ -238,9 +359,8 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     }, [currentQuestionIndex, currentQuestion?.id, assignment?.id]);
 
     useEffect(() => {
-        // Auto-save timer - save every 30 seconds if there are changes
+        // Auto-save every 30 seconds if there are changes
         const timer = setInterval(() => {
-            setTimeSpent(prev => prev + 1);
             autoSaveAnswer();
         }, 30000);
 
@@ -376,6 +496,10 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         });
         if (!isConfirmed) return;
 
+        // Stop the countdown
+        clearInterval(countdownRef.current);
+        timerActiveRef.current = false;
+
         // Flush ALL answers to backend before submitting (not just the current question)
         const flushPromises = questions.map(async (q) => {
             const saved = savedAnswers[q.id];
@@ -407,6 +531,15 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         } catch (error) {
             toast.error('Failed to submit assignment. Please try again.');
         }
+    };
+
+    const formatTimer = (secs) => {
+        if (secs === null) return null;
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = secs % 60;
+        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
     const getDueDate = () => {
@@ -487,7 +620,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 <>
                 {/* Header */}
                 <div className="assignment-header">
-                    <button onClick={onBack} className="back-btn">
+                    <button onClick={handleBack} className="back-btn">
                         <BiLeftArrow /> Back to Assignments
                     </button>
                     <div className="assignment-info">
@@ -495,9 +628,28 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         <div className="assignment-meta">
                             <span className="class-name">{selectedClass?.name}</span>
                             <span className="due-date">Due: {getDueDate()}</span>
-                            <span className={`time-remaining ${(getTimeRemaining().includes('Deadline Passed') || getTimeRemaining().includes('Overdue')) ? 'overdue' : ''}`}>
-                                <BiTime /> {getTimeRemaining()}
-                            </span>
+                            {timerSeconds !== null && (
+                                <span
+                                    className="countdown-timer"
+                                    style={{
+                                        fontWeight: 700,
+                                        fontSize: '1rem',
+                                        color: timerSeconds <= 300 ? '#EF4444' : timerSeconds <= 600 ? '#F59E0B' : '#22C55E',
+                                        background: timerSeconds <= 300 ? '#FEF2F2' : timerSeconds <= 600 ? '#FFFBEB' : '#F0FDF4',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        border: `1px solid ${timerSeconds <= 300 ? '#FECACA' : timerSeconds <= 600 ? '#FDE68A' : '#BBF7D0'}`,
+                                    }}
+                                >
+                                    <BiTime style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                    {timerSeconds <= 0 ? 'Time Up' : formatTimer(timerSeconds)}
+                                </span>
+                            )}
+                            {timerSeconds === null && (
+                                <span className={`time-remaining ${(getTimeRemaining().includes('Deadline Passed') || getTimeRemaining().includes('Overdue')) ? 'overdue' : ''}`}>
+                                    <BiTime /> {getTimeRemaining()}
+                                </span>
+                            )}
                             {isPastDeadline && (
                                 <span className="deadline-warning" style={{color: '#EF4444', fontWeight: 'bold'}}>
                                     ⚠️ Deadline has passed - editing disabled

@@ -856,6 +856,14 @@ export const getSubmissionDetails = async (submissionId) => {
     }
 };
 
+export const updateAnswerGrade = async (answerId, submissionId, questionId, answerText, isCorrect, pointsEarned) => {
+    const response = await authFetch(`/assignmentanswer/${answerId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ id: answerId, submissionId, questionId, answer: answerText, isCorrect, pointsEarned })
+    });
+    if (!response.ok) throw new Error('Failed to update answer grade');
+};
+
 export const gradeSubmission = async (submissionId, score, feedback = '') => {
     try {
         const response = await authFetch(`/assignmentsubmission/${submissionId}/grade`, {

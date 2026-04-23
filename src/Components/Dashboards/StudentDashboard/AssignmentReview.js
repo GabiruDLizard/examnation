@@ -49,10 +49,17 @@ export default function AssignmentReview({ assignment, submission, onBack }) {
 
     const correctCount = answers.filter(a => a.isCorrect).length;
     const totalCount = answers.length;
-    // Use submission.grade if set; otherwise compute from answers directly
-    const grade = submission?.grade != null
-        ? submission.grade
-        : (totalCount > 0 ? (correctCount / totalCount) * 100 : 0);
+
+    // Compute grade from fresh answer data (reflects any teacher regrading)
+    const totalPoints = questions.reduce((sum, q) => sum + (q.points ?? 1), 0);
+    const earnedPoints = answers.reduce((sum, a) => {
+        if (a.pointsEarned != null) return sum + a.pointsEarned;
+        const q = questions.find(q => q.id === a.questionId);
+        return sum + (a.isCorrect ? (q?.points ?? 1) : 0);
+    }, 0);
+    const grade = totalPoints > 0
+        ? Math.round((earnedPoints / totalPoints) * 1000) / 10
+        : (submission?.grade ?? 0);
 
     const letterGrade = grade >= 90 ? 'A' : grade >= 80 ? 'B' : grade >= 70 ? 'C' : grade >= 60 ? 'D' : 'F';
     const gradeClass = grade >= 90 ? 'a' : grade >= 80 ? 'b' : grade >= 70 ? 'c' : grade >= 60 ? 'd' : 'f';

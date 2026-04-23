@@ -9,7 +9,8 @@ import {
     getAnswersBySubmissionId,
     gradeSubmission,
     approveSubmission,
-    sendBackSubmission
+    sendBackSubmission,
+    updateAnswerGrade
 } from './TeacherDashboardService';
 import { authFetch } from '../../../utils/api';
 import '../Assignments.css';
@@ -55,6 +56,10 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
     const [gradeFeedback, setGradeFeedback] = useState('');
     const [savingGrade, setSavingGrade] = useState(false);
 
+    // Per-question grade overrides: { [answerId]: { isCorrect, pointsEarned } }
+    const [answerOverrides, setAnswerOverrides] = useState({});
+    const [savingAnswerGrades, setSavingAnswerGrades] = useState(false);
+
     // Review states
     const [approvingId, setApprovingId] = useState(null);
     const [sendBackId, setSendBackId] = useState(null);
@@ -88,7 +93,8 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
             setLoading(true);
             setError('');
             const teacherAssignments = await getAssignmentsByTeacher(teacherInfo.id);
-            setAssignments(teacherAssignments);
+            const sorted = [...teacherAssignments].sort((a, b) => new Date(b.createdAt ?? b.dueDate ?? 0) - new Date(a.createdAt ?? a.dueDate ?? 0));
+            setAssignments(sorted);
         } catch (error) {
             setError('Failed to load assignments');
         } finally {
@@ -258,10 +264,57 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
             }
             
             setSubmissionDetails(details);
+
+            // Pre-fill overrides from current answer data so the teacher sees existing grades
+            const initialOverrides = {};
+            for (const a of (details.answers || [])) {
+                initialOverrides[a.id] = {
+                    isCorrect: a.isCorrect ?? false,
+                    pointsEarned: a.pointsEarned ?? 0
+                };
+            }
+            setAnswerOverrides(initialOverrides);
         } catch (error) {
             setError('Failed to load submission details');
         } finally {
             setLoadingDetails(false);
+        }
+    };
+
+    const handleSaveAnswerGrades = async () => {
+        const details = submissionDetails || viewingSubmission;
+        if (!details?.answers) return;
+        setSavingAnswerGrades(true);
+        try {
+            for (const answer of details.answers) {
+                const override = answerOverrides[answer.id];
+                if (override !== undefined) {
+                    await updateAnswerGrade(
+                        answer.id,
+                        answer.submissionId,
+                        answer.questionId,
+                        answer.answer,
+                        override.isCorrect,
+                        override.pointsEarned
+                    );
+                }
+            }
+            // Recalculate overall grade from all answers
+            const totalPoints = details.answers.reduce((sum, a) => sum + (a.questionDetails?.points ?? 1), 0);
+            const earnedPoints = details.answers.reduce((sum, a) => {
+                const ov = answerOverrides[a.id];
+                return sum + (ov !== undefined ? ov.pointsEarned : (a.pointsEarned ?? 0));
+            }, 0);
+            const newGrade = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100 * 10) / 10 : 0;
+            await gradeSubmission(details.id, newGrade, gradeFeedback);
+            await loadAssignmentResults();
+            setViewingSubmission(null);
+            setSubmissionDetails(null);
+            setAnswerOverrides({});
+        } catch {
+            setError('Failed to save question grades');
+        } finally {
+            setSavingAnswerGrades(false);
         }
     };
 
@@ -601,14 +654,49 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
                                                             </div>
                                                         </div>
                                                         
-                                                        {answer.isCorrect !== undefined && (
-                                                            <div className={`answer-status ${answer.isCorrect ? 'correct' : 'incorrect'}`}>
-                                                                {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                                                                {answer.pointsEarned !== undefined && (
-                                                                    <span className="points-earned"> • {answer.pointsEarned} points</span>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                        {/* Per-question grade override */}
+                                                        {(() => {
+                                                            const isCorrect = answerOverrides[answer.id]?.isCorrect ?? answer.isCorrect ?? false;
+                                                            return (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', padding: '8px 10px', background: '#f8fafc', borderRadius: '6px', borderTop: '1px solid #e2e8f0' }}>
+                                                                    <span style={{ fontSize: '0.8rem', color: '#64748b', marginRight: '4px' }}>Result:</span>
+                                                                    <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setAnswerOverrides(prev => ({
+                                                                                    ...prev,
+                                                                                    [answer.id]: { isCorrect: true, pointsEarned: answer.questionDetails?.points ?? 1 }
+                                                                                }));
+                                                                            }}
+                                                                            style={{
+                                                                                padding: '5px 16px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem',
+                                                                                background: isCorrect ? '#10b981' : '#f1f5f9',
+                                                                                color: isCorrect ? '#fff' : '#94a3b8',
+                                                                                transition: 'background 0.15s',
+                                                                            }}
+                                                                        >
+                                                                            ✓ Correct
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setAnswerOverrides(prev => ({
+                                                                                    ...prev,
+                                                                                    [answer.id]: { isCorrect: false, pointsEarned: 0 }
+                                                                                }));
+                                                                            }}
+                                                                            style={{
+                                                                                padding: '5px 16px', border: 'none', borderLeft: '1px solid #e2e8f0', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem',
+                                                                                background: !isCorrect ? '#ef4444' : '#f1f5f9',
+                                                                                color: !isCorrect ? '#fff' : '#94a3b8',
+                                                                                transition: 'background 0.15s',
+                                                                            }}
+                                                                        >
+                                                                            ✗ Incorrect
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 );
                                             })}
@@ -632,11 +720,12 @@ const AssignmentResults = ({ teacherInfo, onBack, selectedClass, onSubmissionApp
                                 >
                                     <BiDownload /> Export Data
                                 </button>
-                                <button 
-                                    onClick={() => handleStartGrading(details)}
+                                <button
+                                    onClick={handleSaveAnswerGrades}
                                     className="btn-primary"
+                                    disabled={savingAnswerGrades}
                                 >
-                                    {details.grade != null ? 'Update Grade' : 'Grade Submission'}
+                                    <BiSave /> {savingAnswerGrades ? 'Saving...' : 'Save Question Grades'}
                                 </button>
                             </div>
                         </>

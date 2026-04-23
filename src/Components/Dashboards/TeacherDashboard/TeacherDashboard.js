@@ -893,12 +893,11 @@ export default function TeacherDashboard() {
           <div className="td-header-right">
             <NotificationBell 
               onNavigate={(page, notif) => {
-                if (notif?.type === 'submission_received') {
+                if (notif?.type === 'submission_received' || notif?.type === 'assignment_started') {
                   const meta = notif.metadata ? JSON.parse(notif.metadata) : {};
                   setNotifTarget({view: 'results', assignmentId: meta.assignmentId ?? null});
                   setActivePage('assignments');
-                }
-                else{
+                } else {
                   handlePageChange(page);
                 }
               }}

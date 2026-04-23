@@ -133,10 +133,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
             newErrors.dueTime = 'Due time is required';
         }
 
-        if (!formData.passingMarks || formData.passingMarks <= 0) {
-            newErrors.passingMarks = 'Passing marks must be greater than 0';
-        }
-
         if (!formData.duration || formData.duration <= 0) {
             newErrors.duration = 'Duration must be greater than 0';
         }
@@ -175,11 +171,12 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                 title: formData.title,
                 description: formData.description,
                 dueDate: formData.dueDate ? new Date(formData.dueDate + 'T' + (formData.dueTime || '23:59')).toISOString() : null,
-                pointsPossible: parseInt(formData.passingMarks) || 100,
+                pointsPossible: 100,
                 assignmentType: 'homework',
                 status: 'active',
                 classId: classId,
                 teacherId: parseInt(teacherId),
+                durationMinutes: formData.duration ? parseInt(formData.duration) : null,
                 // Additional metadata for future use
                 metadata: {
                     duration: formData.duration,
@@ -373,20 +370,6 @@ const AssignmentCreation = ({ onBack, onGoToQuestions }) => {
                                 {errors.totalMarks && <span className="error-message">{errors.totalMarks}</span>} */}
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="passingMarks">Passing Marks *</label>
-                                <input
-                                    type="number"
-                                    id="passingMarks"
-                                    name="passingMarks"
-                                    value={formData.passingMarks}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g., 50"
-                                    min="1"
-                                    className={errors.passingMarks ? 'error' : ''}
-                                />
-                                {errors.passingMarks && <span className="error-message">{errors.passingMarks}</span>}
-                            </div>
                         </div>
                     </div>
 

@@ -21,6 +21,7 @@ import AssignmentQuestionPage from './Components/Dashboards/StudentDashboard/Ass
 import Settings from './Components/Settings/Settings';
 import ProtectedRoute from './Components/ProtectedRoute';
 import ScrollToTop from './Components/ScrollToTop';
+import FeedbackButton from './Components/Shared/FeedbackButton';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -88,6 +89,7 @@ function App() {
                 </ProtectedRoute>
               } />
             </Routes>
+            <FeedbackButton />
           </div>
         </div>
         <ToastContainer position="top-right" autoClose={4000} />
