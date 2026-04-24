@@ -118,7 +118,7 @@ export default function StudentView({ teacherInfo, selectedClass, onBack }) {
 
     const totalStudents = studentsData.length;
     const activeStudents = studentsData.filter(s => s.status === 'active').length;
-    const atRiskStudents = studentsData.filter(s => s.status === 'at_risk').length;
+    const atRiskStudents = studentsData.filter(s => s.status === 'at_risk' || s.status === 'needs_attention').length;
     const averageReadiness = totalStudents > 0 
         ? Math.round(studentsData.reduce((sum, s) => sum + (Number(s.readinessLevel) || 0), 0) / totalStudents)
         : 0;
