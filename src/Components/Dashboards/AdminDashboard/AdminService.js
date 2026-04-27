@@ -123,6 +123,9 @@ export const createQuestion = async (questionData) => {
         figureBlobUrl,
         subjectId:       null,
         source:          'admin',
+        examTag:         questionData.examTag || 'BGCSE',
+        points:          parseFloat(questionData.points) || 1.0,
+        paper:           questionData.paper || null,
     };
 
     const res = await authFetch('/question', {
@@ -162,6 +165,9 @@ export const editQuestion = async (questionId, questionData) => {
         figureBlobUrl,
         subjectId:       questionData.subjectId       || null,
         source:          'admin',
+        examTag:         questionData.examTag || 'BGCSE',
+        points:          parseFloat(questionData.points) || 1.0,
+        paper:           questionData.paper || null,
     };
 
     const res = await authFetch(`/question/${questionId}`, {

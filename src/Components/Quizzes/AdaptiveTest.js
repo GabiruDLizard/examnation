@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { askGPT } from '../../Worker/chat';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import questions from '../data/generated_bgcs_questions_200_named_deduped.json';
+import { authFetch } from '../../utils/api';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
 import '../PracticeArea/PracticeArea.css';
@@ -29,20 +29,21 @@ const AdaptiveTest = () => {
   
   // Get question count from navigation state or default to 10
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
-  // When launched from the TA page, restrict to the curated question IDs
   const curatedIds = location.state?.curatedQuizIds;
   const classId    = location.state?.classId ?? null;
-  const questionPool = curatedIds?.length
-    ? questions.filter(q => curatedIds.includes(q['Question ID']))
-    : questions;
-  // Marks-based scoring: score = marks × paperWeight
-  const PAPER_WEIGHTS = { Easy: 1.0, Medium: 1.5, Hard: 2.0 };
-  const DEFAULT_MARKS  = { Easy: 2,   Medium: 3,   Hard: 5   };
+
+  // Composite difficulty score: points × paperWeight × difficultyFactor
+  const PAPER_WEIGHTS      = { 'Paper 1': 1.0, 'Paper 2': 1.5, 'Paper 3': 2.0 };
+  const DIFFICULTY_FACTORS = { 'Easy': 1, 'Medium': 2, 'Hard': 3, 'Very Hard': 4 };
 
   const getQuestionScore = (q) => {
-    const marks = q.marks || DEFAULT_MARKS[q.Difficulty] || 3;
-    return marks * (PAPER_WEIGHTS[q.Difficulty] || 1.5);
+    const points     = parseFloat(q.points ?? q.marks ?? 1);
+    const paperW     = PAPER_WEIGHTS[q.paper] ?? 1.0;
+    const diffFactor = DIFFICULTY_FACTORS[q.difficultyLevel ?? q.Difficulty] ?? 2;
+    return points * paperW * diffFactor;
   };
+
+  const [questionPool, setQuestionPool] = useState([]);
 
   // State declarations
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -80,6 +81,19 @@ const AdaptiveTest = () => {
   // Get authentication token
   const token = localStorage.getItem('token');
 
+  // Fetch questions from DB on mount
+  useEffect(() => {
+    authFetch('/question?source=admin')
+      .then(r => r.json())
+      .then(data => {
+        const pool = curatedIds?.length
+          ? data.filter(q => curatedIds.includes(q.id))
+          : data;
+        setQuestionPool(pool);
+      })
+      .catch(() => toast.error('Failed to load questions'));
+  }, []);
+
   // Block copy / paste / right-click during the test
   useEffect(() => {
     const blockPaste = (e) => {
@@ -104,11 +118,8 @@ const AdaptiveTest = () => {
   }, []);
 
   useEffect(() => {
-    if(!token) {
-      navigate('/login');
-      return;
-    }
-    else{
+    if(!token) { navigate('/login'); return; }
+    if(questionPool.length === 0) return; // wait for questions to load
 
     const initializeTest = () => {
       // Curated sessions always start fresh — don't restore an unrelated saved test
@@ -161,7 +172,7 @@ const AdaptiveTest = () => {
             targetScore: 4.5,
             elapsedTime: 0,
             startTime: Date.now(),
-            usedIds: firstQuestion ? [firstQuestion['Question ID']] : []
+            usedIds: firstQuestion ? [firstQuestion.id] : []
             };
             localStorage.setItem('adaptiveTest', JSON.stringify(initialTestData));
         }
@@ -169,26 +180,25 @@ const AdaptiveTest = () => {
         // Start timer
         setStartTime(Date.now());
         setIsTimerRunning(true);
-        };
+    };
 
-        initializeTest();
+    initializeTest();
 
-        // Load existing per-topic thetas so we start from the student's current ability
-        const userId = getUserIdFromToken();
-        if (userId) {
-            getStudentTopicAbility(userId).then(rows => {
-                const map = {};
-                rows.forEach(r => { map[r.topic] = r.theta; });
-                setTopicThetas(map);
-            }).catch(() => {});
-        }
+    // Load existing per-topic thetas so we start from the student's current ability
+    const userId = getUserIdFromToken();
+    if (userId) {
+        getStudentTopicAbility(userId).then(rows => {
+            const map = {};
+            rows.forEach(r => { map[r.topic] = r.theta; });
+            setTopicThetas(map);
+        }).catch(() => {});
     }
-  }, [token, navigate]);
+  }, [token, navigate, questionPool]);
 
   // Get question whose score is closest to targetScore, excluding already-seen questions
   const getQuestionAtScore = (score, seenIds = usedQuestionIds) => {
     // Filter out seen questions; fall back to full pool only if exhausted
-    const available = questionPool.filter(q => !seenIds.has(q['Question ID']));
+    const available = questionPool.filter(q => !seenIds.has(q.id));
     const pool = available.length > 0 ? available : questionPool;
 
     const scored = pool.map(q => ({ q, dist: Math.abs(getQuestionScore(q) - score) }));
@@ -196,7 +206,7 @@ const AdaptiveTest = () => {
     const candidates = scored.slice(0, 8);
     const picked = candidates[Math.floor(Math.random() * candidates.length)].q;
     setCurrentQuestionStartTime(Date.now());
-    setDifficultyLevel(picked.Difficulty);
+    setDifficultyLevel(picked.difficultyLevel ?? picked.Difficulty ?? 'Medium');
     return picked;
   };
 
@@ -336,7 +346,7 @@ const AdaptiveTest = () => {
 
   const handleHint = async () => {
     const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-    const latexString = `Question: ${currentQuestion["Question Text"]}\n\nUser Solution:\n${submission}`;
+    const latexString = `Question: ${currentQuestion.questionText}\n\nUser Solution:\n${submission}`;
     setHintload(true);
     try {
       const response = await needAHint(latexString);
@@ -368,7 +378,7 @@ const AdaptiveTest = () => {
       let finalAnswer = '';
       let answerStepsJSON = [];
       
-      if (currentQuestion?.Topic === "Graphs") {
+      if (currentQuestion?.subject === "Graphs") {
         finalAnswer = graphState ? JSON.stringify(graphState.expressions) : '';
         workingSteps = finalAnswer; // For graphs, working = final
 
@@ -390,7 +400,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       }
 
       // Check if answer is correct using the final answer
-      const correct = checkAnswer(finalAnswer, currentQuestion.Solution);
+      const correct = checkAnswer(finalAnswer, currentQuestion.correctAnswer);
       setIsCorrect(correct);
 
       // Calculate points for this question using marks × paperWeight
@@ -406,16 +416,16 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       // Store the answer with separated working and final answer
       const answerData = {
         questionId: currentQuestion['Question ID'],
-        questionText: currentQuestion["Question Text"],
+        questionText: currentQuestion.questionText,
         workingSteps: workingSteps,           // ALL steps they wrote
         finalAnswer: finalAnswer,             // LAST step only
         userAnswer: finalAnswer,
         answerStepsJSON: answerStepsJSON,
-        correctAnswer: currentQuestion.Solution,
+        correctAnswer: currentQuestion.correctAnswer,
         isCorrect: correct,
         pointsEarned: questionPoints,
-        difficulty: currentQuestion.Difficulty,
-        topic: currentQuestion.Topic,
+        difficulty: currentQuestion.difficultyLevel ?? currentQuestion.Difficulty,
+        topic: currentQuestion.subject,
         timeSpent: elapsedTime,
         timeToAnswer: timePerQuestion[currentQuestionIndex] || elapsedTime
       };
@@ -428,7 +438,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       adjustDifficulty(correct);
 
       // Update per-topic IRT theta
-      const topic = currentQuestion.Topic;
+      const topic = currentQuestion.subject;
       if (topic) {
           // Seed new topics from current average Rasch theta instead of cold 0
           const existingThetas = Object.values(topicThetas);
@@ -440,7 +450,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               a => a && a.topic === topic
           ).length;
           const newTopicTheta = abilityEstimate(
-              currentQuestion.Difficulty,
+              currentQuestion.difficultyLevel ?? currentQuestion.Difficulty,
               correct,
               priorTopicTheta,
               topicQCount
@@ -457,7 +467,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
 
       // Get GPT feedback
       const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-      const latexString = `Question: ${currentQuestion["Question Text"]}\n\nUser Solution:\n${submission}\n\nCorrect Answer: ${currentQuestion.Solution}`;
+      const latexString = `Question: ${currentQuestion.questionText}\n\nUser Solution:\n${submission}\n\nCorrect Answer: ${currentQuestion.correctAnswer}`;
       
        const response = await askGPT(latexString);
        setFeedback(response);
@@ -697,14 +707,14 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
           <div className="questionCard">
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
               <h2 className="practice-title">{currentQuestion?.UniqueName || "Adaptive Test"}</h2>
-              <span className={`question-difficulty ${currentQuestion?.Difficulty?.toLowerCase() || 'medium'}`}>
-                {currentQuestion?.Difficulty || 'Medium'} ({currentQuestion ? getQuestionScore(currentQuestion).toFixed(1) : '—'} pts)
+              <span className={`question-difficulty ${(currentQuestion?.difficultyLevel ?? currentQuestion?.Difficulty)?.toLowerCase() || 'medium'}`}>
+                {currentQuestion?.difficultyLevel ?? currentQuestion?.Difficulty ?? 'Medium'} ({currentQuestion ? getQuestionScore(currentQuestion).toFixed(1) : '—'} pts)
               </span>
             </div>
             <div className="questionBlock">
               <strong>Question:</strong>
               <div className="questionText">
-                {currentQuestion["Question Text"]}
+                {currentQuestion.questionText}
               </div>
               {currentQuestion["Image URL"] && (
                 <div className="question-image">
@@ -746,7 +756,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               )}
             </div>
 
-            {currentQuestion?.Topic === "Graphs" ? (
+            {currentQuestion?.subject === "Graphs" ? (
               <div className="graph-submission">
                 <div className="graph-instructions">
                   <strong>Interactive Graph:</strong>
@@ -795,7 +805,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               {isCorrect !== null && (
                 <div className={`answer-result ${isCorrect ? 'correct' : 'incorrect'}`}>
                   <strong>{isCorrect ? '✅ Correct!' : '❌ Incorrect'}</strong>
-                  <p>Correct Answer: {currentQuestion.Solution}</p>
+                  <p>Correct Answer: {currentQuestion.correctAnswer}</p>
                   <p>Points Earned: {isCorrect ? getQuestionScore(currentQuestion).toFixed(1) : 0}/{getQuestionScore(currentQuestion).toFixed(1)}</p>
                   <p className="difficulty-change">
                     📊 Next Difficulty: <span className={`${difficultyLevel?.toLowerCase() || 'medium'}`}>{difficultyLevel}</span>

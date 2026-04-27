@@ -12,6 +12,7 @@ import '../TeacherDashboard/MathFieldEditor.css';
 import '../Assignments.css';
 import Breadcrumb from '../../Breadcrumb/Breadcrumb.js';
 import MathFieldEditor from '../TeacherDashboard/MathFieldEditor';
+import TopicComboInput, { DEFAULT_TOPICS } from '../TeacherDashboard/TopicComboInput';
 
 const ROLE_LABEL = { student: 'Student', educator: 'Teacher', admin: 'Admin', superadmin: 'Super Admin' };
 
@@ -480,8 +481,10 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
         figureDescription:     question?.figureDescription   || '',
         solutionSteps:         question?.solutionSteps       || '',
         subjectId:             question?.subjectId           || null,
+        examTag:               question?.examTag             || 'BGCSE',
     });
     const [busy, setBusy] = useState(false);
+    const [availableTopics, setAvailableTopics] = useState(DEFAULT_TOPICS);
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
     const addOption    = () => set('multipleChoiceOptions', [...form.multipleChoiceOptions, '']);
@@ -541,6 +544,13 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
                             <input type="number" step="0.5" min="0.5" max="10" value={form.points} onChange={e => set('points', Math.min(10, parseFloat(e.target.value) || 0.5))} />
                             <small style={{ color: '#64748b', fontSize: '11px' }}>Counts toward assignment grade (max 10)</small>
                         </div>
+                        <div className="form-group">
+                            <label>Exam</label>
+                            <select value={form.examTag} onChange={e => set('examTag', e.target.value)}>
+                                <option value="BGCSE">BGCSE</option>
+                                <option value="BJC">BJC</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="form-row">
@@ -553,11 +563,11 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
                         </div>
                         <div className="form-group">
                             <label>Topic</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Algebra, Probability, Photosynthesis"
+                            <TopicComboInput
                                 value={form.subject}
-                                onChange={e => set('subject', e.target.value)}
+                                onChange={v => set('subject', v)}
+                                availableTopics={availableTopics}
+                                onTopicCreated={t => setAvailableTopics(prev => [...prev, t])}
                             />
                         </div>
                         <div className="form-group">

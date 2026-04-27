@@ -1,28 +1,36 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import './App.css';
+import './styles/utilities.css';
 import ErrorBoundary from './Components/ErrorBoundary';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Auth from './Components/Authentication/Auth';
 import { AuthProvider } from './contexts/AuthContext';
-import ResetPassword from './Components/ResetPassword';
-import LandingPageAuth from './LandingPageAuth';
-import AdminDashboard from './Components/Dashboards/AdminDashboard/AdminDashboard';
-import StudentDashboard from './Components/Dashboards/StudentDashboard/StudentDashboard';
-import TeacherDashboard from './Components/Dashboards/TeacherDashboard/TeacherDashboard';
-import ExamPage from './Components/ExamPage/ExamPage';
-import PracticeArea from './Components/PracticeArea/PracticeArea';
-import AdaptiveTest from './Components/Quizzes/AdaptiveTest';
-import TestEntrance from './Components/Quizzes/TestEntrance';
-import TApageStudent from './Components/Dashboards/TAPage/TAPageStudent';
-import AssignmentQuestionCreationPage from './Components/Dashboards/TeacherDashboard/AssignmentQuestionPage';
-import AssignmentOverview from './Components/Dashboards/StudentDashboard/AssignmentOverview';
-import AssignmentQuestionPage from './Components/Dashboards/StudentDashboard/AssignmentQuestionPage';
-import Settings from './Components/Settings/Settings';
 import ProtectedRoute from './Components/ProtectedRoute';
 import ScrollToTop from './Components/ScrollToTop';
 import FeedbackButton from './Components/Shared/FeedbackButton';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+const LandingPageAuth                = lazy(() => import('./LandingPageAuth'));
+const Auth                           = lazy(() => import('./Components/Authentication/Auth'));
+const ResetPassword                  = lazy(() => import('./Components/ResetPassword'));
+const AdminDashboard                 = lazy(() => import('./Components/Dashboards/AdminDashboard/AdminDashboard'));
+const StudentDashboard               = lazy(() => import('./Components/Dashboards/StudentDashboard/StudentDashboard'));
+const TeacherDashboard               = lazy(() => import('./Components/Dashboards/TeacherDashboard/TeacherDashboard'));
+const ExamPage                       = lazy(() => import('./Components/ExamPage/ExamPage'));
+const PracticeArea                   = lazy(() => import('./Components/PracticeArea/PracticeArea'));
+const AdaptiveTest                   = lazy(() => import('./Components/Quizzes/AdaptiveTest'));
+const TestEntrance                   = lazy(() => import('./Components/Quizzes/TestEntrance'));
+const TApageStudent                  = lazy(() => import('./Components/Dashboards/TAPage/TAPageStudent'));
+const AssignmentQuestionCreationPage = lazy(() => import('./Components/Dashboards/TeacherDashboard/AssignmentQuestionPage'));
+const AssignmentOverview             = lazy(() => import('./Components/Dashboards/StudentDashboard/AssignmentOverview'));
+const AssignmentQuestionPage         = lazy(() => import('./Components/Dashboards/StudentDashboard/AssignmentQuestionPage'));
+const Settings                       = lazy(() => import('./Components/Settings/Settings'));
+
+const PageLoader = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+    <div className="spinner" style={{ width: '36px', height: '36px', borderWidth: '3px', marginRight: 0 }} />
+  </div>
+);
 
 function App() {
   return (
@@ -32,63 +40,65 @@ function App() {
         <ScrollToTop />
         <div className="App">
           <div className="App-body">
-            <Routes>
-              <Route path="/" element={<LandingPageAuth />} />
-              <Route path="/login" element={<Auth />} />
-              <Route path="/passwordreset" element={<ResetPassword />} />
-              <Route path="/admindashboard" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/studentdashboard" element={
-                <ProtectedRoute requiredRole="student">
-                  <StudentDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/teacherdashboard" element={
-                <ProtectedRoute requiredRole="teacher">
-                  <TeacherDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/exampage" element={<ExamPage />} />
-              <Route path="/practice/:id" element={<PracticeArea />} />
-              <Route path="/adaptivetest" element={
-                <ProtectedRoute requiredRole="student">
-                  <AdaptiveTest />
-                </ProtectedRoute>
-              } />
-              <Route path="/testentrance" element={
-                <ProtectedRoute requiredRole="student">
-                  <TestEntrance />
-                </ProtectedRoute>
-              } />
-              <Route path="/tapagestudent" element={
-                <ProtectedRoute requiredRole="student">
-                  <TApageStudent />
-                </ProtectedRoute>
-              } />
-              <Route path="/assignment-questions" element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AssignmentQuestionCreationPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/assignment-overview/:classId" element={
-                <ProtectedRoute requiredRole="student">
-                  <AssignmentOverview />
-                </ProtectedRoute>
-              } />
-              <Route path="/assignment/:assignmentId/question/:questionIndex" element={
-                <ProtectedRoute requiredRole="student">
-                  <AssignmentQuestionPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<LandingPageAuth />} />
+                <Route path="/login" element={<Auth />} />
+                <Route path="/passwordreset" element={<ResetPassword />} />
+                <Route path="/admindashboard" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/studentdashboard" element={
+                  <ProtectedRoute requiredRole="student">
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/teacherdashboard" element={
+                  <ProtectedRoute requiredRole="teacher">
+                    <TeacherDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/exampage" element={<ExamPage />} />
+                <Route path="/practice/:id" element={<PracticeArea />} />
+                <Route path="/adaptivetest" element={
+                  <ProtectedRoute requiredRole="student">
+                    <AdaptiveTest />
+                  </ProtectedRoute>
+                } />
+                <Route path="/testentrance" element={
+                  <ProtectedRoute requiredRole="student">
+                    <TestEntrance />
+                  </ProtectedRoute>
+                } />
+                <Route path="/tapagestudent" element={
+                  <ProtectedRoute requiredRole="student">
+                    <TApageStudent />
+                  </ProtectedRoute>
+                } />
+                <Route path="/assignment-questions" element={
+                  <ProtectedRoute requiredRole="teacher">
+                    <AssignmentQuestionCreationPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/assignment-overview/:classId" element={
+                  <ProtectedRoute requiredRole="student">
+                    <AssignmentOverview />
+                  </ProtectedRoute>
+                } />
+                <Route path="/assignment/:assignmentId/question/:questionIndex" element={
+                  <ProtectedRoute requiredRole="student">
+                    <AssignmentQuestionPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Suspense>
             <FeedbackButton />
           </div>
         </div>

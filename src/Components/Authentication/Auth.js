@@ -38,10 +38,16 @@ const Auth = () => {
                 refreshAuth();
                 const role = getRoleFromToken()?.toLowerCase();
                 if (role === 'admin' || role === 'superadmin') {
+                    import('../../Components/Dashboards/AdminDashboard/AdminDashboard');
                     navigate('/admindashboard');
                 } else if (role === 'educator' || role === 'teacher') {
+                    import('../../Components/Dashboards/TeacherDashboard/TeacherDashboard');
+                    import('../../Components/Dashboards/TAPage/TAPageTeacher');
                     navigate('/teacherdashboard');
                 } else {
+                    import('../../Components/Dashboards/StudentDashboard/StudentDashboard');
+                    import('../../Components/Dashboards/TAPage/TAPageStudent');
+                    import('../../Components/Quizzes/AdaptiveTest');
                     navigate('/studentdashboard');
                 }
             } else {
