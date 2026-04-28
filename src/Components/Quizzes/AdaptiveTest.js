@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { askGPT } from '../../Worker/chat';
@@ -15,6 +15,7 @@ import { updateStudentTopicAbility, getStudentTopicAbility, recordStudentReadine
 import { abilityEstimate } from '../Dashboards/Charts/ReadinessLogic';
 import { analyzeMistakePatterns } from '../PerformanceEngine/^PerformanceAnalysis';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
+import MathText from '../Shared/MathText';
 
 const mathJaxConfig = {
   loader: { load: ["input/tex", "output/chtml"] },
@@ -50,12 +51,28 @@ const AdaptiveTest = () => {
   const [totalScore, setTotalScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(null);
+  const exampleFormat = useMemo(() => {
+    const src = currentQuestion?.['outputFormat'] || currentQuestion?.correctAnswer;
+    if (!src) return null;
+    const stripped = src.replace(/[\r\n]+/g, (_, offset, str) => {
+      const before = str.slice(0, offset).trimEnd();
+      return before.endsWith(',') ? ' ' : ', ';
+    }).trim();
+    if (currentQuestion?.['outputFormat']) return stripped;
+    return stripped.replace(/\d+/g, n => {
+      const orig = parseInt(n);
+      let r;
+      do { r = Math.floor(Math.random() * 9) + 1; } while (r === orig);
+      return r;
+    });
+  }, [currentQuestion?.id]);
   const [testAnswers, setTestAnswers] = useState([]); // Store all answers
   const [difficultyLevel, setDifficultyLevel] = useState("Medium"); // Display label (last question's difficulty)
   const [targetScore, setTargetScore] = useState(4.5); // Continuous difficulty score; Medium ~3marks×1.5=4.5
   const [hint, setHint] = useState('');
   const [hintload, setHintload] = useState(false);
   const [steps, setSteps] = useState(['']);
+  const [finalAnswer, setFinalAnswer] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [startTime, setStartTime] = useState(null);
@@ -212,10 +229,10 @@ const AdaptiveTest = () => {
 
   // Nudge targetScore up on correct, down on wrong; clamp to [1.5, 14]
   const adjustDifficulty = (wasCorrect) => {
-    setTargetScore(prev => {
-      const next = wasCorrect ? prev + 1.5 : prev - 1.0;
-      return Math.max(1.5, Math.min(14.0, next));
-    });
+    const next = wasCorrect ? targetScore + 1.5 : targetScore - 1.0;
+    const clamped = Math.max(1.5, Math.min(14.0, next));
+    setTargetScore(clamped);
+    return clamped;
   };
 
   // Save test state to localStorage whenever important state changes
@@ -260,6 +277,8 @@ const AdaptiveTest = () => {
     const normalize = (ans) => {
       return ans.toString()
         .toLowerCase()
+        // Strip newlines
+        .replace(/[\r\n]+/g, ' ')
         // Strip LaTeX commands from MathQuill (e.g. \left( \right) \text{} \frac{}{})
         .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
         .replace(/\\[a-zA-Z]+/g, '')
@@ -375,32 +394,23 @@ const AdaptiveTest = () => {
 
       // Get user's working steps and final answer
       let workingSteps = '';
-      let finalAnswer = '';
+      let submittedFinalAnswer = '';
       let answerStepsJSON = [];
-      
+
       if (currentQuestion?.subject === "Graphs") {
-        finalAnswer = graphState ? JSON.stringify(graphState.expressions) : '';
-        workingSteps = finalAnswer; // For graphs, working = final
-
-       // answerSteps = { [currentQuestion['Question ID']]: workingSteps };
+        submittedFinalAnswer = graphState ? JSON.stringify(graphState.expressions) : '';
+        workingSteps = submittedFinalAnswer;
       } else {
-        // Get all non-empty steps
         const nonEmptySteps = steps.filter(step => step.trim() !== '');
-
-        //let answerStepsJSON = [];
         if (nonEmptySteps.length > 0) {
-          answerStepsJSON = nonEmptySteps.map((step, idx) => ({
-          stepNumber: idx + 1,
-          stepText: step
-  }));
-}
-
-workingSteps = nonEmptySteps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
-finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
+          answerStepsJSON = nonEmptySteps.map((step, idx) => ({ stepNumber: idx + 1, stepText: step }));
+        }
+        workingSteps = nonEmptySteps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
+        submittedFinalAnswer = finalAnswer.trim() || nonEmptySteps[nonEmptySteps.length - 1] || '';
       }
 
       // Check if answer is correct using the final answer
-      const correct = checkAnswer(finalAnswer, currentQuestion.correctAnswer);
+      const correct = checkAnswer(submittedFinalAnswer, currentQuestion.correctAnswer);
       setIsCorrect(correct);
 
       // Calculate points for this question using marks × paperWeight
@@ -418,8 +428,8 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
         questionId: currentQuestion['Question ID'],
         questionText: currentQuestion.questionText,
         workingSteps: workingSteps,           // ALL steps they wrote
-        finalAnswer: finalAnswer,             // LAST step only
-        userAnswer: finalAnswer,
+        finalAnswer: submittedFinalAnswer,
+        userAnswer: submittedFinalAnswer,
         answerStepsJSON: answerStepsJSON,
         correctAnswer: currentQuestion.correctAnswer,
         isCorrect: correct,
@@ -435,7 +445,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
       setTestAnswers(newTestAnswers);
 
       // **ADAPTIVE DIFFICULTY ADJUSTMENT**
-      adjustDifficulty(correct);
+      const nextTargetScore = adjustDifficulty(correct);
 
       // Update per-topic IRT theta
       const topic = currentQuestion.subject;
@@ -478,21 +488,21 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
     }
   };
 
-  const goToNextQuestion = async () => {
+  const goToNextQuestion = async (scoreOverride) => {
     if (currentQuestionIndex < TOTAL_QUESTIONS - 1) {
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
 
       // Mark current question as seen before picking next
       const newSeen = new Set(usedQuestionIds);
-      if (currentQuestion) newSeen.add(currentQuestion['Question ID']);
+      if (currentQuestion) newSeen.add(currentQuestion.id ?? currentQuestion['Question ID']);
       setUsedQuestionIds(newSeen);
 
-      // Get next question at the current (possibly adjusted) target score
-      const nextQuestion = getQuestionAtScore(targetScore, newSeen);
+      const nextQuestion = getQuestionAtScore(scoreOverride ?? targetScore, newSeen);
       setCurrentQuestion(nextQuestion);
       
       clearField();
+      setFinalAnswer('');
       setIsCorrect(null);
     } else {
       // Test completed
@@ -714,21 +724,25 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
             <div className="questionBlock">
               <strong>Question:</strong>
               <div className="questionText">
-                {currentQuestion.questionText}
+                <MathText>{currentQuestion.questionText}</MathText>
               </div>
-              {currentQuestion["Image URL"] && (
+              {(currentQuestion.figureBlobUrl || currentQuestion["Image URL"]) && (
                 <div className="question-image">
-                  <img src={currentQuestion["Image URL"]} alt="Question Visual" />
+                  <img src={currentQuestion.figureBlobUrl || currentQuestion["Image URL"]} alt="Question Visual" />
                 </div>
               )}
               <div>
                 <h2>How to Answer:</h2>
                 <p>To get the question correct, you must leave your final answer in the same format as the example provided below.<br /> You must also leave your final answer as the last line of your response.</p>
                 <br />
-                <strong>Example Final Answer Format:</strong>
-                <div className="example-answer-format">
-                  {currentQuestion["outputFormat"] || "N/A"}
-                </div>
+                {exampleFormat && (
+                  <>
+                    <strong>Example Final Answer Format:</strong>
+                    <div className="example-answer-format">
+                      <MathText>{exampleFormat}</MathText>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -784,20 +798,24 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
                     <EditableMathField
                       latex={step}
                       onChange={mf => handleStepChange(idx, mf.latex())}
-                      style={{
-                        minHeight: 28,
-                        width: '100%',
-                        maxWidth: '100%',
-                        padding: 2,
-                        borderRadius: 4,
-                        boxSizing: 'border-box',
-                        outline: 'none'
-                      }}
+                      style={{ minHeight: 28, width: '100%', maxWidth: '100%', padding: 2, borderRadius: 4, boxSizing: 'border-box', outline: 'none' }}
                       onKeyDown={e => handleKeyDown(e, idx)}
                       mathquillDidMount={field => (stepReference.current[idx] = field)}
                     />
                   </div>
                 ))}
+                <div className="final-answer-container">
+                  <div className="final-answer-header">
+                    <span className="final-answer-label">Final Answer</span>
+                  </div>
+                  <EditableMathField
+                    latex={finalAnswer}
+                    onChange={mf => setFinalAnswer(mf.latex())}
+                    className="final-answer-input"
+                    mathquillDidMount={field => (stepReference.current['final'] = field)}
+                    onFocus={() => { if (stepReference.current) stepReference.current['final'] = stepReference.current['final']; }}
+                  />
+                </div>
               </div>
             )}
 
@@ -805,7 +823,7 @@ finalAnswer = nonEmptySteps[nonEmptySteps.length - 1] || '';
               {isCorrect !== null && (
                 <div className={`answer-result ${isCorrect ? 'correct' : 'incorrect'}`}>
                   <strong>{isCorrect ? '✅ Correct!' : '❌ Incorrect'}</strong>
-                  <p>Correct Answer: {currentQuestion.correctAnswer}</p>
+                  <p>Correct Answer: <MathText>{currentQuestion.correctAnswer}</MathText></p>
                   <p>Points Earned: {isCorrect ? getQuestionScore(currentQuestion).toFixed(1) : 0}/{getQuestionScore(currentQuestion).toFixed(1)}</p>
                   <p className="difficulty-change">
                     📊 Next Difficulty: <span className={`${difficultyLevel?.toLowerCase() || 'medium'}`}>{difficultyLevel}</span>

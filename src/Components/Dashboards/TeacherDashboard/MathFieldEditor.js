@@ -215,6 +215,17 @@ const TOOLBAR_GROUPS = [
             { label: 'Ω',  title: 'Omega',   latex: '\\Omega' },
         ]
     },
+    {
+        label: 'Currency',
+        buttons: [
+            { label: '$',    title: 'Dollar',          text: '$' },
+            { label: 'BSD$', title: 'Bahamian Dollar', text: 'BSD$' },
+            { label: '¢',    title: 'Cent',            text: '¢' },
+            { label: '£',    title: 'Pound',           text: '£' },
+            { label: '€',    title: 'Euro',            text: '€' },
+            { label: '%',    title: 'Percent',         text: '%' },
+        ]
+    },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -410,7 +421,7 @@ export default function MathFieldEditor({ value, onChange, placeholder }) {
                                         type="button"
                                         className="mfe-btn"
                                         title={btn.title}
-                                        onMouseDown={e => { e.preventDefault(); insertMath(btn.latex); }}
+                                        onMouseDown={e => { e.preventDefault(); btn.text ? editor?.chain().focus().insertContent({ type: 'text', text: btn.text }).run() : insertMath(btn.latex); }}
                                     >
                                         {btn.label}
                                     </button>

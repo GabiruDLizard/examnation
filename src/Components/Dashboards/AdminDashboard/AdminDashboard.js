@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { getUsers, createAccount, editUser, deleteUser, resetPassword, getOrganizations, createOrganization, getResetRequests, completeResetRequest, dismissResetRequest, getLibrary, createQuestion as createQuestionApi, editQuestion as editQuestionApi, deleteQuestion, getInquiries, updateInquiryStatus, getAdminClasses, createClass, editClass, deleteClass } from './AdminService';
 import { removeToken, getRoleFromToken, getInstitutionIdFromToken } from '../../../utils/tokenUtils';
+import { authFetch } from '../../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { BiGroup, BiLogOut, BiBuildings, BiKey, BiEdit, BiTrash, BiMessageRoundedDots, BiFile, BiBook } from 'react-icons/bi';
 import AdminReports from './AdminReports';
@@ -472,8 +473,8 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
         bgcseSubject:          question?.bgcseSubject        || '',
         subject:               question?.subject             || '',
         paper:                 question?.paper               || '',
-        points:                Math.min(10, question?.points || 1.0),
-        multipleChoiceOptions: question?.options             || [],
+        points:                question?.points               ?? 1.0,
+        multipleChoiceOptions: question?.multipleChoiceOptions || question?.options || [],
         correctAnswer:         question?.correctAnswer       || '',
         answerBreakdown:       question?.answerBreakdown     || '',
         imageAssociated:       null,
@@ -541,7 +542,7 @@ function QuestionFormModal({ onClose, onSubmit, question }) {
                         </div>
                         <div className="form-group">
                             <label>Points</label>
-                            <input type="number" step="0.5" min="0.5" max="10" value={form.points} onChange={e => set('points', Math.min(10, parseFloat(e.target.value) || 0.5))} />
+                            <input type="number" step="0.5" min="0.5" value={form.points} onChange={e => set('points', parseFloat(e.target.value) || 0.5)} />
                             <small style={{ color: '#64748b', fontSize: '11px' }}>Counts toward assignment grade (max 10)</small>
                         </div>
                         <div className="form-group">
@@ -803,11 +804,14 @@ export default function AdminDashboard() {
 
     const handleEditQuestion = async (questionData) => {
         try {
-            const updated = await editQuestionApi(editQuestionTarget.id, questionData);
-            setLibrary((prev) => prev.map(q => q.id === editQuestionTarget.id ? { ...q, ...updated } : q));
-            toast.success('Question updated successfully');
+            const id = editQuestionTarget.id;
+            console.log('handleEditQuestion running, points:', questionData.points);
+            await editQuestionApi(id, questionData);
             setEditQuestionTarget(null);
+            await loadLibrary();
+            toast.success('Question updated successfully');
         } catch (err) {
+            console.error('Edit question error:', err);
             toast.error(err.message);
         }
     };

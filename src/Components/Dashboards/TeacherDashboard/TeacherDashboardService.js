@@ -1029,28 +1029,41 @@ export const updateQuestionInAssignment = async (assignmentId, questionId, quest
             figureBlobUrl = await uploadQuestionImage(questionData.imageAssociated);
         }
 
-        const response = await authFetch(`/question/${questionId}`, {
-            method: 'PUT',
-            body: JSON.stringify({
-                id: questionId,
-                questionText: questionData.questionText,
-                answerType: questionData.answerType,
-                difficultyLevel: String(questionData.difficultyLevel),
-                subject: questionData.subject || 'General',
-                points: questionData.points,
-                multipleChoiceOptions: serializeOptions(questionData.multipleChoiceOptions),
-                correctAnswer: questionData.correctAnswer,
-                answerBreakdown: questionData.answerBreakdown,
-                figureBlobUrl,
-                figureDescription: questionData.imageDescription || ''
-            })
-        });
+        const [questionResponse, aqLinks] = await Promise.all([
+            authFetch(`/question/${questionId}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    id: questionId,
+                    questionText: questionData.questionText,
+                    answerType: questionData.answerType,
+                    difficultyLevel: String(questionData.difficultyLevel),
+                    subject: questionData.subject || 'General',
+                    points: questionData.points,
+                    multipleChoiceOptions: serializeOptions(questionData.multipleChoiceOptions),
+                    correctAnswer: questionData.correctAnswer,
+                    answerBreakdown: questionData.answerBreakdown,
+                    figureBlobUrl,
+                    figureDescription: questionData.imageDescription || ''
+                })
+            }),
+            authFetch(`/assignmentquestion/assignment/${assignmentId}`)
+        ]);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!questionResponse.ok) throw new Error(`HTTP error! status: ${questionResponse.status}`);
+
+        // Update points on the junction record
+        if (aqLinks.ok && questionData.points != null) {
+            const links = await aqLinks.json();
+            const link = links.find(l => l.questionId === questionId);
+            if (link) {
+                await authFetch(`/assignmentquestion/${link.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ ...link, points: parseFloat(questionData.points) })
+                });
+            }
         }
 
-        return await response.json();
+        return await questionResponse.json();
     } catch (error) {
         throw error;
     }

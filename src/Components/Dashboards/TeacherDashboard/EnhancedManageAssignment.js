@@ -82,7 +82,7 @@ const QuestionForm = ({ questionData, setQuestionData, onSubmit, onCancel, submi
                     min="0.5"
                     max="10"
                     value={questionData.points}
-                    onChange={(e) => setQuestionData({ ...questionData, points: Math.min(10, parseFloat(e.target.value) || 0.5) })}
+                    onChange={(e) => setQuestionData({ ...questionData, points: parseFloat(e.target.value) || 0.5 })}
                 />
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Counts toward assignment grade (max 10)</small>
             </div>
@@ -549,7 +549,17 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
                                                 <span className="question-points">{question.points} pts</span>
                                                 <div className="question-actions">
                                                     <button
-                                                        onClick={() => setEditingQuestion({ ...question, points: Math.min(10, question.points || 1), multipleChoiceOptions: question.multipleChoiceOptions || [] })}
+                                                        onClick={() => setEditingQuestion({
+    ...question,
+    points: question.points ?? 1,
+    answerBreakdown: question.answerBreakdown || '',
+    multipleChoiceOptions: (question.multipleChoiceOptions || []).map(o => {
+        if (typeof o === 'string') {
+            try { return JSON.parse(o); } catch { return { text: o, imageUrl: null }; }
+        }
+        return o;
+    })
+})}
                                                         className="edit-btn"
                                                         disabled={editingQuestion || isAddingQuestion}
                                                     >

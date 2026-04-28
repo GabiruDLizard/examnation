@@ -8,13 +8,13 @@ import 'katex/dist/katex.min.css';
  */
 const MathText = ({ children }) => {
     if (!children) return null;
-    // Split on $$...$$ first (display), then $...$  (inline)
-    const parts = children.split(/(\$\$[^$]+\$\$|\$[^$\n]+\$)/g);
+    // Split on $$...$$ first (display), then $...$  (inline) — only if content contains LaTeX chars
+    const parts = children.split(/(\$\$[^$]+\$\$|\$[^$\n]*[\\^_{}\[\]][^$\n]*\$)/g);
     return (
         <span>
             {parts.map((part, i) => {
                 const display = part.match(/^\$\$([^$]+)\$\$$/);
-                const inline  = part.match(/^\$([^$\n]+)\$$/);
+                const inline  = part.match(/^\$([^$\n]*[\\^_{}\[\]][^$\n]*)\$$/);
                 const latex   = display?.[1] || inline?.[1];
                 if (latex) {
                     try {
@@ -33,7 +33,14 @@ const MathText = ({ children }) => {
                         return <span key={i}>{part}</span>;
                     }
                 }
-                return <span key={i}>{part}</span>;
+                return <span key={i}>
+                    {part.split('\n').map((line, j, arr) => (
+                        <React.Fragment key={j}>
+                            {line}
+                            {j < arr.length - 1 && <br />}
+                        </React.Fragment>
+                    ))}
+                </span>;
             })}
         </span>
     );

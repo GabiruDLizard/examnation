@@ -69,6 +69,17 @@ const MQ_TOOLBAR_GROUPS = [
       { label: 'Σ', title: 'Sigma', latex: '\\Sigma' },
     ],
   },
+  {
+    label: 'Currency',
+    buttons: [
+      { label: '$',    title: 'Dollar',          latex: '\\$' },
+      { label: 'BSD$', title: 'Bahamian Dollar', latex: '\\text{BSD}\\$' },
+      { label: '¢',    title: 'Cent',            latex: '\\text{¢}' },
+      { label: '£',    title: 'Pound',           latex: '\\pounds' },
+      { label: '€',    title: 'Euro',            latex: '\\text{€}' },
+      { label: '%',    title: 'Percent',         latex: '\\%' },
+    ],
+  },
 ];
 
 const PracticeArea = () => {
