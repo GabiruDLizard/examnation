@@ -3,6 +3,7 @@ import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import { getTeacherPatterns, getStrugglingStudents, assignCuratedQuizToStudent } from './TAService';
 import { getTeacherClasses } from '../TeacherDashboard/TeacherDashboardService';
 import StudentMistakePatterns from './StudentMistakePatterns';
+import Clustering from './Clustering';
 import { toast } from 'react-toastify';
 import './TAPageTeacher.css';
 import { DEMO_MODE, DEMO_TA_PATTERNS, DEMO_TA_STRUGGLING, DEMO_TEACHER_CLASSES } from '../../../demo/dummyData';
@@ -207,6 +208,7 @@ export default function TAPageTeacher() {
     const [patterns, setPatterns] = useState([]);
     const [struggling, setStruggling] = useState([]);
     const [classes, setClasses] = useState([]);
+    const [selectedClassId, setSelectedClassId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState(null);
 
@@ -227,6 +229,7 @@ export default function TAPageTeacher() {
             setPatterns(p);
             setStruggling(s);
             setClasses(c);
+            if (c.length > 0) setSelectedClassId(c[0].id);
             setLoading(false);
         });
     }, [teacherId]);
@@ -274,56 +277,75 @@ export default function TAPageTeacher() {
 
             {loading ? (
                 <div className="tat-loading">Analyzing class data...</div>
-            ) : !hasData ? (
-                <div className="tat-empty-state">
-                    <div className="tat-empty-icon">📊</div>
-                    <div className="tat-empty-title">No data yet</div>
-                    <div className="tat-empty-body">
-                        Insights will appear here as students complete practice sessions and assignments.
-                    </div>
-                </div>
             ) : (
                 <>
-                    {/* ── Class Priorities ── */}
-                    {patterns.length > 0 && <ClassAlertBar patterns={patterns} />}
+                    {!hasData && (
+                        <div className="tat-empty-state">
+                            <div className="tat-empty-icon">📊</div>
+                            <div className="tat-empty-title">No data yet</div>
+                            <div className="tat-empty-body">
+                                Insights will appear here as students complete practice sessions and assignments.
+                            </div>
+                        </div>
+                    )}
 
-                    {/* ── Students Who Need Help ── */}
-                    {struggling.length > 0 && (
+                    {hasData && <>
+                        {/* ── Class Priorities ── */}
+                        {patterns.length > 0 && <ClassAlertBar patterns={patterns} />}
+
+                        {/* ── Students Who Need Help ── */}
+                        {struggling.length > 0 && (
+                            <div className="tat-section">
+                                <div className="tat-section-title">
+                                    Students Who Need Attention
+                                    <span className="tat-section-count">{struggling.length}</span>
+                                </div>
+                                <p className="tat-section-sub">
+                                    Ranked by number of logged mistakes. Assign a targeted quiz directly from here.
+                                </p>
+                                <div className="tat-student-list">
+                                    {struggling.map((s, i) => (
+                                        <StudentRow key={s.studentId} student={s} rank={i} onAssign={setModal} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Topic Breakdown ── */}
+                        {topicEntries.length > 0 && (
+                            <div className="tat-section">
+                                <div className="tat-section-title">Mistake Patterns by Topic</div>
+                                <p className="tat-section-sub">
+                                    Which topics are causing the most mistakes, and what kinds of errors.
+                                </p>
+                                <div className="tat-topic-grid">
+                                    {topicEntries.map(([topic, rows]) => (
+                                        <TopicCard key={topic} topic={topic} rows={rows} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>}
+
+                    {/* ── Student Performance Clusters — commented out until more data available ── */}
+                    {/* {selectedClassId && !loading && (
                         <div className="tat-section">
                             <div className="tat-section-title">
-                                Students Who Need Attention
-                                <span className="tat-section-count">{struggling.length}</span>
+                                Student Performance Clusters
+                                {classes.length > 1 && (
+                                    <select
+                                        value={selectedClassId}
+                                        onChange={e => setSelectedClassId(parseInt(e.target.value))}
+                                        style={{ marginLeft: 12, fontSize: '0.85rem', fontWeight: 400, padding: '2px 8px', borderRadius: 6, border: '1px solid #e2e8f0' }}
+                                    >
+                                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                )}
                             </div>
-                            <p className="tat-section-sub">
-                                Ranked by number of logged mistakes. Assign a targeted quiz directly from here.
-                            </p>
-                            <div className="tat-student-list">
-                                {struggling.map((s, i) => (
-                                    <StudentRow
-                                        key={s.studentId}
-                                        student={s}
-                                        rank={i}
-                                        onAssign={setModal}
-                                    />
-                                ))}
-                            </div>
+                            <p className="tat-section-sub">K-means grouping of students based on topic mastery patterns.</p>
+                            <Clustering classId={selectedClassId} enrolledStudents={struggling} />
                         </div>
-                    )}
-
-                    {/* ── Topic Breakdown ── */}
-                    {topicEntries.length > 0 && (
-                        <div className="tat-section">
-                            <div className="tat-section-title">Mistake Patterns by Topic</div>
-                            <p className="tat-section-sub">
-                                Which topics are causing the most mistakes, and what kinds of errors.
-                            </p>
-                            <div className="tat-topic-grid">
-                                {topicEntries.map(([topic, rows]) => (
-                                    <TopicCard key={topic} topic={topic} rows={rows} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    )} */}
                 </>
             )}
 

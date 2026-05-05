@@ -98,3 +98,4 @@ export const assignCuratedQuizToStudent = async (studentId, studentName, classId
 
     return { assignment: created, questionCount: questionIds.length, focusTopics };
 };
+

@@ -29,6 +29,7 @@
     "react-shepherd": "^7.0.4",
     "react-toastify": "^11.0.5",
     "recharts": "^3.3.0",
+    "skmeans": "^0.11.3",
     "sweetalert2": "^11.26.24",
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5"

@@ -27,21 +27,36 @@ const AdaptiveTest = () => {
   const answerBlockRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Adaptive difficulty state sets next question based on user's performance
+  const [nextIfCorrect, setNextIfCorrect] = useState(null);
+  const [nextIfWrong, setNextIfWrong] = useState(null);
   
   // Get question count from navigation state or default to 10
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
   const curatedIds = location.state?.curatedQuizIds;
   const classId    = location.state?.classId ?? null;
 
-  // Composite difficulty score: points × paperWeight × difficultyFactor
-  const PAPER_WEIGHTS      = { 'Paper 1': 1.0, 'Paper 2': 1.5, 'Paper 3': 2.0 };
-  const DIFFICULTY_FACTORS = { 'Easy': 1, 'Medium': 2, 'Hard': 3, 'Very Hard': 4 };
-
+  const preQueue = (currentId, seenIds) => {
+    const excludeIds = new Set([...seenIds, currentId]);
+    setNextIfCorrect(getQuestionAtScore(targetScore + 1.5, excludeIds));
+    setNextIfWrong(getQuestionAtScore(targetScore - 1.0, excludeIds));
+  };
+  
+  // Composite difficulty score normalised to [1.5, 14] range
+  // Weights: difficulty 40%, paper 35%, points 25% (log-scaled)
+  const DIFF_NAME_MAP = { 'easy': 1, 'medium': 2, 'medium-hard': 3, 'hard': 4, 'very hard': 5 };
   const getQuestionScore = (q) => {
-    const points     = parseFloat(q.points ?? q.marks ?? 1);
-    const paperW     = PAPER_WEIGHTS[q.paper] ?? 1.0;
-    const diffFactor = DIFFICULTY_FACTORS[q.difficultyLevel ?? q.Difficulty] ?? 2;
-    return points * paperW * diffFactor;
+    const rawDiff = q.difficultyLevel ?? q.Difficulty ?? 2;
+    const diff    = typeof rawDiff === 'string' && isNaN(rawDiff)
+      ? (DIFF_NAME_MAP[rawDiff.toLowerCase()] ?? 2)
+      : parseFloat(rawDiff) || 2;
+    const paperLevel = { 'Paper 1': 1, 'Paper 2': 2, 'Paper 3': 3 }[q.paper] ?? 1;
+    const points     = parseFloat(q.points ?? q.marks ?? 1) || 1;
+
+    const pointsNorm  = Math.log(points + 1) / Math.log(13);
+    const normalized  = (diff / 5 * 0.4) + (paperLevel / 3 * 0.35) + (pointsNorm * 0.25);
+    return 1.5 + normalized * 12.5;
   };
 
   const [questionPool, setQuestionPool] = useState([]);
@@ -178,6 +193,7 @@ const AdaptiveTest = () => {
             })();
             const firstQuestion = getQuestionAtScore(4.5, seenIds);
             setCurrentQuestion(firstQuestion);
+            preQueue(firstQuestion?.id, seenIds);
 
             // Save initial test state
             const initialTestData = {
@@ -447,6 +463,8 @@ const AdaptiveTest = () => {
       // **ADAPTIVE DIFFICULTY ADJUSTMENT**
       const nextTargetScore = adjustDifficulty(correct);
 
+      preQueue(currentQuestion?.id, new Set([...usedQuestionIds, currentQuestion?.id]));
+
       // Update per-topic IRT theta
       const topic = currentQuestion.subject;
       if (topic) {
@@ -498,15 +516,24 @@ const AdaptiveTest = () => {
       if (currentQuestion) newSeen.add(currentQuestion.id ?? currentQuestion['Question ID']);
       setUsedQuestionIds(newSeen);
 
-      const nextQuestion = getQuestionAtScore(scoreOverride ?? targetScore, newSeen);
+      // Use pre-queued question based on last answer, fall back to on-demand if missing
+      const preQueued = isCorrect ? nextIfCorrect : nextIfWrong;
+      const nextQuestion = preQueued ?? getQuestionAtScore(scoreOverride ?? targetScore, newSeen);
       setCurrentQuestion(nextQuestion);
-      
+      setNextIfCorrect(null);
+      setNextIfWrong(null);
+
+      // Pre-queue the next pair for the question we just loaded
+      if (nextQuestion) preQueue(nextQuestion.id, new Set([...newSeen, nextQuestion.id]));
+
       clearField();
       setFinalAnswer('');
       setIsCorrect(null);
     } else {
-      // Test completed
+      // Test completed — snapshot elapsed time and stop timer
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
       setIsTimerRunning(false);
+      setStartTime(null);
       setIsTestComplete(true);
 
       const userId = getUserIdFromToken();
@@ -634,6 +661,8 @@ const AdaptiveTest = () => {
     localStorage.removeItem('adaptiveTestResults');
   }
 
+  const wrapMath = (s) => s && /[\\^_{}&]/.test(s) && !s.startsWith('$') ? `$${s}$` : (s || '—');
+
   // Test completion screen
   if (isTestComplete) {
     const percentage = ((correctAnswers / TOTAL_QUESTIONS) * 100).toFixed(1);
@@ -657,8 +686,8 @@ const AdaptiveTest = () => {
                 answer && (
                   <div key={index} className={`answer-card ${answer.isCorrect ? 'correct' : 'incorrect'}`}>
                     <p><strong>Q{index + 1}:</strong> {answer.difficulty} ({answer.pointsEarned} pts)</p>
-                    <p><strong>Your Answer:</strong> {answer.userAnswer}</p>
-                    <p><strong>Correct Answer:</strong> {answer.correctAnswer}</p>
+                    <p><strong>Your Answer:</strong> <MathText>{wrapMath(answer.userAnswer)}</MathText></p>
+                    <p><strong>Correct Answer:</strong> <MathText>{wrapMath(answer.correctAnswer)}</MathText></p>
                     <p><strong>Points:</strong> {answer.isCorrect ? answer.pointsEarned : 0}</p>
                   </div>
                 )

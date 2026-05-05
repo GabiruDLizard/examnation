@@ -515,6 +515,26 @@
   display: block;
 }
 
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.student-table th,
+.student-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+}
+.student-table th {
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+}
+.student-table tbody tr:hover {
+  background: #f8fafc;
+}
+
 /* RESPONSIVE BREAKPOINTS */
 
 /* Large tablets and small laptops */

@@ -29,6 +29,7 @@ import { DEMO_MODE, DEMO_TEACHER_INFO, DEMO_TEACHER_STATS, DEMO_STUDENT_RANKING,
 import NotificationBell from '../../Notifications/NotificationBell';
 
 
+
 function heatColor(v) {
   // 0 = red, 0.5 = amber, 1 = green
   const hue = Math.round(v * 120);
@@ -95,6 +96,7 @@ export default function TeacherDashboard() {
   const [actualStudentsData, setActualStudentsData] = useState([]);
   const [loadingStudentsData, setLoadingStudentsData] = useState(true);
   const [heatmapData, setHeatmapData] = useState({ topics: [], students: [], grid: [] });
+  const [allClassHeatmaps, setAllClassHeatmaps] = useState([]);
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
   const heatmapRef = useRef(null);
@@ -274,12 +276,34 @@ export default function TeacherDashboard() {
       setLoadingWeakSpots(true);
       try {
         const allTopicRows = [];
+        const perClassHeatmaps = [];
         for (const classItem of classes) {
           const cid = classItem.classId || classItem.id;
           if (!cid) continue;
           const rows = await getClassTopicAbility(cid);
-          if (Array.isArray(rows)) allTopicRows.push(...rows);
+          if (Array.isArray(rows)) {
+            allTopicRows.push(...rows);
+            if (rows.length > 0) {
+              const topics = [...new Set(rows.map(r => r.topic))].sort();
+              const studentIds = [...new Set(rows.map(r => r.studentId))];
+              const lookup = {};
+              rows.forEach(r => {
+                if (!lookup[r.studentId]) lookup[r.studentId] = {};
+                const t = r.theta ?? 0;
+                lookup[r.studentId][r.topic] = (t >= -4 && t <= 4)
+                  ? Math.max(0, Math.min(1, (t + 4) / 8))
+                  : Math.max(0, Math.min(1, t / 100));
+              });
+              const grid = topics.map(topic => studentIds.map(sid => lookup[sid]?.[topic] ?? null));
+              const students = studentIds.map(sid => {
+                const found = studentsArray.find(s => s.id === sid);
+                return found ? found.name : `Student ${sid}`;
+              });
+              perClassHeatmaps.push({ className: classItem.name, topics, students, grid });
+            }
+          }
         }
+        setAllClassHeatmaps(perClassHeatmaps);
         setWeakSpots(computeWeakSpots(allTopicRows));
 
         // Build overview heatmap from all topic rows (aggregated across classes)
@@ -492,6 +516,7 @@ export default function TeacherDashboard() {
         return renderOverviewContent();
     }
   };
+
 
   // Overview page content 
   const renderOverviewContent = () => (
@@ -918,56 +943,149 @@ export default function TeacherDashboard() {
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
           zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <div onClick={e => e.stopPropagation()} style={{
+          <div ref={heatmapRef} onClick={e => e.stopPropagation()} style={{
             background: '#fff', borderRadius: 12, padding: '24px',
             maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: '16px' }}>Topic Mastery by Student</div>
-              <button onClick={() => setHeatmapModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>✕</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={async () => {
+                  const { default: html2canvas } = await import('html2canvas');
+                  const { default: jsPDF } = await import('jspdf');
+                  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                  allClassHeatmaps.forEach((cls, clsIdx) => {
+                      if (clsIdx > 0) pdf.addPage();
+
+                      const marginLeft = 8;
+                      const marginTop = 10;
+                      const cellW = 12;
+                      const cellH = 7;
+                      const labelW = 55;
+                      const nameRowHeight = 20;
+
+                      // Class name header
+                      pdf.setFontSize(13);
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.text(cls.className, marginLeft, marginTop + 6);
+
+                      // Student names across the top
+                      pdf.setFontSize(7);
+                      pdf.setFont('helvetica', 'normal');
+                      cls.students.forEach((name, i) => {
+                          const x = marginLeft + labelW + i * cellW + cellW / 2;
+                          const y = marginTop + nameRowHeight;
+                          pdf.text(name.split(' ')[0].substring(0, 8), x, y, { angle: 45, align: 'right' });
+                      });
+
+                      // Topic rows
+                      cls.topics.forEach((topic, rIdx) => {
+                          const y = marginTop + nameRowHeight + 4 + rIdx * cellH;
+
+                          // Topic label
+                          pdf.setFontSize(7);
+                          pdf.setFont('helvetica', 'normal');
+                          pdf.setTextColor(60, 60, 60);
+                          pdf.text(topic.substring(0, 28), marginLeft, y + cellH - 2);
+
+                          // Cells
+                          cls.grid[rIdx].forEach((cell, cIdx) => {
+                              const x = marginLeft + labelW + cIdx * cellW;
+                              if (cell === null) {
+                                  pdf.setFillColor(220, 220, 220);
+                              } else {
+                                  const v = cell;
+                                  if (v < 0.5) {
+                                      pdf.setFillColor(239, Math.round(v * 2 * 175 + 68), 68);
+                                  } else {
+                                      pdf.setFillColor(Math.round((1 - v) * 2 * 100 + 16), 185, 97);
+                                  }
+                              }
+                              pdf.rect(x, y, cellW - 1, cellH - 1, 'F');
+
+                              if (cell !== null) {
+                                  pdf.setTextColor(255, 255, 255);
+                                  pdf.setFontSize(8);
+                                  pdf.text(`${Math.round(cell * 100)}%`, x + 1.5, y + cellH - 2);
+                              }
+                          });
+                      });
+
+                      pdf.setTextColor(0, 0, 0);
+                  });
+                  pdf.save('topic-mastery-heatmap.pdf');
+
+                  // const el = heatmapRef.current;
+                  // // Temporarily expand to full height so all content renders
+                  // const prevMaxHeight = el.style.maxHeight;
+                  // const prevOverflow = el.style.overflow;
+                  // el.style.maxHeight = 'none';
+                  // el.style.overflow = 'visible';
+                  // await new Promise(r => setTimeout(r, 100)); // let browser reflow
+                  // const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#fff', useCORS: true, scrollY: 0 });
+                  // el.style.maxHeight = prevMaxHeight;
+                  // el.style.overflow = prevOverflow;
+                  // const imgW = 297; // A4 landscape width in mm
+                  // const imgH = (canvas.height * imgW) / canvas.width;
+                  // const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                  // pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+                  // pdf.save('topic-mastery-heatmap.pdf');
+                }} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', color: '#374151' }}>
+                  Export PDF
+                </button>
+                <button onClick={() => setHeatmapModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>✕</button>
+              </div>
             </div>
 
-            {/* Header row */}
-            <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', marginBottom: '6px' }}>
-                <div style={{ width: 180, flexShrink: 0 }} />
-                {heatmapData.students.map((name, i) => (
-                  <div key={i} style={{ width: 40, flexShrink: 0, display: 'flex', justifyContent: 'center', overflow: 'visible' }}>
-                    <div style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', transform: 'rotate(-45deg)', transformOrigin: 'bottom center' }}>
-                      {name}
-                    </div>
+            {allClassHeatmaps.length === 0 ? (
+              <div style={{ color: '#888', fontSize: '13px', padding: '16px 0' }}>No topic data available.</div>
+            ) : (
+              allClassHeatmaps.map((cls, clsIdx) => (
+                <div key={clsIdx} style={{ marginBottom: 32 }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b', marginBottom: 12, paddingBottom: 6, borderBottom: '1px solid #e2e8f0' }}>
+                    {cls.className}
                   </div>
-                ))}
-              </div>
-
-              {/* Data rows */}
-              {heatmapData.topics.map((topic, rIdx) => (
-                <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: 180, fontSize: '12px', color: '#444', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
-                    {topic}
-                  </div>
-                  {heatmapData.grid[rIdx].map((cell, cIdx) => (
-                    <div key={cIdx} style={{
-                      width: 40, height: 40, borderRadius: 6, flexShrink: 0,
-                      background: cell === null ? '#e8e8e8' : heatColor(cell),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '10px', color: '#fff', fontWeight: 600,
-                    }}
-                      title={cell === null ? `${heatmapData.students[cIdx]} — no data` : `${heatmapData.students[cIdx]} · ${topic}: ${Math.round(cell * 100)}%`}
-                    >
-                      {cell !== null ? `${Math.round(cell * 100)}%` : ''}
+                  <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px' }}>
+                    {/* Student name headers */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', marginBottom: '6px' }}>
+                      <div style={{ width: 180, flexShrink: 0 }} />
+                      {cls.students.map((name, i) => (
+                        <div key={i} style={{ width: 40, flexShrink: 0, display: 'flex', justifyContent: 'center', overflow: 'visible' }}>
+                          <div style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', transform: 'rotate(-45deg)', transformOrigin: 'bottom center' }}>
+                            {name.split(' ')[0]}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                    {/* Topic rows */}
+                    {cls.topics.map((topic, rIdx) => (
+                      <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ width: 180, fontSize: '12px', color: '#444', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }} title={topic}>
+                          {topic}
+                        </div>
+                        {cls.grid[rIdx].map((cell, cIdx) => (
+                          <div key={cIdx} style={{
+                            width: 40, height: 40, borderRadius: 6, flexShrink: 0,
+                            background: cell === null ? '#e8e8e8' : heatColor(cell),
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '10px', color: '#fff', fontWeight: 600,
+                          }} title={cell === null ? `${cls.students[cIdx]} — no data` : `${cls.students[cIdx]} · ${topic}: ${Math.round(cell * 100)}%`}>
+                            {cell !== null ? `${Math.round(cell * 100)}%` : ''}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              ))
+            )}
 
-              {/* Legend */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '11px', color: '#666' }}>
-                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.1) }} /> Low
-                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.5), marginLeft: 8 }} /> Mid
-                <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.9), marginLeft: 8 }} /> High
-              </div>
+            {/* Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', fontSize: '11px', color: '#666' }}>
+              <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.1) }} /> Low
+              <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.5), marginLeft: 8 }} /> Mid
+              <div style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(0.9), marginLeft: 8 }} /> High
             </div>
           </div>
         </div>

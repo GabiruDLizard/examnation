@@ -1,0 +1,54 @@
+.cluster-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 48px;
+    padding: 32px 0;
+}
+
+.cluster-orb {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: var(--orb-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--orb-color) 40%, transparent);
+}
+
+.cluster-orb:hover { transform: scale(1.1); }
+
+.orb-inner { text-align: center; color: #fff; }
+.orb-label { display: block; font-size: 0.75rem; font-weight: 600; opacity: 0.9; }
+.orb-count { display: block; font-size: 2rem; font-weight: 700; }
+
+.orb-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 140%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 120px;
+    text-align: left;
+}
+
+.cluster-orb:hover .orb-tooltip { display: block; }
+
+.cluster-loading, .cluster-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 24px;
+    font-size: 0.9rem;
+}
