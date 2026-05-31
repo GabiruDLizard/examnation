@@ -342,6 +342,163 @@
     line-height: 1.5;
 }
 
+/* ============================================================
+   PILOT REGISTER — extra styles (reuses auth-split layout)
+   ============================================================ */
+
+/* Lock the whole layout to viewport height so left panel doesn't stretch */
+.pilot-layout {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.pilot-layout .auth-panel-left {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Right panel scrolls independently */
+.auth-panel-right--pilot {
+    height: 100vh;
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: 3rem 3rem;
+}
+
+.auth-panel-right--pilot .auth-form-wrap {
+    max-width: 460px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+}
+
+/* Side-by-side field row */
+.auth-field-row {
+    display: flex;
+    gap: 12px;
+}
+.auth-field-row .auth-field {
+    flex: 1;
+}
+
+/* Textarea + select inherit the same look as inputs */
+.auth-form-wrap textarea,
+.auth-form-wrap select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.auth-form-wrap textarea:focus,
+.auth-form-wrap select:focus {
+    outline: none;
+    border-color: #6C63FF;
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+    background: #ffffff;
+}
+.auth-form-wrap select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+    height: 48px;
+    resize: none;
+}
+
+/* Dot accent on left panel stats */
+.pilot-check-icon {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6C63FF;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+/* Form section labels */
+.pilot-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin: 1.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Sign in link at bottom of pilot form */
+.pilot-signin-link {
+    text-align: center;
+    font-size: 0.83rem;
+    color: #64748b;
+    margin-top: 1rem;
+}
+.pilot-signin-link span {
+    color: #6C63FF;
+    cursor: pointer;
+    font-weight: 500;
+}
+.pilot-signin-link span:hover {
+    text-decoration: underline;
+}
+
+/* Success screen */
+.pilot-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 0;
+    gap: 1rem;
+}
+.pilot-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #6C63FF;
+    color: #fff;
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pilot-success h2 {
+    font-size: 1.5rem;
+    color: #0f172a;
+    margin: 0;
+}
+.pilot-success p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin: 0;
+}
+.pilot-success button {
+    margin-top: 0.5rem;
+    padding: 0.875rem 2rem;
+    background: #6C63FF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.pilot-success button:hover {
+    background: #5a52e0;
+}
+
 /* ── Legacy wrapper (kept for already-logged-in path) */
 .auth-page-wrapper { display: none; }
 .auth-floating-bg,

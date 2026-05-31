@@ -239,7 +239,7 @@ const PracticeArea = () => {
     }
   };
 
-
+  
   return (
     <MathJaxContext version={3} config={mathJaxConfig}>
       <div className = "practicebg">
@@ -249,7 +249,7 @@ const PracticeArea = () => {
           <button className="nav-btn" onClick={goToNext} disabled={!nextQuestionId || loading}>Next →</button>
           <button className="nav-btn" onClick={() => navigate('/exampage')} title="Back to question list">Question List</button>
         </div>
-        <div className="practiceareagrid">
+        <div className="practiceareagrid"> 
           {/* Question Panel - LeetCode Style */}
           <div className="questionCard">
             <div className="question-header">
@@ -300,7 +300,7 @@ const PracticeArea = () => {
                 )}
               </div>
             </div>
-
+            
             <div className="solution-content">
               {question?.Topic === "Graphs" ? (
                 <div className="workingBlock">
@@ -461,7 +461,7 @@ const PracticeArea = () => {
                 </div>
               )}
             </div>
-
+            
             {/* Console/Action Area */}
             <div className="console-area">
               {feedback && (
@@ -472,7 +472,7 @@ const PracticeArea = () => {
                   </div>
                 </div>
               )}
-
+              
               {hint && (
                 <div className="console-output hint-output">
                   <div className="console-header">Hint</div>

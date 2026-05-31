@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import './TeacherReports.css';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
     Legend, BarChart, Bar, ResponsiveContainer

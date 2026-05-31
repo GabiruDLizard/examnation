@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './StudyHistory.css';
 import {
     BiCheckCircle, BiXCircle, BiChevronDown, BiChevronUp,
     BiBookOpen, BiBullseye, BiClipboard, BiTime, BiLoader

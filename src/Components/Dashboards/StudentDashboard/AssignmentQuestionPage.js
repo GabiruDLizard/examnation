@@ -33,7 +33,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const { questionIndex } = useParams();
     const navigate = useNavigate();
     const stepReference = useRef([]);
-    
+
     // Get current user ID from token - always initialize this first
     const currentUserId = useMemo(() => {
         const id = getUserIdFromToken();
@@ -47,7 +47,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
         return null;
     }, []);
-    
+
     // Use preloaded questions if available, otherwise fetch them
     const [questions, setQuestions] = useState(preloadedQuestions || []);
     const [loadingQuestions, setLoadingQuestions] = useState(!preloadedQuestions);
@@ -116,10 +116,10 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 setLoadingQuestions(false);
             }
         };
-        
+
         loadQuestions();
     }, [assignment?.id, preloadedQuestions]);
-    
+
     // Initialize submission
     useEffect(() => {
         if (!assignment?.id || !currentUserId) {
@@ -129,7 +129,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         const initializeSubmission = async () => {
             try {
                 let existingSubmission = await getSubmissionByAssignmentAndStudent(assignment.id, currentUserId);
-                
+
                 if (!existingSubmission) {
                     // Create new submission with 'in_progress' status
                     existingSubmission = await createSubmission({
@@ -155,10 +155,10 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 }
             } catch { /* ignore */ }
         };
-        
+
         initializeSubmission();
     }, [assignment?.id, currentUserId]);
-    
+
     // Check deadline status
     useEffect(() => {
         const checkDeadline = () => {
@@ -170,15 +170,15 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                 setIsPastDeadline(false);
             }
         };
-        
+
         checkDeadline();
-        
+
         // Check deadline every minute
         const interval = setInterval(checkDeadline, 60000);
-        
+
         return () => clearInterval(interval);
     }, [assignment?.dueDate]);
-    
+
     // ── Timer: initialise once submission is loaded ────────────────────────────
     useEffect(() => {
         if (!submission || isSubmitted) return;
@@ -307,9 +307,9 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
     const autoSaveAnswer = useCallback(async () => {
         if (currentQuestion && steps.some(step => step.trim()) && submission && !isEditingDisabled) {
             setIsAutoSaving(true);
-            
+
             const answerText = steps.filter(step => step.trim()).join('\n');
-            
+
             const answerData = {
                 questionId: currentQuestion.id,
                 steps: steps,
@@ -345,7 +345,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         const assignmentId = assignment?.id || 'temp-assignment';
         const saved = localStorage.getItem(`assignment-answers-${assignmentId}`);
         const currentSavedAnswers = saved ? JSON.parse(saved) : {};
-        
+
         if (currentSavedAnswers[currentQuestion?.id]) {
             const saved = currentSavedAnswers[currentQuestion.id];
             setSteps(saved.steps || ['']);
@@ -422,9 +422,9 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
         // Manual save - only save if there's actual content or if flagged and not past deadline
         if (currentQuestion && (steps.some(step => step.trim()) || isFlagged) && submission && !isEditingDisabled) {
             setIsAutoSaving(true);
-            
+
             const answerText = steps.filter(step => step.trim()).join('\n');
-            
+
             const answerData = {
                 questionId: currentQuestion.id,
                 steps: steps,
@@ -554,12 +554,12 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
             const due = new Date(assignment.dueDate);
             const now = new Date();
             const diff = due - now;
-            
+
             if (diff <= 0) return 'Deadline Passed';
-            
+
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            
+
             if (days > 0) return `${days}d ${hours}h remaining`;
             return `${hours}h remaining`;
         }
@@ -695,7 +695,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         <span>Progress: {Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%</span>
                     </div>
                     <div className="progress-track">
-                        <div 
+                        <div
                             className="progress-fill"
                             style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                         />
@@ -704,14 +704,14 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
                 {/* Navigation */}
                 <div className="question-navigation">
-                    <button 
-                        onClick={goToPrevious} 
+                    <button
+                        onClick={goToPrevious}
                         disabled={isFirstQuestion}
                         className="nav-btn prev"
                     >
                         <BiLeftArrow /> Previous
                     </button>
-                    
+
                     <div className="question-indicators">
                         {questions.map((_, index) => (
                             <button
@@ -730,8 +730,8 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                         ))}
                     </div>
 
-                    <button 
-                        onClick={goToNext} 
+                    <button
+                        onClick={goToNext}
                         disabled={isLastQuestion}
                         className="nav-btn next"
                     >
@@ -746,7 +746,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             <div className="question-title">
                                 <h2>Question {currentQuestionIndex + 1}</h2>
                                 {!isEditingDisabled && (
-                                    <button 
+                                    <button
                                         onClick={toggleFlag}
                                         className={`flag-btn ${isFlagged ? 'flagged' : ''}`}
                                         title={isFlagged ? 'Remove flag' : 'Flag for review'}
@@ -764,7 +764,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                                 {currentQuestion?.difficultyLevel || currentQuestion?.difficulty}
                             </span>
                         </div>
-                        
+
                         <div className="question-text">
                             <MathText>{currentQuestion?.questionText || currentQuestion?.text}</MathText>
                             {currentQuestion?.figureDescription && (
@@ -774,8 +774,8 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                             )}
                             {currentQuestion?.figureBlobUrl && (
                                 <div className="question-figure">
-                                    <img 
-                                        src={currentQuestion.figureBlobUrl} 
+                                    <img
+                                        src={currentQuestion.figureBlobUrl}
                                         alt={currentQuestion.figureDescription || "Question figure"}
                                         className="question-image"
                                     />
@@ -786,7 +786,7 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
 
                     <div className="answer-section">
                         <h3>
-                            Your Answer 
+                            Your Answer
                             {isSubmitted && <span style={{color: '#22C55E'}}>(Submitted)</span>}
                             {isPastDeadline && !isSubmitted && <span style={{color: '#EF4444'}}>(Deadline Passed)</span>}
                         </h3>
@@ -892,10 +892,10 @@ export default function AssignmentQuestionPage({ assignment, selectedClass, onBa
                                 ))
                             )}
                         </div>
-                        
+
                         {savedAnswers[currentQuestion?.id] && (
                             <div className="save-indicator">
-                                <BiCheckCircle style={{ color: '#22C55E' }} /> 
+                                <BiCheckCircle style={{ color: '#22C55E' }} />
                                 Last saved at{' '}
                                 {new Date(savedAnswers[currentQuestion.id].savedAt).toLocaleTimeString()}
                                 {savedAnswers[currentQuestion.id].flagged && (

@@ -8,6 +8,8 @@ import teacherDashboardPreview from '../Resources/Landing/TeacherDashboardPrevie
 import logo from '../Resources/ExamNationLogo.svg';
 import { motion } from "framer-motion";
 import { BiMenu, BiX } from 'react-icons/bi';
+import { FaInstagram, FaTwitter, FaTiktok, FaLinkedin } from 'react-icons/fa';
+import BentoFeatures from './BentoFeatures';
 
 export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -120,6 +122,7 @@ export default function ExamNationLanding() {
                         <button className="navbar-signup" onClick={() => scrollToSection('about')}>About</button>
                         <button className="navbar-signup" onClick={() => scrollToSection('contact')}>Contact</button>
                         <button className="navbar-signup" onClick={handleLogin}>Login</button>
+                        <button className="navbar-pilot-btn" onClick={() => navigate('/pilot')}>Join Pilot →</button>
                     </div>
 
                     {/* Mobile Hamburger Button */}
@@ -136,6 +139,7 @@ export default function ExamNationLanding() {
                             <button className="mobile-nav-item" onClick={() => scrollToSection('about')}>About</button>
                             <button className="mobile-nav-item" onClick={() => scrollToSection('contact')}>Contact</button>
                             <button className="mobile-nav-item" onClick={handleLogin}>Login</button>
+                            <button className="mobile-nav-item primary" onClick={() => navigate('/pilot')}>Join Pilot →</button>
                         </div>
                     </div>
                 )}
@@ -188,30 +192,8 @@ export default function ExamNationLanding() {
                 </div>
             </section>
 
-            {/* Features Section - Add id for scrolling */}
-            <section id="features" className="features">
-                <h2>Built for the Whole School</h2>
-                <div className="feature-grid">
-                    <div className="feature-card">
-                        <h3>For Teachers</h3>
-                        <p>
-                            Know who's struggling before they do. Track readiness by topic across your entire class and focus your lessons where they matter most.
-                        </p>
-                    </div>
-                    <div className="feature-card">
-                        <h3>For Students</h3>
-                        <p>
-                            Practice that actually feels like progress. Get instant feedback, AI-guided explanations, and a clear picture of where you stand heading into exam day.
-                        </p>
-                    </div>
-                    <div className="feature-card">
-                        <h3>For Parents</h3>
-                        <p>
-                            Stay in the loop without chasing the school. See your child's readiness, topic by topic, and know exactly where they need support.
-                        </p>
-                    </div>
-                </div>
-            </section>
+            {/* Features Section */}
+            <BentoFeatures />
             <section className="practice-preview">
                 <div className="practice-content">
                     <h2>Practice That Actually Prepares You</h2>
@@ -257,8 +239,45 @@ export default function ExamNationLanding() {
                 </div>
             </section>
 
-            {/* Testimonials placeholder - id kept for nav scroll */}
-            <div id="about"></div>
+            {/* ── Pilot Program Section ── */}
+            <section id="about" className="pilot-section">
+                <div className="pilot-inner">
+                    <div className="pilot-badge">🚀 Limited Spots Available</div>
+                    <h2>Be One of the First Schools to Try Examnation</h2>
+                    <p>
+                        We're opening up a free pilot program for a small number of schools in The Bahamas.
+                        Get full platform access, hands-on onboarding, and a direct line to our team —
+                        at no cost.
+                    </p>
+                    <div className="pilot-perks">
+                        <div className="pilot-perk">
+                            <span className="perk-icon">✓</span>
+                            <div>
+                                <strong>Free during the pilot</strong>
+                                <span>Full access for your teachers and students, no credit card needed.</span>
+                            </div>
+                        </div>
+                        <div className="pilot-perk">
+                            <span className="perk-icon">✓</span>
+                            <div>
+                                <strong>Dedicated onboarding</strong>
+                                <span>We'll set up your school, train your staff, and be available throughout.</span>
+                            </div>
+                        </div>
+                        <div className="pilot-perk">
+                            <span className="perk-icon">✓</span>
+                            <div>
+                                <strong>Early adopter pricing — locked in forever</strong>
+                                <span>Pilot schools keep a special rate when we go to paid plans.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button className="pilot-apply-btn" onClick={() => navigate('/pilot')}>
+                        Apply for the Pilot →
+                    </button>
+                    <p className="pilot-note">Takes less than 2 minutes. We'll reach out within 24 hours.</p>
+                </div>
+            </section>
 
             {/* CTA Footer - Add id for contact section */}
             <footer id="contact" className="cta-footer">
@@ -350,6 +369,11 @@ export default function ExamNationLanding() {
                     </div>
                 </div>
                 <div className="footer-bottom">
+                    <div className="social-icons">
+                        <a href="https://www.instagram.com/tryexamnation/" target="_blank" rel="noopener noreferrer"><FaInstagram size={30} /></a>
+                        {/* <a href="https://www.facebook.com/examnationapp" target="_blank" rel="noopener noreferrer"><FaFacebook size={30} /></a> */}
+                        <a href="https://www.linkedin.com/products/loftier-goals-software-examnation/" target="_blank" rel="noopener noreferrer"><FaLinkedin size={30} /></a>
+                    </div>
                     <p className="footer-copyright">
                         &copy; {new Date().getFullYear()} Lofty Goals Software. All rights reserved.
                         Examnation is a product of Lofty Goals Software.

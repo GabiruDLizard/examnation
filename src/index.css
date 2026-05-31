@@ -3,6 +3,7 @@
 /* Import our efficient CSS architecture */
 @import './styles/variables.css';
 @import './styles/utilities.css';
+@import './styles/DashboardShared.css';
 
 body {
   margin: 0;

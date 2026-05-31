@@ -31,7 +31,7 @@ const AdaptiveTest = () => {
   // Adaptive difficulty state sets next question based on user's performance
   const [nextIfCorrect, setNextIfCorrect] = useState(null);
   const [nextIfWrong, setNextIfWrong] = useState(null);
-  
+
   // Get question count from navigation state or default to 10
   const TOTAL_QUESTIONS = location.state?.questionCount || 5;
   const curatedIds = location.state?.curatedQuizIds;
@@ -42,7 +42,7 @@ const AdaptiveTest = () => {
     setNextIfCorrect(getQuestionAtScore(targetScore + 1.5, excludeIds));
     setNextIfWrong(getQuestionAtScore(targetScore - 1.0, excludeIds));
   };
-  
+
   // Composite difficulty score normalised to [1.5, 14] range
   // Weights: difficulty 40%, paper 35%, points 25% (log-scaled)
   const DIFF_NAME_MAP = { 'easy': 1, 'medium': 2, 'medium-hard': 3, 'hard': 4, 'very hard': 5 };
@@ -354,7 +354,7 @@ const AdaptiveTest = () => {
     const newSteps = [...steps];
     newSteps[idx] = latex;
     setSteps(newSteps);
-    
+
     const combinedAnswer = newSteps.filter(step => step.trim() !== '').join('; ');
     setCurrentAnswer(combinedAnswer);
   };
@@ -402,7 +402,7 @@ const AdaptiveTest = () => {
 
   const handleSubmit = async () => {
     setLoading(true);
-    
+
     try {
       // Calculate time spent on this question
       const elapsedTime = Math.floor((Date.now() - currentQuestionStartTime) / 1000);
@@ -431,11 +431,11 @@ const AdaptiveTest = () => {
 
       // Calculate points for this question using marks × paperWeight
       const questionPoints = correct ? Math.round(getQuestionScore(currentQuestion) * 10) / 10 : 0;
-      
+
       // Update scores
       const newTotalScore = totalScore + questionPoints;
       const newCorrectAnswers = correctAnswers + (correct ? 1 : 0);
-      
+
       setTotalScore(newTotalScore);
       setCorrectAnswers(newCorrectAnswers);
 
@@ -496,10 +496,10 @@ const AdaptiveTest = () => {
       // Get GPT feedback
       const submission = steps.map((step, idx) => `Step ${idx + 1}: ${step}`).join('\n');
       const latexString = `Question: ${currentQuestion.questionText}\n\nUser Solution:\n${submission}\n\nCorrect Answer: ${currentQuestion.correctAnswer}`;
-      
+
        const response = await askGPT(latexString);
        setFeedback(response);
-      
+
       setLoading(false);
     } catch {
       setLoading(false);
@@ -543,8 +543,8 @@ const AdaptiveTest = () => {
         .map(answer => ({
            UserId: userId,
           QuestionId: answer.questionId,
-          AnswerText: answer.workingSteps, 
-          AnswerSteps: answer.answerStepsJSON, 
+          AnswerText: answer.workingSteps,
+          AnswerSteps: answer.answerStepsJSON,
           IsCorrect: answer.isCorrect,
           AnsweredAt: new Date().toISOString(),
           TimeSpentSeconds: answer.timeSpent,
@@ -579,7 +579,7 @@ const AdaptiveTest = () => {
         })
         .catch(error => {
         });
-      
+
       const userProgress = {
         userId: userId,
         subjectId: 1,
@@ -666,7 +666,7 @@ const AdaptiveTest = () => {
   // Test completion screen
   if (isTestComplete) {
     const percentage = ((correctAnswers / TOTAL_QUESTIONS) * 100).toFixed(1);
-    
+
     return (
       <div className="practicebg">
         <div className="test-complete">
@@ -678,7 +678,7 @@ const AdaptiveTest = () => {
             <p><strong>Time Taken:</strong> {formatTime(elapsedTime)}</p>
             <p><strong>Average per Question:</strong> {(totalScore / TOTAL_QUESTIONS).toFixed(1)} points</p>
           </div>
-          
+
           <div className="answer-review">
             <h3>Review Your Answers:</h3>
             <div className="answers-grid">
@@ -694,7 +694,7 @@ const AdaptiveTest = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="test-actions">
             <button onClick={() => {clearTestData();navigate('/studentdashboard');}}>Back to Dashboard</button>
             <button onClick={resetTest}>Take Test Again</button>
@@ -719,8 +719,8 @@ const AdaptiveTest = () => {
           <div className="test-progress">
             <span>Question {currentQuestionIndex + 1} of {TOTAL_QUESTIONS}</span>
             <div className="progress-bar">
-              <div 
-                className="progress-fill" 
+              <div
+                className="progress-fill"
                 style={{ width: `${((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100}%` }}
               ></div>
             </div>
@@ -741,7 +741,7 @@ const AdaptiveTest = () => {
             <button onClick={() => cancelTest()}>Cancel Test</button>
           </div>
         </div>
-        
+
         <div className="practiceareagrid">
           <div className="questionCard">
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
@@ -775,7 +775,7 @@ const AdaptiveTest = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="answerBlock">
             {/* Buttons at top, matching PracticeArea layout */}
             <div className="tab-actions">

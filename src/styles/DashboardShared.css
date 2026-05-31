@@ -1,0 +1,116 @@
+/* ============================================================
+   DASHBOARD SHARED — styles common to both Student & Teacher dashboards
+   Imported globally via index.css
+   ============================================================ */
+
+/* ── KPI Cards ──────────────────────────────────────── */
+.kpi-card {
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+  border: 1px solid #e2e8f0;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.kpi-card:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05), 0 8px 20px rgba(0,0,0,0.09);
+  transform: translateY(-1px);
+}
+.kpi-title {
+  color: #64748b;
+  font-size: 11px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.kpi-subtitle {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* ── Back Button ────────────────────────────────────── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+/* ── Loading & Spinner ──────────────────────────────── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #64748b;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #4f46e5;
+  border-radius: 50%;
+  animation: dash-spin 0.8s linear infinite;
+}
+@keyframes dash-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Coming Soon placeholder ────────────────────────── */
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: #64748b;
+  text-align: center;
+}
+.coming-soon h2 { color: #1e293b; margin: 0; }
+.coming-soon p  { margin: 0; font-size: 14px; }
+
+/* ── Progress Bar ───────────────────────────────────── */
+.progress-bar {
+  width: 120px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+}
+.progress-text {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 6px;
+}
+
+/* ── Shared mobile slide-down animation ─────────────── */
+@keyframes dash-slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -13,6 +13,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 const LandingPageAuth                = lazy(() => import('./LandingPageAuth'));
 const Auth                           = lazy(() => import('./Components/Authentication/Auth'));
 const ResetPassword                  = lazy(() => import('./Components/ResetPassword'));
+const PilotRegister                  = lazy(() => import('./Components/PilotRegister'));
 const AdminDashboard                 = lazy(() => import('./Components/Dashboards/AdminDashboard/AdminDashboard'));
 const StudentDashboard               = lazy(() => import('./Components/Dashboards/StudentDashboard/StudentDashboard'));
 const TeacherDashboard               = lazy(() => import('./Components/Dashboards/TeacherDashboard/TeacherDashboard'));
@@ -45,6 +46,7 @@ function App() {
                 <Route path="/" element={<LandingPageAuth />} />
                 <Route path="/login" element={<Auth />} />
                 <Route path="/passwordreset" element={<ResetPassword />} />
+                <Route path="/pilot" element={<PilotRegister />} />
                 <Route path="/admindashboard" element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminDashboard />
