@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './TestEntrance.css'; // Add styling if you want
 import { getToken } from '../../utils/tokenUtils';
 
 const TestEntrance = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = getToken();
   const [selectedQuestionCount, setSelectedQuestionCount] = useState(10); // Default to 10 questions
+
+  // Preserve classId if passed from the student dashboard
+  const classId = location.state?.classId ?? null;
 
   const ToExam = async () => {
     if(!token){
@@ -24,10 +28,10 @@ const TestEntrance = () => {
         if (result.isConfirmed) navigate('/login');
     }
     else{
-        // Pass the selected question count to the adaptive test
-        navigate('/adaptivetest', { 
-          state: { 
-            questionCount: selectedQuestionCount 
+        navigate('/adaptivetest', {
+          state: {
+            questionCount: selectedQuestionCount,
+            classId,
           }
         });
     }

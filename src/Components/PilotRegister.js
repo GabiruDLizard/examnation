@@ -79,8 +79,8 @@ const PilotRegister = () => {
                         <div className="auth-stat">
                             <div className="pilot-check-icon"></div>
                             <div className="auth-stat-text">
-                                <span className="auth-stat-value">Free Pilot Access</span>
-                                <span className="auth-stat-label">No cost during the pilot period</span>
+                                <span className="auth-stat-value">Founding School Pricing</span>
+                                <span className="auth-stat-label">Special rates for early partners</span>
                             </div>
                         </div>
                         <div className="auth-stat">

@@ -96,10 +96,12 @@ const Assignments = ({
 
     const handleCardClick = (cardId) => {
         setCurrentView(cardId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleBackToDashboard = () => {
         setCurrentView('dashboard');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleGoToQuestions = () => {

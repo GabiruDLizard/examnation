@@ -348,7 +348,7 @@ export default function TeacherDashboard() {
   const generateReadinessChartData = async (classes) => {
     try {
       const resolvedClasses = classes ?? await getTeacherClasses().catch(() => []);
-      const chartData = await getTeacherReadinessChartData(userId, 30);
+      const chartData = await getTeacherReadinessChartData(userId, 365);
       const colors = generateClassColors(resolvedClasses);
       const stats = calculateTeacherStats(chartData);
 

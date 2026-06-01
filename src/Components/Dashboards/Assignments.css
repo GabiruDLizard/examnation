@@ -132,6 +132,37 @@
   margin-top: 4px;
 }
 
+/* Override large summary stat sizes inside assignment cards */
+.assignment-card .assignment-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.assignment-card .assignment-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assignment-card .assignment-stats .stat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0;
+}
+
+.assignment-card .assignment-stats .stat-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
 /* Main Grid */
 .assignment-grid {
   display: grid;
@@ -166,7 +197,8 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  height: 200px;
+  min-height: 240px;
+  height: 240px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -809,8 +841,8 @@
 
 .ManageAssignmentContainer {
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
   background: #f8fafc;
   min-height: 100vh;
 }
@@ -1096,6 +1128,8 @@
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .assignments-header {
@@ -1147,7 +1181,7 @@
 
 .assignments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   padding: 24px;
 }

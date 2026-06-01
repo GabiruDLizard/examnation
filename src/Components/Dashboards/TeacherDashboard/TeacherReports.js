@@ -99,10 +99,10 @@ export default function TeacherReports({ overrideTeacherId } = {}) {
             // ── readiness chart ────────────────────────────────
             let chart = [];
             if (selectedClassId === 'all') {
-                chart = await getTeacherReadinessChartData(teacherId, 30).catch(() => []);
+                chart = await getTeacherReadinessChartData(teacherId, 365).catch(() => []);
             } else {
                 // Filter teacher chart data to just this class
-                const raw = await getTeacherReadinessChartData(teacherId, 30).catch(() => []);
+                const raw = await getTeacherReadinessChartData(teacherId, 365).catch(() => []);
                 const cls = filteredClasses[0];
                 const key = cls?.name;
                 chart = raw.map(row => ({ week: row.week, [key]: row[key] })).filter(r => r[key] != null);

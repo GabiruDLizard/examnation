@@ -234,6 +234,7 @@ const EnhancedManageAssignment = ({ assignment, onBack, onAssignmentUpdated }) =
 
             await updateAssignment(assignment.id, updatedData);
             setSuccess('Assignment updated successfully!');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             if (onAssignmentUpdated) {
                 onAssignmentUpdated();

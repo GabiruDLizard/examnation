@@ -68,7 +68,7 @@ export const getClassTopicAbility = async (classId) => {
     }
 };
 
-export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
+export const getStudentReadinessHistory = async (studentId, weeksBack = 52) => {
     try {
         const response = await authFetch(`/Readiness/student/${studentId}/history?weeksBack=${weeksBack}`);
 
@@ -82,7 +82,7 @@ export const getStudentReadinessHistory = async (studentId, weeksBack = 8) => {
     }
 };
 
-export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
+export const getClassReadinessHistory = async (classId, weeksBack = 52) => {
     try {
         const response = await authFetch(`/Readiness/class/${classId}/history?weeksBack=${weeksBack}`);
 
@@ -96,7 +96,7 @@ export const getClassReadinessHistory = async (classId, weeksBack = 8) => {
     }
 };
 
-export const getTeacherReadinessChartData = async (teacherId, daysBack = 30) => {
+export const getTeacherReadinessChartData = async (teacherId, daysBack = 365) => {
     try {
         const response = await authFetch(`/Readiness/teacher/${teacherId}/chart-data?daysBack=${daysBack}`);
 
@@ -374,7 +374,7 @@ export const getAllEnrolledStudentInfo = async (classId) => {
 
                 let readinessLevel = 0;
                 try {
-                    const history = await getStudentReadinessHistory(studentId, 4);
+                    const history = await getStudentReadinessHistory(studentId, 52);
                     if (Array.isArray(history) && history.length > 0) {
                         const sorted = [...history].sort(
                             (a, b) => new Date(b.weekDate ?? b.recordedAt ?? 0) - new Date(a.weekDate ?? a.recordedAt ?? 0)
@@ -383,6 +383,20 @@ export const getAllEnrolledStudentInfo = async (classId) => {
                         readinessLevel = Math.round(classRecord?.readinessPercentage ?? 0);
                     }
                 } catch { /* no readiness recorded yet */ }
+
+                // Fallback: derive readiness from topic ability if history is empty
+                if (readinessLevel === 0) {
+                    try {
+                        const abilityRes = await authFetch(`/studenttopicability/student/${studentId}`);
+                        if (abilityRes.ok) {
+                            const abilities = await abilityRes.json();
+                            if (Array.isArray(abilities) && abilities.length > 0) {
+                                const avgTheta = abilities.reduce((sum, a) => sum + (a.theta ?? 0), 0) / abilities.length;
+                                readinessLevel = Math.round(Math.max(0, Math.min(100, ((avgTheta + 4) / 8) * 100)));
+                            }
+                        }
+                    } catch { /* no topic ability data */ }
+                }
 
                 let studentProgress = null;
                 if (completed.length > 0 || readinessLevel > 0) {

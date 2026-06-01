@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BiUser, BiBarChart, BiBookOpen, BiCalendar, BiTrendingUp, BiAssignments, BiStats, BiGroup, BiChevronRight, BiPlay, BiCheckCircle, BiTime, BiAward } from 'react-icons/bi';
+import { useNavigate } from 'react-router-dom';
 import { getAssignmentsForClass } from "./StudentDashboardService";
 import { authFetch } from '../../../utils/api';
 import { getUserIdFromToken } from '../../../utils/tokenUtils';
 import "../ClassOverview.css";
 
 export default function StudentClassOverview({ studentInfo, selectedClass, onBack, onNavigate }) {
+    const navigate = useNavigate();
     const [classStats, setClassStats] = useState({
         totalAssignments: 0,
         submittedAssignments: 0,
@@ -302,7 +304,7 @@ export default function StudentClassOverview({ studentInfo, selectedClass, onBac
                         <BiAward className="recommendation-icon" />
                         <h4>Take Practice Test</h4>
                         <p>Test your knowledge with adaptive questions</p>
-                        <button onClick={() => window.location.href = '/testentrance'}>Take Test</button>
+                        <button onClick={() => navigate('/testentrance', { state: { classId: selectedClass.classId } })}>Take Test</button>
                     </div>
                     <div className="recommendation-card">
                         <BiStats className="recommendation-icon" />

@@ -21,7 +21,7 @@ export default function StudentProfile({ studentId, studentName, onBack }) {
             try {
                 const [topicRes, historyRes, submissionsRes] = await Promise.all([
                     authFetch(`/studenttopicability/student/${studentId}`),
-                    authFetch(`/Readiness/student/${studentId}/history?weeksBack=8`),
+                    authFetch(`/Readiness/student/${studentId}/history?weeksBack=52`),
                     authFetch(`/assignmentsubmission/student/${studentId}`)
                 ]);
                 if (topicRes.ok) {
