@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { BiMenu, BiX } from 'react-icons/bi';
 import { FaInstagram, FaTwitter, FaTiktok, FaLinkedin } from 'react-icons/fa';
 import BentoFeatures from './BentoFeatures';
+import VideoModal from "./Dashboards/VideoModal";
 
 export default function ExamNationLanding() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,6 +26,9 @@ export default function ExamNationLanding() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
+
+    //video modal
+    const [demoVideoUrl, setDemoVideoUrl] = useState("");
     
     // Add the scrollToSection function
     const scrollToSection = (sectionId) => {
@@ -183,7 +187,7 @@ export default function ExamNationLanding() {
                     </p>
                     <div className="cta-buttons">
                     <button className="primary" onClick={handleGetStarted}>Get Started</button>
-                    <button className="secondary">Watch Demo</button>
+                    <button className="secondary" onClick={() => setDemoVideoUrl("/Examnation-Demo-Video.mov")}>Watch Demo</button>
                     </div>
                 </div>
 
